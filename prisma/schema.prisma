@@ -1,13 +1,36 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum WatchStatus {
+  PLAN_TO_WATCH
+  WATCHING
+  COMPLETED
+  DROPPED
+  ON_HOLD
+}
+
+model Movie {
+  id        String   @id @default(cuid())
+
+  // Cached data from TMDB, so we don't refetch every time
+  tmdbId    Int      @unique
+  title     String
+  posterPath String?
+  releaseDate DateTime?
+  overview  String?
+
+  // Your personal tracking data
+  status    WatchStatus @default(PLAN_TO_WATCH)
+  rating    Int?        // e.g. 1-10, nullable until you rate it
+  notes     String?
+  startedAt DateTime?
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
