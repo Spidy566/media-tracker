@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useMovieSearch } from "@/hooks/use-movie-search";
+import { useAddMovie } from "@/hooks/use-add-movie";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function SearchPage() {
     const [query, setQuery] = useState("");
     const { data, isLoading, isError } = useMovieSearch(query);
+    const { mutate: addMovie, isPending } = useAddMovie();
 
     return (
         <div className="max-w-2xl mx-auto p-6">
@@ -41,6 +44,22 @@ export default function SearchPage() {
                             <p className="text-sm font-medium">{movie.title}</p>
                             <p className="text-xs text-gray-500">{movie.release_date}</p>
                         </CardContent>
+                        <Button
+                            size="sm"
+                            className="w-full mt-2"
+                            disabled={isPending}
+                            onClick={() =>
+                                addMovie({
+                                    tmdbId: movie.id,
+                                    title: movie.title,
+                                    posterPath: movie.poster_path,
+                                    releaseDate: movie.release_date || null,
+                                    overview: movie.overview,
+                                })
+                            }
+                        >
+                            Add to Library
+                        </Button>
                     </Card>
                 ))}
             </div>
