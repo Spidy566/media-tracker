@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { useMovieSearch } from "@/hooks/use-movie-search";
 import { useAddMovie } from "@/hooks/use-add-movie";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SearchPage() {
     const [query, setQuery] = useState("");
-    const { data, isLoading, isError } = useMovieSearch(query);
+    const debouncedQuery = useDebounce(query, 400);
+    const { data, isLoading, isError } = useMovieSearch(debouncedQuery);
     const { mutate: addMovie, isPending } = useAddMovie();
 
     return (
@@ -23,8 +26,20 @@ export default function SearchPage() {
                 className="mb-6"
             />
 
-            {isLoading && <p>Loading...</p>}
+            {isLoading && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i}>
+                            <Skeleton className="h-64 w-full rounded-md mb-2" />
+                            <Skeleton className="h-4 w-3/4" />
+                        </div>
+                    ))}
+                </div>
+            )}
             {isError && <p className="text-red-500">Something went wrong.</p>}
+            {!isLoading && query.length > 0 && data?.results.length === 0 && (
+                <p className="text-gray-500">No movies found for "{query}".</p>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {data?.results.map((movie) => (
