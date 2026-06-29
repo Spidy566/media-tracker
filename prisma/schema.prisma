@@ -34,3 +34,31 @@ model Movie {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum GameStatus {
+  PLAN_TO_PLAY
+  PLAYING
+  COMPLETED
+  DROPPED
+  ON_HOLD
+}
+
+model Game {
+  id          String   @id @default(cuid())
+
+  igdbId      Int      @unique
+  title       String
+  coverUrl    String?
+  releaseDate DateTime?
+  summary     String?
+  genres      String[] // simple array of genre names, e.g. ["Adventure", "RPG"]
+
+  status      GameStatus @default(PLAN_TO_PLAY)
+  rating      Int?
+  notes       String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

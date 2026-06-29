@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Film, Search, Library } from "lucide-react";
+import { Film, Search, Library, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
     { href: "/", label: "Home", icon: Film },
-    { href: "/search", label: "Search", icon: Search },
+    { href: "/search", label: "Movies", icon: Search },
+    { href: "/games/search", label: "Games", icon: Gamepad2 },
     { href: "/library", label: "Library", icon: Library },
 ];
 
