@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useGameLibrary } from "@/hooks/use-game-library";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { MediaCard } from "@/components/media-card";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
 
 const STATUSES = [
@@ -39,22 +37,15 @@ export default function GameLibraryPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
                                 {filtered?.map((game) => {
                                     const coverUrl = getIgdbCoverUrl(game.coverUrl ?? undefined);
+
                                     return (
-                                        <Link key={game.id} href={`/games/library/${game.id}`}>
-                                            <Card className="hover:opacity-80 transition">
-                                                <CardContent className="p-2">
-                                                    {coverUrl ? (
-                                                        <img src={coverUrl} alt={game.title} className="rounded-md mb-2 w-full" />
-                                                    ) : (
-                                                        <div className="bg-gray-200 h-64 rounded-md mb-2" />
-                                                    )}
-                                                    <p className="text-sm font-medium">{game.title}</p>
-                                                    <Badge variant="secondary" className="mt-1">
-                                                        {game.status.replace(/_/g, " ")}
-                                                    </Badge>
-                                                </CardContent>
-                                            </Card>
-                                        </Link>
+                                        <MediaCard 
+                                            key={game.id}
+                                            title={game.title}
+                                            imageUrl={coverUrl || null}
+                                            href={`/library/games/${game.id}`}
+                                            status={game.status}
+                                        />
                                     );
                                 })}
                             </div>

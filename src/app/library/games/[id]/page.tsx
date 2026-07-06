@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import { useGame, useUpdateGame, useDeleteGame } from "@/hooks/use-game-library";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,12 +17,6 @@ export default function GameDetailPage() {
     const { mutate: updateGame } = useUpdateGame();
     const { mutate: deleteGame, isPending: isDeleting } = useDeleteGame();
 
-    const [notes, setNotes] = useState("");
-
-    useEffect(() => {
-        if (game?.notes) setNotes(game.notes);
-    }, [game?.notes]);
-
     if (isLoading) return <p className="p-6">Loading...</p>;
     if (!game) return <p className="p-6">Game not found.</p>;
 
@@ -31,7 +24,7 @@ export default function GameDetailPage() {
 
     return (
         <div className="max-w-2xl mx-auto p-6">
-            <Button variant="ghost" onClick={() => router.push("/games/library")} className="mb-4">
+            <Button variant="ghost" onClick={() => router.push("/library/games")} className="mb-4">
                 ← Back to Library
             </Button>
 
@@ -82,9 +75,8 @@ export default function GameDetailPage() {
                 <div>
                     <label className="text-sm font-medium block mb-1">Notes</label>
                     <Textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        onBlur={() => updateGame({ id: game.id, notes })}
+                        defaultValue={game.notes ?? ""}
+                        onBlur={(e) => updateGame({ id: game.id, notes: e.target.value })}
                         placeholder="Your thoughts..."
                         rows={4}
                     />
@@ -95,7 +87,7 @@ export default function GameDetailPage() {
                     disabled={isDeleting}
                     onClick={() => {
                         deleteGame(game.id);
-                        router.push("/games/library");
+                        router.push("/library/games");
                     }}
                 >
                     Remove from Library

@@ -5,9 +5,9 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useGameSearch } from "@/hooks/use-game-search";
 import { useAddGame } from "@/hooks/use-add-game";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MediaCard } from "@/components/media-card";
 import { getIgdbCoverUrl, igdbTimestampToDate } from "@/lib/igdb-helpers";
 
 export default function GameSearchPage() {
@@ -36,26 +36,22 @@ export default function GameSearchPage() {
             )}
 
             {!isLoading && query.length > 0 && data?.length === 0 && (
-                <p className="text-gray-500">No games found for "{query}".</p>
+                <p className="text-gray-500">No games found for ${query}.</p>
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {data?.map((game) => {
                     const coverUrl = getIgdbCoverUrl(game.cover?.url);
                     return (
-                        <Card key={game.id}>
-                            <CardContent className="p-2">
-                                {coverUrl ? (
-                                    <img src={coverUrl} alt={game.name} className="rounded-md mb-2 w-full" />
-                                ) : (
-                                    <div className="bg-gray-200 h-64 rounded-md mb-2 flex items-center justify-center text-sm text-gray-500">
-                                        No image
-                                    </div>
-                                )}
-                                <p className="text-sm font-medium">{game.name}</p>
+                        <MediaCard
+                            key={game.id}
+                            title={game.name}
+                            imageUrl={coverUrl || null}
+                            // subtitle={igdbTimestampToDate(game.first_release_date)?.toISOString() ?? null}
+                            actionButton={
                                 <Button
                                     size="sm"
-                                    className="w-full mt-2"
+                                    className="w-full"
                                     disabled={isPending}
                                     onClick={() =>
                                         addGame({
@@ -70,8 +66,8 @@ export default function GameSearchPage() {
                                 >
                                     Add to Library
                                 </Button>
-                            </CardContent>
-                        </Card>
+                            }
+                        />
                     );
                 })}
             </div>
