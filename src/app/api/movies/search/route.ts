@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { tmdbFetch } from "@/lib/tmdb";
 
 export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get("query");
+    const query = request.nextUrl.searchParams.get("query");
 
     if (!query) {
         return NextResponse.json(
