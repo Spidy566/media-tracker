@@ -2,17 +2,61 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LibrarySection } from "@/components/library-section";
-import { useMovieLibrary } from "@/hooks/use-movie-library";
-import { useGameLibrary } from "@/hooks/use-game-library";
+import { useMediaLibrary } from "@/hooks/use-media-library";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
-import { MOVIE_STATUSES, GAME_STATUSES, withAllOption } from "@/lib/media-status";
+import { movies as movieSchema, games as gameSchema } from "@/db/schema";
+import {
+  MOVIE_STATUSES,
+  GAME_STATUSES,
+  withAllOption,
+  StatusOption,
+} from "@/lib/media-status";
 
-const MOVIE_FILTERS = withAllOption(MOVIE_STATUSES);
-const GAME_FILTERS = withAllOption(GAME_STATUSES);
+type Movie = typeof movieSchema.$inferSelect;
+type Game = typeof gameSchema.$inferSelect;
+
+const RESOURCES = ["movies", "games"] as const;
+type ResourceType = (typeof RESOURCES)[number];
+
+interface LibraryConfig<T> {
+  label: string;
+  filters: StatusOption[];
+  hrefBase: string;
+  getImageUrl: (item: T) => string | null;
+}
+
+const libraryConfig: {
+  movies: LibraryConfig<Movie>;
+  games: LibraryConfig<Game>;
+} = {
+  movies: {
+    label: "Movies",
+    filters: withAllOption(MOVIE_STATUSES),
+    hrefBase: "/library/movies",
+    getImageUrl: (movie) =>
+      movie.posterPath
+        ? `https://image.tmdb.org/t/p/w300${movie.posterPath}`
+        : null,
+  },
+  games: {
+    label: "Games",
+    filters: withAllOption(GAME_STATUSES),
+    hrefBase: "/library/games",
+    getImageUrl: (game) => getIgdbCoverUrl(game.coverUrl ?? undefined),
+  },
+};
 
 export default function LibraryPage() {
-  const { data: movies, isLoading: moviesLoading } = useMovieLibrary();
-  const { data: games, isLoading: gamesLoading } = useGameLibrary();
+  const { data: movies, isLoading: moviesLoading } = useMediaLibrary("movies");
+  const { data: games, isLoading: gamesLoading } = useMediaLibrary("games");
+
+  const libraryData: Record<
+    ResourceType,
+    { items: Movie[] | Game[] | undefined; isLoading: boolean }
+  > = {
+    movies: { items: movies, isLoading: moviesLoading },
+    games: { items: games, isLoading: gamesLoading },
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -20,31 +64,29 @@ export default function LibraryPage() {
 
       <Tabs defaultValue="movies">
         <TabsList>
-          <TabsTrigger value="movies">Movies</TabsTrigger>
-          <TabsTrigger value="games">Games</TabsTrigger>
+          {RESOURCES.map((res) => (
+            <TabsTrigger key={res} value={res}>
+              {libraryConfig[res].label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="movies">
-          <LibrarySection
-            items={movies}
-            isLoading={moviesLoading}
-            statuses={MOVIE_FILTERS}
-            hrefBase="/library/movies"
-            getImageUrl={(movie) =>
-              movie.posterPath ? `https://image.tmdb.org/t/p/w300${movie.posterPath}` : null
-            }
-          />
-        </TabsContent>
+        {RESOURCES.map((res) => {
+          const config = libraryConfig[res] as LibraryConfig<Movie | Game>;
+          const data = libraryData[res];
 
-        <TabsContent value="games">
-          <LibrarySection
-            items={games}
-            isLoading={gamesLoading}
-            statuses={GAME_FILTERS}
-            hrefBase="/library/games"
-            getImageUrl={(game) => getIgdbCoverUrl(game.coverUrl ?? undefined)}
-          />
-        </TabsContent>
+          return (
+            <TabsContent key={res} value={res}>
+              <LibrarySection
+                items={data.items}
+                isLoading={data.isLoading}
+                statuses={config.filters}
+                hrefBase={config.hrefBase}
+                getImageUrl={config.getImageUrl}
+              />
+            </TabsContent>
+          );
+        })}
       </Tabs>
     </div>
   );
