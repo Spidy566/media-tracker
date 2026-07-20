@@ -77,11 +77,12 @@ export async function deleteById(table: PgTable, idColumn: AnyColumn, id: string
   }
 }
 
+const PG_UNIQUE_VIOLATION_CODE = "23505";
+
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: unknown }).code === "23505"
-  );
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const code = (error as { code: unknown }).code;
+    return String(code) === PG_UNIQUE_VIOLATION_CODE;
+  }
+  return false;
 }

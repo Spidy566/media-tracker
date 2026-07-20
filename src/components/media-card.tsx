@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,10 +24,12 @@ export function MediaCard({
   subtitle,
   actionButton,
 }: MediaCardProps) {
+  const [hasError, setHasError] = useState(false);
+
   const cardContent = (
     <Card className="hover:opacity-80 transition h-full flex flex-col">
       <CardContent className="p-2 flex-grow">
-        {imageUrl ? (
+        {imageUrl && !hasError ? (
           <Image
             src={imageUrl}
             alt={title}
@@ -32,10 +37,11 @@ export function MediaCard({
             height={450}
             loading="eager"
             fetchPriority="high"
-            className="rounded-md mb-2 object-cover"
+            className="rounded-md mb-2 object-cover aspect-[2/3] w-full"
+            onError={() => setHasError(true)}
           />
         ) : (
-          <div className="bg-gray-200 aspect-[2/3] rounded-md mb-2 flex items-center justify-center text-sm text-gray-500">
+          <div className="bg-gray-200 aspect-[2/3] rounded-md mb-2 flex items-center justify-center text-sm text-gray-500 w-full">
             No image
           </div>
         )}

@@ -26,7 +26,7 @@ interface MediaDetailViewProps {
   statuses: StatusOption[];
   backHref: string;
   onStatusChange: (status: string) => void;
-  onRatingChange: (rating: number) => void;
+  onRatingChange: (rating: number | null) => void;
   onNotesBlur: (notes: string) => void;
   onDelete: () => void;
   isDeleting: boolean;
@@ -116,13 +116,14 @@ export function MediaDetailView({
             Rating (1-10)
           </label>
           <Select
-            value={rating?.toString() ?? ""}
-            onValueChange={(v) => onRatingChange(Number(v))}
+            value={rating?.toString() ?? "none"}
+            onValueChange={(v) => onRatingChange(v === "none" ? null : Number(v))}
           >
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Not rated" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">Not rated</SelectItem>
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                 <SelectItem key={n} value={n.toString()}>
                   {n}

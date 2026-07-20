@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { movies, games } from "@/db/schema";
 import { addMovieSchema } from "@/lib/validations/movie";
 import { addGameSchema } from "@/lib/validations/game";
@@ -23,10 +23,13 @@ const apiConfig = {
   },
 };
 
-type RouteParams = { params: Promise<{ type: ResourceType }> };
+type RouteParams = { params: Promise<{ type: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { type } = await params;
+  if (type !== "movies" && type !== "games") {
+    return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
+  }
   const config = apiConfig[type];
 
   return listAll(config.table, config.orderColumn);
@@ -34,6 +37,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   const { type } = await params;
+  if (type !== "movies" && type !== "games") {
+    return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
+  }
   const config = apiConfig[type];
   const body = await request.json();
 

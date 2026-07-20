@@ -1,18 +1,24 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Film } from "lucide-react";
+import { Film, Gamepad2 } from "lucide-react";
 
 export default function HomePage() {
   return (
       <div className="max-w-2xl mx-auto px-6 py-24 text-center">
-        <Film className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-        <h1 className="text-3xl font-bold mb-3">Track everything you watch.</h1>
+        <div className="flex justify-center gap-4 mb-4 text-muted-foreground">
+          <Film className="w-12 h-12" />
+          <Gamepad2 className="w-12 h-12" />
+        </div>
+        <h1 className="text-3xl font-bold mb-3">Track what you watch and play.</h1>
         <p className="text-muted-foreground mb-8">
-          Movies first. Games and anime coming soon.
+          Manage your personal movie collection and video game backlog in one unified dashboard.
         </p>
         <div className="flex gap-3 justify-center">
-          <Link href="/search">
+          <Link href="/search/movies">
             <Button>Search Movies</Button>
+          </Link>
+          <Link href="/search/games">
+            <Button variant="secondary">Search Games</Button>
           </Link>
           <Link href="/library">
             <Button variant="outline">View Library</Button>

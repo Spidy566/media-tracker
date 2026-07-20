@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, notFound } from "next/navigation";
 import { movies, games } from "@/db/schema";
 import {
   useMediaItem,
@@ -60,7 +60,11 @@ const mediaConfig: MediaConfigMap = {
 export default function GenericDetailPage() {
   const router = useRouter();
 
-  const { type, id } = useParams<{ type: ResourceType; id: string }>();
+  const { type, id } = useParams<{ type: string; id: string }>();
+
+  if (type !== "movies" && type !== "games") {
+    notFound();
+  }
 
   const { data: item, isLoading } = useMediaItem(type, id);
   const { mutate: updateItem } = useUpdateMediaItem(type);

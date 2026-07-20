@@ -1,22 +1,23 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { movies, games } from "@/db/schema";
 import { getById, updateById, deleteById } from "@/lib/api/crud";
 import { z } from "zod";
 
-const updateMovieSchema = z.object({
-  status: z
-    .enum(["PLAN_TO_WATCH", "WATCHING", "COMPLETED", "DROPPED", "ON_HOLD"])
-    .optional(),
+const baseUpdateSchema = z.object({
   rating: z.number().min(1).max(10).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
-const updateGameSchema = z.object({
+const updateMovieSchema = baseUpdateSchema.extend({
+  status: z
+    .enum(["PLAN_TO_WATCH", "WATCHING", "COMPLETED", "DROPPED", "ON_HOLD"])
+    .optional(),
+});
+
+const updateGameSchema = baseUpdateSchema.extend({
   status: z
     .enum(["PLAN_TO_PLAY", "PLAYING", "COMPLETED", "DROPPED", "ON_HOLD"])
     .optional(),
-  rating: z.number().min(1).max(10).nullable().optional(),
-  notes: z.string().nullable().optional(),
 });
 
 type ResourceType = "movies" | "games";
@@ -34,10 +35,13 @@ const apiConfig = {
   },
 };
 
-type RouteParams = { params: Promise<{ type: ResourceType; id: string }> };
+type RouteParams = { params: Promise<{ type: string; id: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { type, id } = await params;
+  if (type !== "movies" && type !== "games") {
+    return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
+  }
   const config = apiConfig[type];
 
   return getById(config.table, config.idColumn, id);
@@ -45,6 +49,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { type, id } = await params;
+  if (type !== "movies" && type !== "games") {
+    return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
+  }
   const config = apiConfig[type];
   const body = await request.json();
 
@@ -59,6 +66,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { type, id } = await params;
+  if (type !== "movies" && type !== "games") {
+    return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
+  }
   const config = apiConfig[type];
 
   return deleteById(config.table, config.idColumn, id);

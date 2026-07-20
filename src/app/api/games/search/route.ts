@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const safeQuery = query.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
         const body = `search "${safeQuery}"; fields name,cover.url,first_release_date,summary,genres.name; limit 20;`;
         const data = await igdbFetch("/games", body);
-    return NextResponse.json(data);
+        return NextResponse.json(data);
     } catch (error) {
         console.error(error);
         return NextResponse.json(
