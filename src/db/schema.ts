@@ -1,50 +1,101 @@
-import { pgTable, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  integer,
+  timestamp,
+  pgEnum,
+  uuid,
+  smallint,
+  unique,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
-export const movieStatusEnum = pgEnum("movie_status", [
-  "PLAN_TO_WATCH",
-  "WATCHING",
-  "COMPLETED",
-  "DROPPED",
-  "ON_HOLD",
+// 1. Enums
+export const mediaTypeEnum = pgEnum("media_type", [
+  "movie",
+  "tv",
+  "game",
+  "book",
 ]);
 
-export const movies = pgTable("movies", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  tmdbId: integer("tmdb_id").notNull().unique(),
-  title: text("title").notNull(),
-  posterPath: text("poster_path"),
-  releaseDate: timestamp("release_date"),
-  overview: text("overview"),
-  status: movieStatusEnum("status").default("PLAN_TO_WATCH").notNull(),
-  rating: integer("rating"),
-  notes: text("notes"),
-  startedAt: timestamp("started_at"),
-  finishedAt: timestamp("finished_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+export const mediaStatusEnum = pgEnum("media_status", [
+  "want_to", // Backlog / Wishlist
+  "doing",   // Watching / Playing / Reading
+  "done",    // Finished
+  "dropped", // Abandoned / DNF
+]);
+
+// 2. Users (The Squad)
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  username: text("username").notNull().unique(), // e.g. "spidy"
+  displayName: text("display_name").notNull(),   // e.g. "Spidy"
+  avatarUrl: text("avatar_url"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
-export const gameStatusEnum = pgEnum("game_status", [
-  "PLAN_TO_PLAY",
-  "PLAYING",
-  "COMPLETED",
-  "DROPPED",
-  "ON_HOLD",
-]);
-
-export const games = pgTable("games", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  igdbId: integer("igdb_id").notNull().unique(),
+// 3. Media Items (The Universal Cache)
+export const mediaItems = pgTable("media_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Provider-prefixed ID: "tmdb:movie:693134", "igdb:119133", "gb:abc"
+  externalId: text("external_id").notNull().unique(),
+  mediaType: mediaTypeEnum("media_type").notNull(),
   title: text("title").notNull(),
-  coverUrl: text("cover_url"),
-  releaseDate: timestamp("release_date"),
+  releaseYear: integer("release_year"),
+  posterUrl: text("poster_url"),
+  creator: text("creator"), // Director / Studio / Author
   summary: text("summary"),
   genres: text("genres").array().notNull().default([]),
-  status: gameStatusEnum("status").default("PLAN_TO_PLAY").notNull(),
-  rating: integer("rating"),
-  notes: text("notes"),
-  startedAt: timestamp("started_at"),
-  finishedAt: timestamp("finished_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
+
+// 4. User Media Entries (The Tracking Bridge)
+export const userMediaEntries = pgTable(
+  "user_media_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    mediaItemId: uuid("media_item_id")
+      .notNull()
+      .references(() => mediaItems.id, { onDelete: "cascade" }),
+    status: mediaStatusEnum("status").notNull().default("want_to"),
+    rating: smallint("rating"), // 1 to 10
+    reviewNote: text("review_note"), // Quick thoughts
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    // Rule: One user can only track a specific media item once
+    unique("user_media_unique").on(table.userId, table.mediaItemId),
+  ]
+);
+
+// 5. Relations (Makes querying in Drizzle effortless)
+export const usersRelations = relations(users, ({ many }) => ({
+  entries: many(userMediaEntries),
+}));
+
+export const mediaItemsRelations = relations(mediaItems, ({ many }) => ({
+  entries: many(userMediaEntries),
+}));
+
+export const userMediaEntriesRelations = relations(userMediaEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [userMediaEntries.userId],
+    references: [users.id],
+  }),
+  mediaItem: one(mediaItems, {
+    fields: [userMediaEntries.mediaItemId],
+    references: [mediaItems.id],
+  }),
+}));
