@@ -69,6 +69,22 @@ export default function HomePage() {
     },
   });
 
+  // Delete entry mutation
+  const { mutate: deleteEntry, isPending: isDeleting } = useMutation({
+    mutationFn: async (entryId: string) => {
+      if (!currentUser) return;
+      const res = await fetch(`/api/entries?id=${entryId}&userId=${currentUser.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      // Refresh the feed automatically
+      queryClient.invalidateQueries({ queryKey: ["entries"] });
+    },
+  });
+
   const entries = data?.entries || [];
 
   return (
@@ -156,6 +172,17 @@ export default function HomePage() {
                   onClick={() => stealToBacklog(entry.media)}
                 >
                   + Steal
+                </Button>
+              )}
+              {isMe && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs text-destructive hover:bg-destructive/10 shrink-0"
+                  disabled={isDeleting}
+                  onClick={() => deleteEntry(entry.id)}
+                >
+                  Delete
                 </Button>
               )}
             </div>

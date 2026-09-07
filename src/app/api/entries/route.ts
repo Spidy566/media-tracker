@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 
 const createEntrySchema = z.object({
@@ -137,6 +137,46 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ entries: rows });
   } catch (error) {
     console.error("Failed to fetch entries:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+
+// DELETE /api/entries?id=...&userId=... — Remove an entry from stash
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get("id");
+    const userId = searchParams.get("userId");
+
+    if (!id || !userId) {
+      return NextResponse.json(
+        { error: "Missing required params: id and userId" },
+        { status: 400 }
+      );
+    }
+
+    // Delete only if the entry belongs to this user
+    const [deleted] = await db
+      .delete(userMediaEntries)
+      .where(
+        and(
+          eq(userMediaEntries.id, id),
+          eq(userMediaEntries.userId, userId)
+        )
+      )
+      .returning();
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Entry not found or unauthorized" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, deleted });
+  } catch (error) {
+    console.error("Failed to delete entry:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
