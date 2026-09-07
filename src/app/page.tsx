@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useActiveUser } from "@/hooks/use-active-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Entry {
   id: string;
@@ -41,12 +43,19 @@ export default function HomePage() {
   const { currentUser } = useActiveUser();
   const queryClient = useQueryClient();
 
+  const [activeTab, setActiveTab] = useState<"squad" | "me">("squad");
+
   const { data, isLoading } = useQuery<{ entries: Entry[] }>({
-    queryKey: ["entries"],
+    queryKey: ["entries", activeTab, activeTab === "me" ? currentUser?.id : null],
     queryFn: async () => {
-      const res = await fetch("/api/entries");
+      const url =
+        activeTab === "me" && currentUser
+          ? `/api/entries?userId=${currentUser.id}`
+          : "/api/entries";
+      const res = await fetch(url);
       return res.json();
     },
+    enabled: activeTab === "squad" || Boolean(currentUser),
   });
 
   // The 1-click "Steal to Backlog" button
@@ -89,11 +98,24 @@ export default function HomePage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">The Squad Lounge</h1>
-        <p className="text-muted-foreground text-sm">
-          Live activity from you and the homies.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {activeTab === "squad" ? "The Squad Lounge" : "My Personal Stash"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {activeTab === "squad"
+              ? "Live activity from you and the homies."
+              : `Everything tracked by ${currentUser?.displayName || "you"}.`}
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "squad" | "me")}>
+          <TabsList className="grid grid-cols-2 w-52">
+            <TabsTrigger value="squad">Squad</TabsTrigger>
+            <TabsTrigger value="me">My Stash</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {isLoading && <p className="text-muted-foreground py-10 text-center">Loading squad stash...</p>}
