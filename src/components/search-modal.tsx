@@ -75,10 +75,10 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
                     alt={item.title}
                     width={48}
                     height={72}
-                    className="rounded object-cover aspect-[2/3] w-12"
+                    className="rounded object-cover aspect-2/3 w-12"
                   />
                 ) : (
-                  <div className="w-12 aspect-[2/3] bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                  <div className="w-12 aspect-2/3 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
                     Art
                   </div>
                 )}

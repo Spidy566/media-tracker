@@ -5,8 +5,7 @@ import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { db } from "@/lib/db";
 
 const createEntrySchema = z.object({
-  userId: z.string().uuid(),
-  // Factual media info from the search result
+  userId: z.uuid(),
   media: z.object({
     externalId: z.string().min(1),
     mediaType: z.enum(["movie", "tv", "game", "book"]),
@@ -17,7 +16,6 @@ const createEntrySchema = z.object({
     summary: z.string().nullable().optional(),
     genres: z.array(z.string()).optional().default([]),
   }),
-  // User's tracking status
   status: z.enum(["want_to", "doing", "done", "dropped"]).default("want_to"),
   rating: z.number().min(1).max(10).nullable().optional(),
   reviewNote: z.string().max(280).nullable().optional(),
@@ -31,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: parsed.error.flatten() },
+        { error: "Invalid input", details: z.treeifyError(parsed.error) },
         { status: 400 },
       );
     }

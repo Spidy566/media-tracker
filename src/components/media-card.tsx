@@ -27,7 +27,7 @@ export function MediaCard({
 
   const cardContent = (
     <Card className="hover:opacity-80 transition h-full flex flex-col">
-      <CardContent className="p-2 flex-grow">
+      <CardContent className="p-2 grow">
         {imageUrl && !hasError ? (
           <Image
             src={imageUrl}
@@ -36,11 +36,11 @@ export function MediaCard({
             height={450}
             loading="eager"
             fetchPriority="high"
-            className="rounded-md mb-2 object-cover aspect-[2/3] w-full"
+            className="rounded-md mb-2 object-cover aspect-2/3 w-full"
             onError={() => setHasError(true)}
           />
         ) : (
-          <div className="bg-gray-200 aspect-[2/3] rounded-md mb-2 flex items-center justify-center text-sm text-gray-500 w-full">
+          <div className="bg-gray-200 aspect-2/3 rounded-md mb-2 flex items-center justify-center text-sm text-gray-500 w-full">
             No image
           </div>
         )}

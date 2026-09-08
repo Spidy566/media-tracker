@@ -5,7 +5,6 @@ import { tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGame } from "@/types/igdb";
 import type { TMDBSearchResponse } from "@/types/tmdb";
 
-// The clean, standardized item shape your frontend will receive
 export interface UnifiedSearchResult {
   externalId: string;
   mediaType: "movie" | "tv" | "game";

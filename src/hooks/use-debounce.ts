@@ -7,7 +7,7 @@ export function useDebounce<T>(value: T, delay: number = 400): T {
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer); // cancel if value changes before delay passes
+    return () => clearTimeout(timer);
   }, [value, delay]);
 
   return debouncedValue;

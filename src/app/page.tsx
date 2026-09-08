@@ -44,12 +44,11 @@ export default function HomePage() {
   const { currentUser } = useActiveUser();
   const queryClient = useQueryClient();
 
-  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-
   const [activeTab, setActiveTab] = useState<"squad" | "me">("squad");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "want_to" | "doing" | "done" | "dropped"
   >("all");
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   const { data, isLoading } = useQuery<{ entries: Entry[] }>({
     queryKey: ["entries", activeTab, activeTab === "me" ? currentUser?.id : null],

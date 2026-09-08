@@ -272,7 +272,7 @@ export default function ExplorePage() {
               {Array.from({ length: 18 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-[2/3] bg-white/5 rounded-lg animate-pulse border border-white/5"
+                  className="aspect-2/3 bg-white/5 rounded-lg animate-pulse border border-white/5"
                 />
               ))}
             </div>
@@ -302,7 +302,7 @@ export default function ExplorePage() {
               <div
                 key={item.externalId}
                 onClick={() => setSelectedMedia(item)}
-                className="group relative cursor-pointer aspect-[2/3] rounded-lg overflow-hidden border border-white/10 bg-[#161a22] transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl hover:border-[#ff4b72]/60 hover:z-10"
+                className="group relative cursor-pointer aspect-2/3 rounded-lg overflow-hidden border border-white/10 bg-[#161a22] transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl hover:border-[#ff4b72]/60 hover:z-10"
               >
                 {item.posterUrl ? (
                   <Image
@@ -322,7 +322,7 @@ export default function ExplorePage() {
                 )}
 
                 {/* Backloggd-style Dark Gradient Overlay on Hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
                   <p className="text-xs font-bold leading-tight line-clamp-2 text-white">
                     {item.title}
                   </p>
