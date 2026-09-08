@@ -47,6 +47,7 @@ export default function HomePage() {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   const [activeTab, setActiveTab] = useState<"squad" | "me">("squad");
+  const [statusFilter, setStatusFilter] = useState<"all" | "want_to" | "doing" | "done" | "dropped">("all");
 
   const { data, isLoading } = useQuery<{ entries: Entry[] }>({
     queryKey: ["entries", activeTab, activeTab === "me" ? currentUser?.id : null],
@@ -99,9 +100,47 @@ export default function HomePage() {
 
   const entries = data?.entries || [];
 
+  // Count items per status for the active user
+  const statusCounts = {
+    all: entries.length,
+    want_to: entries.filter((e) => e.status === "want_to").length,
+    doing: entries.filter((e) => e.status === "doing").length,
+    done: entries.filter((e) => e.status === "done").length,
+    dropped: entries.filter((e) => e.status === "dropped").length,
+  };
+
+  // Filter entries if we're on "My Stash" and a specific status is chosen
+  const displayedEntries =
+    activeTab === "me" && statusFilter !== "all"
+      ? entries.filter((e) => e.status === statusFilter)
+      : entries;
+
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        {activeTab === "me" && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6">
+          {(
+            [
+              { key: "all", label: "All" },
+              { key: "want_to", label: "Backlog" },
+              { key: "doing", label: "In Progress" },
+              { key: "done", label: "Completed" },
+              { key: "dropped", label: "Dropped" },
+            ] as const
+          ).map(({ key, label }) => (
+            <Button
+              key={key}
+              size="xs"
+              variant={statusFilter === key ? "default" : "outline"}
+              onClick={() => setStatusFilter(key)}
+              className="text-xs shrink-0"
+            >
+              {label} ({statusCounts[key]})
+            </Button>
+          ))}
+        </div>
+      )}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             {activeTab === "squad" ? "The Squad Lounge" : "My Personal Stash"}
@@ -123,7 +162,7 @@ export default function HomePage() {
 
       {isLoading && <p className="text-muted-foreground py-10 text-center">Loading squad stash...</p>}
 
-      {!isLoading && entries.length === 0 && (
+      {!isLoading && displayedEntries.length === 0 && (
         <div className="text-center py-16 border border-dashed rounded-xl">
           <p className="font-medium">No activity yet.</p>
           <p className="text-xs text-muted-foreground mt-1">Use the search bar above to log your first title!</p>
@@ -131,7 +170,7 @@ export default function HomePage() {
       )}
 
       <div className="space-y-4">
-        {entries.map((entry) => {
+        {displayedEntries.map((entry) => {
           const isMe = currentUser?.id === entry.user.id;
 
           return (
