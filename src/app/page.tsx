@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useActiveUser } from "@/hooks/use-active-user";
+import { TrackDialog } from "@/components/track-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,6 +43,8 @@ const statusTextMap = {
 export default function HomePage() {
   const { currentUser } = useActiveUser();
   const queryClient = useQueryClient();
+
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   const [activeTab, setActiveTab] = useState<"squad" | "me">("squad");
 
@@ -197,20 +200,49 @@ export default function HomePage() {
                 </Button>
               )}
               {isMe && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs text-destructive hover:bg-destructive/10 shrink-0"
-                  disabled={isDeleting}
-                  onClick={() => deleteEntry(entry.id)}
-                >
-                  Delete
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7"
+                    onClick={() => setEditingEntry(entry)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs text-destructive hover:bg-destructive/10 h-7"
+                    disabled={isDeleting}
+                    onClick={() => deleteEntry(entry.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
               )}
             </div>
           );
         })}
       </div>
+      {editingEntry && currentUser && (
+        <TrackDialog
+          media={{
+            externalId: editingEntry.media.externalId,
+            mediaType: editingEntry.media.mediaType as "movie" | "tv" | "game",
+            title: editingEntry.media.title,
+            releaseYear: editingEntry.media.releaseYear,
+            posterUrl: editingEntry.media.posterUrl,
+            creator: editingEntry.media.creator,
+            summary: null,
+            genres: editingEntry.media.genres,
+          }}
+          userId={currentUser.id}
+          initialStatus={editingEntry.status}
+          initialRating={editingEntry.rating}
+          initialNote={editingEntry.reviewNote}
+          onClose={() => setEditingEntry(null)}
+        />
+      )}
     </main>
   );
 }

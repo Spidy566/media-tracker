@@ -18,12 +18,22 @@ interface TrackDialogProps {
   media: UnifiedSearchResult;
   userId: string;
   onClose: () => void;
+  initialStatus?: "want_to" | "doing" | "done" | "dropped";
+  initialRating?: number | null;
+  initialNote?: string | null;
 }
 
-export function TrackDialog({ media, userId, onClose }: TrackDialogProps) {
-  const [status, setStatus] = useState<"want_to" | "doing" | "done" | "dropped">("done");
-  const [rating, setRating] = useState<number | null>(10);
-  const [note, setNote] = useState("");
+export function TrackDialog({
+  media,
+  userId,
+  onClose,
+  initialStatus = "done",
+  initialRating = 10,
+  initialNote = "",
+}: TrackDialogProps) {
+  const [status, setStatus] = useState<"want_to" | "doing" | "done" | "dropped">(initialStatus);
+  const [rating, setRating] = useState<number | null>(initialRating);
+  const [note, setNote] = useState(initialNote || "");
 
   const queryClient = useQueryClient();
 
