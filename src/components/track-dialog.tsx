@@ -27,8 +27,8 @@ export function TrackDialog({
   media,
   userId,
   onClose,
-  initialStatus = "done",
-  initialRating = 10,
+  initialStatus = "want_to",
+  initialRating = null,
   initialNote = "",
 }: TrackDialogProps) {
   const [status, setStatus] = useState<"want_to" | "doing" | "done" | "dropped">(initialStatus);

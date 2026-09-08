@@ -125,9 +125,11 @@ export default function HomePage() {
 
   // Filter entries if we're on "My Stash" and a specific status is chosen
   const displayedEntries =
-    activeTab === "me" && statusFilter !== "all"
-      ? entries.filter((e) => e.status === statusFilter)
-      : entries;
+    activeTab === "squad"
+      ? entries.filter((e) => e.user.id !== currentUser?.id)
+      : statusFilter !== "all"
+        ? entries.filter((e) => e.status === statusFilter)
+        : entries;
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
@@ -243,9 +245,13 @@ export default function HomePage() {
       {/* Empty State */}
       {!isLoading && displayedEntries.length === 0 && (
         <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
-          <p className="font-semibold text-white">No titles in this list.</p>
+          <p className="font-semibold text-white">
+            {activeTab === "squad" ? "No squad activity yet." : "Your stash is empty."}
+          </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Search or explore to add titles to your stash!
+            {activeTab === "squad"
+              ? "When friends log movies or games, their activity will appear here!"
+              : "Use the search bar or Explore to add your first title."}
           </p>
         </div>
       )}
