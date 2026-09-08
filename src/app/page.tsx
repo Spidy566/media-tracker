@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useActiveUser } from "@/hooks/use-active-user";
+import { useState } from "react";
 import { TrackDialog } from "@/components/track-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useActiveUser } from "@/hooks/use-active-user";
 
 interface Entry {
   id: string;
@@ -47,7 +47,9 @@ export default function HomePage() {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   const [activeTab, setActiveTab] = useState<"squad" | "me">("squad");
-  const [statusFilter, setStatusFilter] = useState<"all" | "want_to" | "doing" | "done" | "dropped">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "want_to" | "doing" | "done" | "dropped"
+  >("all");
 
   const { data, isLoading } = useQuery<{ entries: Entry[] }>({
     queryKey: ["entries", activeTab, activeTab === "me" ? currentUser?.id : null],
@@ -119,28 +121,28 @@ export default function HomePage() {
     <main className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         {activeTab === "me" && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6">
-          {(
-            [
-              { key: "all", label: "All" },
-              { key: "want_to", label: "Backlog" },
-              { key: "doing", label: "In Progress" },
-              { key: "done", label: "Completed" },
-              { key: "dropped", label: "Dropped" },
-            ] as const
-          ).map(({ key, label }) => (
-            <Button
-              key={key}
-              size="xs"
-              variant={statusFilter === key ? "default" : "outline"}
-              onClick={() => setStatusFilter(key)}
-              className="text-xs shrink-0"
-            >
-              {label} ({statusCounts[key]})
-            </Button>
-          ))}
-        </div>
-      )}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6">
+            {(
+              [
+                { key: "all", label: "All" },
+                { key: "want_to", label: "Backlog" },
+                { key: "doing", label: "In Progress" },
+                { key: "done", label: "Completed" },
+                { key: "dropped", label: "Dropped" },
+              ] as const
+            ).map(({ key, label }) => (
+              <Button
+                key={key}
+                size="xs"
+                variant={statusFilter === key ? "default" : "outline"}
+                onClick={() => setStatusFilter(key)}
+                className="text-xs shrink-0"
+              >
+                {label} ({statusCounts[key]})
+              </Button>
+            ))}
+          </div>
+        )}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             {activeTab === "squad" ? "The Squad Lounge" : "My Personal Stash"}
@@ -160,12 +162,16 @@ export default function HomePage() {
         </Tabs>
       </div>
 
-      {isLoading && <p className="text-muted-foreground py-10 text-center">Loading squad stash...</p>}
+      {isLoading && (
+        <p className="text-muted-foreground py-10 text-center">Loading squad stash...</p>
+      )}
 
       {!isLoading && displayedEntries.length === 0 && (
         <div className="text-center py-16 border border-dashed rounded-xl">
           <p className="font-medium">No activity yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Use the search bar above to log your first title!</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Use the search bar above to log your first title!
+          </p>
         </div>
       )}
 
@@ -184,22 +190,18 @@ export default function HomePage() {
                   alt={entry.media.title}
                   width={64}
                   height={96}
-                  className="rounded-md object-cover aspect-[2/3] w-16"
+                  className="rounded-md object-cover aspect-2/3 w-16"
                 />
               ) : (
-                <div className="w-16 aspect-[2/3] bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+                <div className="w-16 aspect-2/3 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
                   No Art
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap text-sm">
-                  <span className="font-semibold text-primary">
-                    {entry.user.displayName}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {statusTextMap[entry.status]}
-                  </span>
+                  <span className="font-semibold text-primary">{entry.user.displayName}</span>
+                  <span className="text-muted-foreground">{statusTextMap[entry.status]}</span>
                   <Badge variant="outline" className="text-[10px] uppercase">
                     {entry.media.mediaType}
                   </Badge>

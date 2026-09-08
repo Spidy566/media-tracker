@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { Search, UserCheck } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { SearchModal } from "@/components/search-modal";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -12,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useActiveUser } from "@/hooks/use-active-user";
-import { SearchModal } from "@/components/search-modal";
 
 export function NavBar() {
   const { users, currentUser, setActiveUser } = useActiveUser();
@@ -25,7 +25,10 @@ export function NavBar() {
           <Link href="/" className="font-bold text-lg tracking-tight">
             SquadTracker 🎬🎮
           </Link>
-          <Link href="/explore" className="text-sm font-medium text-muted-foreground hover:text-white transition">
+          <Link
+            href="/explore"
+            className="text-sm font-medium text-muted-foreground hover:text-white transition"
+          >
             Explore
           </Link>
           <div className="flex items-center gap-3">

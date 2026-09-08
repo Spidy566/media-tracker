@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { mediaItems, userMediaEntries, users } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { mediaItems, userMediaEntries, users } from "@/db/schema";
+import { db } from "@/lib/db";
 
 const createEntrySchema = z.object({
   userId: z.string().uuid(),
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid input", details: parsed.error.flatten() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -141,7 +141,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
 // DELETE /api/entries?id=...&userId=... — Remove an entry from stash
 export async function DELETE(request: NextRequest) {
   try {
@@ -152,26 +151,18 @@ export async function DELETE(request: NextRequest) {
     if (!id || !userId) {
       return NextResponse.json(
         { error: "Missing required params: id and userId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Delete only if the entry belongs to this user
     const [deleted] = await db
       .delete(userMediaEntries)
-      .where(
-        and(
-          eq(userMediaEntries.id, id),
-          eq(userMediaEntries.userId, userId)
-        )
-      )
+      .where(and(eq(userMediaEntries.id, id), eq(userMediaEntries.userId, userId)))
       .returning();
 
     if (!deleted) {
-      return NextResponse.json(
-        { error: "Entry not found or unauthorized" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Entry not found or unauthorized" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, deleted });

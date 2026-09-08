@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { useActiveUser } from "@/hooks/use-active-user";
+import { AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { TrackDialog } from "@/components/track-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SlidersHorizontal, ChevronLeft, ChevronRight, X, AlertCircle } from "lucide-react";
-import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { useActiveUser } from "@/hooks/use-active-user";
 
 const GENRES = [
   "Action",
@@ -149,7 +149,7 @@ export default function ExplorePage() {
                         : "text-muted-foreground hover:text-white"
                     }`}
                   >
-                    {t === "tv" ? "TV Shows" : t + "s"}
+                    {t === "tv" ? "TV Shows" : `${t}s`}
                   </button>
                 ))}
               </div>
@@ -282,7 +282,9 @@ export default function ExplorePage() {
           {!isLoading && !isError && results.length === 0 && (
             <div className="text-center py-28 text-muted-foreground border border-dashed border-white/10 rounded-2xl">
               <p className="text-base font-semibold text-white">No titles match your filters</p>
-              <p className="text-xs mt-1 text-muted-foreground">Try clearing your filters or changing categories.</p>
+              <p className="text-xs mt-1 text-muted-foreground">
+                Try clearing your filters or changing categories.
+              </p>
               <Button
                 variant="outline"
                 size="sm"
@@ -313,7 +315,9 @@ export default function ExplorePage() {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center text-xs text-muted-foreground bg-black/40">
                     <span className="font-semibold text-white/80 line-clamp-3">{item.title}</span>
-                    <span className="text-[10px] text-muted-foreground mt-2 uppercase">{item.mediaType}</span>
+                    <span className="text-[10px] text-muted-foreground mt-2 uppercase">
+                      {item.mediaType}
+                    </span>
                   </div>
                 )}
 

@@ -1,27 +1,22 @@
-import {
-  pgTable,
-  text,
-  integer,
-  timestamp,
-  pgEnum,
-  uuid,
-  smallint,
-  unique,
-} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import {
+  integer,
+  pgEnum,
+  pgTable,
+  smallint,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 // 1. Enums
-export const mediaTypeEnum = pgEnum("media_type", [
-  "movie",
-  "tv",
-  "game",
-  "book",
-]);
+export const mediaTypeEnum = pgEnum("media_type", ["movie", "tv", "game", "book"]);
 
 export const mediaStatusEnum = pgEnum("media_status", [
   "want_to", // Backlog / Wishlist
-  "doing",   // Watching / Playing / Reading
-  "done",    // Finished
+  "doing", // Watching / Playing / Reading
+  "done", // Finished
   "dropped", // Abandoned / DNF
 ]);
 
@@ -29,11 +24,9 @@ export const mediaStatusEnum = pgEnum("media_status", [
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: text("username").notNull().unique(), // e.g. "spidy"
-  displayName: text("display_name").notNull(),   // e.g. "Spidy"
+  displayName: text("display_name").notNull(), // e.g. "Spidy"
   avatarUrl: text("avatar_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // 3. Media Items (The Universal Cache)
@@ -48,9 +41,7 @@ export const mediaItems = pgTable("media_items", {
   creator: text("creator"), // Director / Studio / Author
   summary: text("summary"),
   genres: text("genres").array().notNull().default([]),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // 4. User Media Entries (The Tracking Bridge)
@@ -67,17 +58,13 @@ export const userMediaEntries = pgTable(
     status: mediaStatusEnum("status").notNull().default("want_to"),
     rating: smallint("rating"), // 1 to 10
     reviewNote: text("review_note"), // Quick thoughts
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     // Rule: One user can only track a specific media item once
     unique("user_media_unique").on(table.userId, table.mediaItemId),
-  ]
+  ],
 );
 
 // 5. Relations (Makes querying in Drizzle effortless)

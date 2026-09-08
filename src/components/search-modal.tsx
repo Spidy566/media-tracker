@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { useDebounce } from "@/hooks/use-debounce";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { TrackDialog } from "@/components/track-dialog";
+import Image from "next/image";
+import { useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { TrackDialog } from "@/components/track-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface SearchModalProps {
   userId: string;
@@ -51,10 +51,16 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {isLoading && <p className="text-center text-muted-foreground py-8">Searching across everything...</p>}
+            {isLoading && (
+              <p className="text-center text-muted-foreground py-8">
+                Searching across everything...
+              </p>
+            )}
 
             {!isLoading && data?.results?.length === 0 && debouncedQuery.length > 0 && (
-              <p className="text-center text-muted-foreground py-8">No results found for &quot;{query}&quot;</p>
+              <p className="text-center text-muted-foreground py-8">
+                No results found for &quot;{query}&quot;
+              </p>
             )}
 
             {data?.results?.map((item) => (

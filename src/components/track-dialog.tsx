@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
+import { useState } from "react";
+import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TrackDialogProps {
   media: UnifiedSearchResult;
@@ -70,10 +70,10 @@ export function TrackDialog({
               alt={media.title}
               width={80}
               height={120}
-              className="rounded-md object-cover aspect-[2/3] w-20"
+              className="rounded-md object-cover aspect-2/3 w-20"
             />
           ) : (
-            <div className="w-20 aspect-[2/3] bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+            <div className="w-20 aspect-2/3 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
               No Art
             </div>
           )}
@@ -106,7 +106,9 @@ export function TrackDialog({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Score (1-10)</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              Score (1-10)
+            </label>
             <Select
               value={rating?.toString() ?? "none"}
               onValueChange={(val) => setRating(val === "none" ? null : Number(val))}
@@ -127,7 +129,9 @@ export function TrackDialog({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Quick Note (Optional)</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Quick Note (Optional)
+          </label>
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}

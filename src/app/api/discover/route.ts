@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { tmdbFetch } from "@/lib/tmdb";
+import { type NextRequest, NextResponse } from "next/server";
+import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
-import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { tmdbFetch } from "@/lib/tmdb";
 
 // Real Genre IDs for TMDB & IGDB
 export const GENRE_MAP: Record<string, { tmdbMovie?: number; tmdbTv?: number; igdb?: number }> = {
@@ -21,7 +21,7 @@ export const GENRE_MAP: Record<string, { tmdbMovie?: number; tmdbTv?: number; ig
 function parseReleaseYear(dateStr?: string | null): number | null {
   if (!dateStr || typeof dateStr !== "string" || dateStr.trim().length === 0) return null;
   const year = parseInt(dateStr.slice(0, 4), 10);
-  return isNaN(year) ? null : year;
+  return Number.isNaN(year) ? null : year;
 }
 
 export async function GET(request: NextRequest) {
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     console.error("Discover API error:", error?.message || error);
     return NextResponse.json(
       { error: "Failed to load titles. Check API keys and network." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -56,7 +56,7 @@ async function fetchTmdbDiscover(
   sort: string,
   genre: string | null,
   year: string | null,
-  page: number
+  page: number,
 ) {
   let sortBy = "popularity.desc";
   let extraFilters = "";
@@ -68,9 +68,10 @@ async function fetchTmdbDiscover(
     extraFilters += "&vote_count.gte=200";
   } else if (sort === "upcoming") {
     sortBy = type === "movie" ? "primary_release_date.asc" : "first_air_date.asc";
-    extraFilters += type === "movie" 
-      ? `&primary_release_date.gte=${today}&vote_count.gte=0` 
-      : `&first_air_date.gte=${today}&vote_count.gte=0`;
+    extraFilters +=
+      type === "movie"
+        ? `&primary_release_date.gte=${today}&vote_count.gte=0`
+        : `&first_air_date.gte=${today}&vote_count.gte=0`;
   }
 
   // Map genre name to TMDB ID
@@ -80,9 +81,8 @@ async function fetchTmdbDiscover(
   }
 
   if (year && /^\d{4}$/.test(year)) {
-    extraFilters += type === "movie" 
-      ? `&primary_release_year=${year}` 
-      : `&first_air_date_year=${year}`;
+    extraFilters +=
+      type === "movie" ? `&primary_release_year=${year}` : `&first_air_date_year=${year}`;
   }
 
   const endpoint = `/discover/${type}?sort_by=${sortBy}&page=${Math.min(page, 500)}&include_adult=false${extraFilters}`;
@@ -116,7 +116,7 @@ async function fetchIgdbDiscover(
   sort: string,
   genre: string | null,
   year: string | null,
-  page: number
+  page: number,
 ) {
   const limit = 24;
   const offset = (page - 1) * limit;

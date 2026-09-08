@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { tmdbFetch } from "@/lib/tmdb";
+import { type NextRequest, NextResponse } from "next/server";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
-import type { TMDBSearchResponse } from "@/types/tmdb";
+import { tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGame } from "@/types/igdb";
+import type { TMDBSearchResponse } from "@/types/tmdb";
 
 // The clean, standardized item shape your frontend will receive
 export interface UnifiedSearchResult {
@@ -77,13 +77,17 @@ export async function GET(request: NextRequest) {
 
   // Parse Games
   if (gamesRes.status === "fulfilled" && Array.isArray(gamesRes.value)) {
-    const gameData = gamesRes.value as (IGDBGame & { involved_companies?: { company: { name: string } }[] })[];
+    const gameData = gamesRes.value as (IGDBGame & {
+      involved_companies?: { company: { name: string } }[];
+    })[];
     for (const g of gameData.slice(0, 8)) {
       results.push({
         externalId: `igdb:${g.id}`,
         mediaType: "game",
         title: g.name,
-        releaseYear: g.first_release_date ? new Date(g.first_release_date * 1000).getFullYear() : null,
+        releaseYear: g.first_release_date
+          ? new Date(g.first_release_date * 1000).getFullYear()
+          : null,
         posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
         creator: g.involved_companies?.[0]?.company?.name || null,
         summary: g.summary || null,
