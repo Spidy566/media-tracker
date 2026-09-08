@@ -36,16 +36,20 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 p-4">
-        <div className="bg-card text-card-foreground w-full max-w-2xl rounded-xl shadow-2xl border flex flex-col max-h-[75vh] overflow-hidden">
-          <div className="p-4 border-b flex items-center gap-3">
+        <div className="bg-[#141820] text-white border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[75vh] overflow-hidden">
+          <div className="p-4 border-b border-white/10 flex items-center gap-3">
             <Input
               autoFocus
               placeholder="Search movies, TV shows, games..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="text-base h-11"
+              className="text-base h-11 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground"
             />
-            <Button variant="ghost" onClick={onClose}>
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              className="text-muted-foreground hover:text-white"
+            >
               Esc
             </Button>
           </div>

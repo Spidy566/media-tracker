@@ -110,6 +110,19 @@ export default function HomePage() {
     dropped: entries.filter((e) => e.status === "dropped").length,
   };
 
+  // Calculate stats for current view
+  const totalEntries = entries.length;
+  const gamesCount = entries.filter((e) => e.media.mediaType === "game").length;
+  const moviesCount = entries.filter((e) => e.media.mediaType === "movie").length;
+  const tvCount = entries.filter((e) => e.media.mediaType === "tv").length;
+
+  // Calculate average rating (ignoring unrated items)
+  const ratedEntries = entries.filter((e) => typeof e.rating === "number");
+  const avgRating =
+    ratedEntries.length > 0
+      ? (ratedEntries.reduce((sum, e) => sum + (e.rating || 0), 0) / ratedEntries.length).toFixed(1)
+      : null;
+
   // Filter entries if we're on "My Stash" and a specific status is chosen
   const displayedEntries =
     activeTab === "me" && statusFilter !== "all"
@@ -117,71 +130,135 @@ export default function HomePage() {
       : entries;
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
+    <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        {activeTab === "me" && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-6">
-            {(
-              [
-                { key: "all", label: "All" },
-                { key: "want_to", label: "Backlog" },
-                { key: "doing", label: "In Progress" },
-                { key: "done", label: "Completed" },
-                { key: "dropped", label: "Dropped" },
-              ] as const
-            ).map(({ key, label }) => (
-              <Button
-                key={key}
-                size="xs"
-                variant={statusFilter === key ? "default" : "outline"}
-                onClick={() => setStatusFilter(key)}
-                className="text-xs shrink-0"
-              >
-                {label} ({statusCounts[key]})
-              </Button>
-            ))}
-          </div>
-        )}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             {activeTab === "squad" ? "The Squad Lounge" : "My Personal Stash"}
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs mt-1">
             {activeTab === "squad"
-              ? "Live activity from you and the homies."
-              : `Everything tracked by ${currentUser?.displayName || "you"}.`}
+              ? "Live activity and ratings from you and the homies."
+              : `All titles tracked by ${currentUser?.displayName || "you"}.`}
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "squad" | "me")}>
-          <TabsList className="grid grid-cols-2 w-52">
-            <TabsTrigger value="squad">Squad</TabsTrigger>
-            <TabsTrigger value="me">My Stash</TabsTrigger>
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => {
+            setActiveTab(val as "squad" | "me");
+            setStatusFilter("all");
+          }}
+        >
+          <TabsList className="bg-white/5 border border-white/10 p-1 h-9">
+            <TabsTrigger
+              value="squad"
+              className="text-xs px-3 data-[state=active]:bg-[#ff4b72] data-[state=active]:text-white"
+            >
+              Squad Feed
+            </TabsTrigger>
+            <TabsTrigger
+              value="me"
+              className="text-xs px-3 data-[state=active]:bg-[#ff4b72] data-[state=active]:text-white"
+            >
+              My Stash
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      {isLoading && (
-        <p className="text-muted-foreground py-10 text-center">Loading squad stash...</p>
+      {/* Sleek Stats Bar */}
+      {!isLoading && totalEntries > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 p-4 rounded-xl border border-white/10 bg-[#141820]/80">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Total Logged
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-white mt-0.5">{totalEntries}</span>
+          </div>
+
+          <div className="flex flex-col border-x border-white/10 px-3 sm:px-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Breakdown
+            </span>
+            <div className="flex items-center gap-2 mt-1 text-xs font-semibold text-white/90">
+              {gamesCount > 0 && <span>🎮 {gamesCount}</span>}
+              {moviesCount > 0 && <span>🎬 {moviesCount}</span>}
+              {tvCount > 0 && <span>📺 {tvCount}</span>}
+            </div>
+          </div>
+
+          <div className="flex flex-col pl-2 sm:pl-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Avg Score
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">
+              {avgRating ? `★ ${avgRating}` : "—"}
+            </span>
+          </div>
+        </div>
       )}
 
+      {/* Status Filter Pills (Only on "My Stash") */}
+      {activeTab === "me" && (
+        <div className="flex items-center gap-1.5 flex-wrap mb-6">
+          {(
+            [
+              { key: "all", label: "All" },
+              { key: "want_to", label: "Backlog" },
+              { key: "doing", label: "In Progress" },
+              { key: "done", label: "Completed" },
+              { key: "dropped", label: "Dropped" },
+            ] as const
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setStatusFilter(key)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${
+                statusFilter === key
+                  ? "bg-white text-black border-white"
+                  : "bg-white/5 border-white/10 text-muted-foreground hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {label} <span className="opacity-60 ml-1">({statusCounts[key]})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Loading Skeleton */}
+      {isLoading && (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-28 rounded-xl bg-white/5 animate-pulse border border-white/5"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
       {!isLoading && displayedEntries.length === 0 && (
-        <div className="text-center py-16 border border-dashed rounded-xl">
-          <p className="font-medium">No activity yet.</p>
+        <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
+          <p className="font-semibold text-white">No titles in this list.</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Use the search bar above to log your first title!
+            Search or explore to add titles to your stash!
           </p>
         </div>
       )}
 
-      <div className="space-y-4">
+      {/* Entries List */}
+      <div className="space-y-3">
         {displayedEntries.map((entry) => {
           const isMe = currentUser?.id === entry.user.id;
 
           return (
             <div
               key={entry.id}
-              className="border bg-card rounded-xl p-4 shadow-xs flex gap-4 items-start"
+              className="border border-white/10 bg-[#141820]/60 hover:bg-[#141820] transition rounded-xl p-4 flex gap-4 items-start"
             >
               {entry.media.posterUrl ? (
                 <Image
@@ -189,24 +266,27 @@ export default function HomePage() {
                   alt={entry.media.title}
                   width={64}
                   height={96}
-                  className="rounded-md object-cover aspect-2/3 w-16"
+                  className="rounded-lg object-cover aspect-2/3 w-16 shrink-0 border border-white/10"
                 />
               ) : (
-                <div className="w-16 aspect-2/3 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+                <div className="w-16 aspect-2/3 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[10px] text-muted-foreground shrink-0 uppercase font-bold">
                   No Art
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap text-sm">
-                  <span className="font-semibold text-primary">{entry.user.displayName}</span>
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className="font-bold text-white">{entry.user.displayName}</span>
                   <span className="text-muted-foreground">{statusTextMap[entry.status]}</span>
-                  <Badge variant="outline" className="text-[10px] uppercase">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] uppercase border-white/15 bg-white/5 text-white/80"
+                  >
                     {entry.media.mediaType}
                   </Badge>
                 </div>
 
-                <h2 className="font-bold text-base mt-0.5 truncate">
+                <h2 className="font-bold text-base text-white mt-1 truncate">
                   {entry.media.title}
                   {entry.media.releaseYear && (
                     <span className="text-xs font-normal text-muted-foreground ml-1.5">
@@ -216,54 +296,60 @@ export default function HomePage() {
                 </h2>
 
                 {entry.rating && (
-                  <div className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded text-xs mt-1">
-                    ★ {entry.rating}/10
+                  <div className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 font-bold px-2 py-0.5 rounded text-xs mt-1.5">
+                    ★ {entry.rating} / 10
                   </div>
                 )}
 
                 {entry.reviewNote && (
-                  <p className="text-sm mt-2 text-foreground/90 italic bg-muted/40 p-2 rounded border-l-2 border-primary/50">
+                  <p className="text-xs mt-2.5 text-white/80 italic bg-white/5 p-2.5 rounded-lg border-l-2 border-[#ff4b72]">
                     &ldquo;{entry.reviewNote}&rdquo;
                   </p>
                 )}
               </div>
 
-              {!isMe && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="text-xs shrink-0"
-                  disabled={isPending}
-                  onClick={() => stealToBacklog(entry.media)}
-                >
-                  + Steal
-                </Button>
-              )}
-              {isMe && (
-                <div className="flex items-center gap-1 shrink-0">
+              {/* Action Buttons */}
+              <div className="shrink-0 flex items-center gap-1 self-center">
+                {!isMe && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-xs h-7"
-                    onClick={() => setEditingEntry(entry)}
+                    className="text-xs h-7 border-white/10 bg-white/5 hover:bg-white/10 text-white"
+                    disabled={isPending}
+                    onClick={() => stealToBacklog(entry.media)}
                   >
-                    Edit
+                    + Steal
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-xs text-destructive hover:bg-destructive/10 h-7"
-                    disabled={isDeleting}
-                    onClick={() => deleteEntry(entry.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              )}
+                )}
+
+                {isMe && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 border-white/10 bg-white/5 hover:bg-white/10 text-white"
+                      onClick={() => setEditingEntry(entry)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-7 text-destructive hover:bg-destructive/15"
+                      disabled={isDeleting}
+                      onClick={() => deleteEntry(entry.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Edit Modal */}
       {editingEntry && currentUser && (
         <TrackDialog
           media={{
