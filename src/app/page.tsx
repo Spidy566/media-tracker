@@ -4,8 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useState } from "react";
 import { TrackDialog } from "@/components/track-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActiveUser } from "@/hooks/use-active-user";
 
@@ -32,13 +30,6 @@ interface Entry {
     genres: string[];
   };
 }
-
-const statusTextMap = {
-  want_to: "wants to check out",
-  doing: "is currently watching / playing",
-  done: "completed",
-  dropped: "dropped",
-};
 
 export default function HomePage() {
   const { currentUser } = useActiveUser();
@@ -110,19 +101,6 @@ export default function HomePage() {
     dropped: entries.filter((e) => e.status === "dropped").length,
   };
 
-  // Calculate stats for current view
-  const totalEntries = entries.length;
-  const gamesCount = entries.filter((e) => e.media.mediaType === "game").length;
-  const moviesCount = entries.filter((e) => e.media.mediaType === "movie").length;
-  const tvCount = entries.filter((e) => e.media.mediaType === "tv").length;
-
-  // Calculate average rating (ignoring unrated items)
-  const ratedEntries = entries.filter((e) => typeof e.rating === "number");
-  const avgRating =
-    ratedEntries.length > 0
-      ? (ratedEntries.reduce((sum, e) => sum + (e.rating || 0), 0) / ratedEntries.length).toFixed(1)
-      : null;
-
   // Filter entries if we're on "My Stash" and a specific status is chosen
   const displayedEntries =
     activeTab === "squad"
@@ -132,82 +110,56 @@ export default function HomePage() {
         : entries;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+      {/* Top Controls Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10 mb-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            {activeTab === "squad" ? "The Squad Lounge" : "My Personal Stash"}
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <span>{activeTab === "squad" ? "Squad Lounge" : "My Stash"}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-white/70">
+              {displayedEntries.length} {displayedEntries.length === 1 ? "title" : "titles"}
+            </span>
           </h1>
-          <p className="text-muted-foreground text-xs mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {activeTab === "squad"
-              ? "Live activity and ratings from you and the homies."
-              : `All titles tracked by ${currentUser?.displayName || "you"}.`}
+              ? "Live activity and ratings from the homies."
+              : `Everything tracked by ${currentUser?.displayName || "you"}.`}
           </p>
         </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) => {
-            setActiveTab(val as "squad" | "me");
-            setStatusFilter("all");
-          }}
-        >
-          <TabsList className="bg-white/5 border border-white/10 p-1 h-9">
-            <TabsTrigger
-              value="squad"
-              className="text-xs px-3 data-[state=active]:bg-[#ff4b72] data-[state=active]:text-white"
-            >
-              Squad Feed
-            </TabsTrigger>
-            <TabsTrigger
-              value="me"
-              className="text-xs px-3 data-[state=active]:bg-[#ff4b72] data-[state=active]:text-white"
-            >
-              My Stash
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Tab & Status Filter Controls */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Tabs
+            value={activeTab}
+            onValueChange={(val) => {
+              setActiveTab(val as "squad" | "me");
+              setStatusFilter("all");
+            }}
+          >
+            <TabsList className="bg-white/5 border border-white/10 p-1 h-9 rounded-xl">
+              <TabsTrigger
+                value="squad"
+                className="text-xs px-3.5 rounded-lg data-[state=active]:bg-[#ff4b72] data-[state=active]:text-white font-semibold transition"
+              >
+                Squad Feed
+              </TabsTrigger>
+              <TabsTrigger
+                value="me"
+                className="text-xs px-3.5 rounded-lg data-[state=active]:bg-[#ff4b72] data-[state=active]:text-white font-semibold transition"
+              >
+                My Stash
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
-      {/* Sleek Stats Bar */}
-      {!isLoading && totalEntries > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 p-4 rounded-xl border border-white/10 bg-[#141820]/80">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Total Logged
-            </span>
-            <span className="text-xl sm:text-2xl font-black text-white mt-0.5">{totalEntries}</span>
-          </div>
-
-          <div className="flex flex-col border-x border-white/10 px-3 sm:px-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Breakdown
-            </span>
-            <div className="flex items-center gap-2 mt-1 text-xs font-semibold text-white/90">
-              {gamesCount > 0 && <span>🎮 {gamesCount}</span>}
-              {moviesCount > 0 && <span>🎬 {moviesCount}</span>}
-              {tvCount > 0 && <span>📺 {tvCount}</span>}
-            </div>
-          </div>
-
-          <div className="flex flex-col pl-2 sm:pl-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Avg Score
-            </span>
-            <span className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">
-              {avgRating ? `★ ${avgRating}` : "—"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Status Filter Pills (Only on "My Stash") */}
+      {/* Sub-Filters (When viewing My Stash) */}
       {activeTab === "me" && (
-        <div className="flex items-center gap-1.5 flex-wrap mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6">
           {(
             [
-              { key: "all", label: "All" },
+              { key: "all", label: "All Titles" },
               { key: "want_to", label: "Backlog" },
               { key: "doing", label: "In Progress" },
               { key: "done", label: "Completed" },
@@ -218,25 +170,25 @@ export default function HomePage() {
               key={key}
               type="button"
               onClick={() => setStatusFilter(key)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition shrink-0 ${
                 statusFilter === key
-                  ? "bg-white text-black border-white"
+                  ? "bg-white text-black border-white shadow-sm"
                   : "bg-white/5 border-white/10 text-muted-foreground hover:text-white hover:bg-white/10"
               }`}
             >
-              {label} <span className="opacity-60 ml-1">({statusCounts[key]})</span>
+              {label} <span className="opacity-50 ml-1">({statusCounts[key]})</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* Loading Skeleton */}
+      {/* Loading Skeleton Grid */}
       {isLoading && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
-              className="h-28 rounded-xl bg-white/5 animate-pulse border border-white/5"
+              className="aspect-2/3 bg-white/5 rounded-xl animate-pulse border border-white/5"
             />
           ))}
         </div>
@@ -244,111 +196,130 @@ export default function HomePage() {
 
       {/* Empty State */}
       {!isLoading && displayedEntries.length === 0 && (
-        <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
-          <p className="font-semibold text-white">
-            {activeTab === "squad" ? "No squad activity yet." : "Your stash is empty."}
+        <div className="text-center py-28 border border-dashed border-white/10 rounded-2xl">
+          <p className="text-base font-bold text-white">
+            {activeTab === "squad" ? "No squad activity yet" : "Your stash is empty"}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
             {activeTab === "squad"
-              ? "When friends log movies or games, their activity will appear here!"
-              : "Use the search bar or Explore to add your first title."}
+              ? "When your friends log movies, TV shows, or games, they will appear here!"
+              : "Hit the search bar above or Explore to log your first title."}
           </p>
         </div>
       )}
 
-      {/* Entries List */}
-      <div className="space-y-3">
-        {displayedEntries.map((entry) => {
+      {/* Watcharr / Yamtrack Style Poster Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {displayedEntries.map((entry, index) => {
           const isMe = currentUser?.id === entry.user.id;
 
           return (
             <div
               key={entry.id}
-              className="border border-white/10 bg-[#141820]/60 hover:bg-[#141820] transition rounded-xl p-4 flex gap-4 items-start"
+              className="group relative aspect-2/3 rounded-xl overflow-hidden bg-[#141820] border border-white/10 hover:border-white/30 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:z-10 flex flex-col justify-between"
             >
+              {/* Poster Image */}
               {entry.media.posterUrl ? (
                 <Image
                   src={entry.media.posterUrl}
                   alt={entry.media.title}
-                  width={64}
-                  height={96}
-                  className="rounded-lg object-cover aspect-2/3 w-16 shrink-0 border border-white/10"
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                  className="object-cover transition duration-300 group-hover:brightness-90"
+                  priority={index < 4}
                 />
               ) : (
-                <div className="w-16 aspect-2/3 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-[10px] text-muted-foreground shrink-0 uppercase font-bold">
-                  No Art
+                <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-white/5">
+                  <span className="font-bold text-xs text-white/80 line-clamp-2">
+                    {entry.media.title}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground mt-1 uppercase">
+                    {entry.media.mediaType}
+                  </span>
                 </div>
               )}
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="font-bold text-white">{entry.user.displayName}</span>
-                  <span className="text-muted-foreground">{statusTextMap[entry.status]}</span>
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] uppercase border-white/15 bg-white/5 text-white/80"
-                  >
-                    {entry.media.mediaType}
-                  </Badge>
-                </div>
-
-                <h2 className="font-bold text-base text-white mt-1 truncate">
-                  {entry.media.title}
-                  {entry.media.releaseYear && (
-                    <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                      ({entry.media.releaseYear})
-                    </span>
-                  )}
-                </h2>
-
-                {entry.rating && (
-                  <div className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 font-bold px-2 py-0.5 rounded text-xs mt-1.5">
-                    ★ {entry.rating} / 10
-                  </div>
+              {/* Top Floating Badges */}
+              <div className="relative z-10 p-2.5 flex items-start justify-between gap-1">
+                {/* User tag (Squad feed) or Status badge (My Stash) */}
+                {activeTab === "squad" ? (
+                  <span className="bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1 shadow-sm">
+                    {entry.user.displayName}
+                  </span>
+                ) : (
+                  <span className="bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-md border border-white/10 uppercase tracking-wider">
+                    {entry.status.replace("_", " ")}
+                  </span>
                 )}
 
-                {entry.reviewNote && (
-                  <p className="text-xs mt-2.5 text-white/80 italic bg-white/5 p-2.5 rounded-lg border-l-2 border-[#ff4b72]">
-                    &ldquo;{entry.reviewNote}&rdquo;
-                  </p>
+                {/* Rating Badge */}
+                {entry.rating && (
+                  <span className="bg-black/85 backdrop-blur-md text-amber-400 font-black text-xs px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                    ★ {entry.rating}
+                  </span>
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="shrink-0 flex items-center gap-1 self-center">
-                {!isMe && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs h-7 border-white/10 bg-white/5 hover:bg-white/10 text-white"
-                    disabled={isPending}
-                    onClick={() => stealToBacklog(entry.media)}
-                  >
-                    + Steal
-                  </Button>
+              {/* Bottom Info Gradient */}
+              <div className="relative z-10 p-3 bg-linear-to-t from-black/95 via-black/70 to-transparent pt-8">
+                <h3 className="font-bold text-xs text-white leading-snug line-clamp-1 group-hover:line-clamp-2 transition">
+                  {entry.media.title}
+                </h3>
+                <div className="flex items-center gap-1.5 text-[10px] text-white/60 mt-0.5">
+                  <span>{entry.media.releaseYear || "TBA"}</span>
+                  <span>•</span>
+                  <span className="uppercase">{entry.media.mediaType}</span>
+                </div>
+
+                {/* Review Note Preview if present */}
+                {entry.reviewNote && (
+                  <p className="text-[10px] text-white/90 italic mt-1.5 line-clamp-1 border-l border-[#ff4b72] pl-1.5 bg-black/40 rounded-r py-0.5">
+                    &ldquo;{entry.reviewNote}&rdquo;
+                  </p>
                 )}
 
-                {isMe && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-7 border-white/10 bg-white/5 hover:bg-white/10 text-white"
-                      onClick={() => setEditingEntry(entry)}
+                {/* Action Buttons (Slide-up on Hover) */}
+                <div className="pt-2 mt-1 border-t border-white/10 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {!isMe && (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        stealToBacklog(entry.media);
+                      }}
+                      className="w-full text-center py-1 rounded bg-[#ff4b72] hover:bg-[#ff335e] text-white text-[11px] font-bold transition shadow-sm"
                     >
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-xs h-7 text-destructive hover:bg-destructive/15"
-                      disabled={isDeleting}
-                      onClick={() => deleteEntry(entry.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                )}
+                      + Steal
+                    </button>
+                  )}
+
+                  {isMe && (
+                    <div className="flex items-center gap-1 w-full">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingEntry(entry);
+                        }}
+                        className="flex-1 py-1 rounded bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold transition text-center"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEntry(entry.id);
+                        }}
+                        className="py-1 px-2 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[11px] font-bold transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
