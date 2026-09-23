@@ -8,7 +8,7 @@ const createEntrySchema = z.object({
   userId: z.uuid(),
   media: z.object({
     externalId: z.string().min(1),
-    mediaType: z.enum(["movie", "tv", "game", "book"]),
+    mediaType: z.enum(["movie", "tv", "game"]),
     title: z.string().min(1),
     releaseYear: z.number().nullable().optional(),
     posterUrl: z.string().nullable().optional(),
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid input", details: z.treeifyError(parsed.error) },
+        { error: "Invalid input", details: parsed.error.issues },
         { status: 400 },
       );
     }
@@ -89,15 +89,12 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/entries — Get entries (feed or profile)
-// Usage:
-//   /api/entries -> All squad activity (recent updates first)
-//   /api/entries?userId=... -> Specific friend's stash
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const userId = searchParams.get("userId");
 
-    const query = db
+    const baseQuery = db
       .select({
         id: userMediaEntries.id,
         status: userMediaEntries.status,
@@ -123,15 +120,16 @@ export async function GET(request: NextRequest) {
       })
       .from(userMediaEntries)
       .innerJoin(users, eq(userMediaEntries.userId, users.id))
-      .innerJoin(mediaItems, eq(userMediaEntries.mediaItemId, mediaItems.id))
-      .orderBy(desc(userMediaEntries.updatedAt));
+      .innerJoin(mediaItems, eq(userMediaEntries.mediaItemId, mediaItems.id));
 
     if (userId) {
-      const rows = await query.where(eq(userMediaEntries.userId, userId));
+      const rows = await baseQuery
+        .where(eq(userMediaEntries.userId, userId))
+        .orderBy(desc(userMediaEntries.updatedAt));
       return NextResponse.json({ entries: rows });
     }
 
-    const rows = await query.limit(30);
+    const rows = await baseQuery.orderBy(desc(userMediaEntries.updatedAt)).limit(30);
     return NextResponse.json({ entries: rows });
   } catch (error) {
     console.error("Failed to fetch entries:", error);

@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // 1. Enums
-export const mediaTypeEnum = pgEnum("media_type", ["movie", "tv", "game", "book"]);
+export const mediaTypeEnum = pgEnum("media_type", ["movie", "tv", "game"]);
 
 export const mediaStatusEnum = pgEnum("media_status", ["want_to", "doing", "done", "dropped"]);
 

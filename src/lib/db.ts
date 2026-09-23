@@ -1,6 +1,11 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not configured in environment");
+}
+
 const globalForDb = globalThis as unknown as {
   conn: Pool | undefined;
 };
@@ -8,7 +13,7 @@ const globalForDb = globalThis as unknown as {
 const pool =
   globalForDb.conn ??
   new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl,
   });
 
 if (process.env.NODE_ENV !== "production") {

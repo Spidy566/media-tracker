@@ -1,15 +1,17 @@
-export interface TMDBMovie {
+export interface TMDBMediaItem {
   id: number;
-  title: string;
+  title?: string;
+  name?: string;
   poster_path: string | null;
-  release_date: string;
-  overview: string;
-  vote_average: number;
+  release_date?: string;
+  first_air_date?: string;
+  overview?: string;
+  vote_average?: number;
 }
 
-export interface TMDBSearchResponse {
+export interface TMDBResponse {
   page: number;
-  results: TMDBMovie[];
+  results: TMDBMediaItem[];
   total_pages: number;
   total_results: number;
 }

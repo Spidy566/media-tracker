@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +37,15 @@ export function TrackDialog({
 
   const queryClient = useQueryClient();
 
+  // Close when pressing the physical Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const { mutate: saveEntry, isPending } = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/entries", {
@@ -61,8 +70,18 @@ export function TrackDialog({
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-card text-card-foreground w-full max-w-md rounded-xl p-6 shadow-2xl border flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop Button */}
+      <button
+        type="button"
+        aria-label="Close dialog"
+        onClick={onClose}
+        tabIndex={-1}
+        className="fixed inset-0 bg-black/70 cursor-default border-0"
+      />
+
+      {/* Dialog Content */}
+      <div className="relative z-10 bg-card text-card-foreground w-full max-w-md rounded-xl p-6 shadow-2xl border flex flex-col gap-4">
         <div className="flex gap-4 items-start">
           {media.posterUrl ? (
             <Image
@@ -91,7 +110,7 @@ export function TrackDialog({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
+            <span className="text-xs font-medium text-muted-foreground mb-1 block">Status</span>
             <Select value={status} onValueChange={(val) => setStatus(val as typeof status)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -106,9 +125,9 @@ export function TrackDialog({
           </div>
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            <span className="text-xs font-medium text-muted-foreground mb-1 block">
               Score (1-10)
-            </label>
+            </span>
             <Select
               value={rating?.toString() ?? "none"}
               onValueChange={(val) => setRating(val === "none" ? null : Number(val))}
@@ -129,10 +148,14 @@ export function TrackDialog({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+          <label
+            htmlFor="review-note"
+            className="text-xs font-medium text-muted-foreground mb-1 block"
+          >
             Quick Note (Optional)
           </label>
           <Textarea
+            id="review-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="What did you think? (Ending was crazy, etc.)"

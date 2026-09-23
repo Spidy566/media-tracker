@@ -3,8 +3,9 @@ import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
 import { tmdbFetch } from "@/lib/tmdb";
+import type { IGDBGameItem } from "@/types/igdb";
+import type { TMDBResponse } from "@/types/tmdb";
 
-// Real Genre IDs for TMDB & IGDB
 export const GENRE_MAP: Record<string, { tmdbMovie?: number; tmdbTv?: number; igdb?: number }> = {
   Action: { tmdbMovie: 28, tmdbTv: 10759, igdb: 4 },
   Adventure: { tmdbMovie: 12, tmdbTv: 10759, igdb: 31 },
@@ -19,16 +20,15 @@ export const GENRE_MAP: Record<string, { tmdbMovie?: number; tmdbTv?: number; ig
 };
 
 function parseReleaseYear(dateStr?: string | null): number | null {
-  if (!dateStr || typeof dateStr !== "string" || dateStr.trim().length === 0) return null;
+  if (!dateStr?.trim()) return null;
   const year = parseInt(dateStr.slice(0, 4), 10);
   return Number.isNaN(year) ? null : year;
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-
   const type = (searchParams.get("type") || "game") as "movie" | "tv" | "game";
-  const sort = searchParams.get("sort") || "popular"; // popular, top_rated, upcoming
+  const sort = searchParams.get("sort") || "popular";
   const genre = searchParams.get("genre");
   const year = searchParams.get("year");
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -36,21 +36,15 @@ export async function GET(request: NextRequest) {
   try {
     if (type === "movie" || type === "tv") {
       return await fetchTmdbDiscover(type, sort, genre, year, page);
-    } else {
-      return await fetchIgdbDiscover(sort, genre, year, page);
     }
-  } catch (error: any) {
-    console.error("Discover API error:", error?.message || error);
-    return NextResponse.json(
-      { error: "Failed to load titles. Check API keys and network." },
-      { status: 500 },
-    );
+    return await fetchIgdbDiscover(sort, genre, year, page);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to load titles";
+    console.error("Discover API error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-// -------------------------------------------------------------
-// TMDB Discover (Movies & TV)
-// -------------------------------------------------------------
 async function fetchTmdbDiscover(
   type: "movie" | "tv",
   sort: string,
@@ -60,7 +54,6 @@ async function fetchTmdbDiscover(
 ) {
   let sortBy = "popularity.desc";
   let extraFilters = "";
-
   const today = new Date().toISOString().split("T")[0];
 
   if (sort === "top_rated") {
@@ -74,7 +67,6 @@ async function fetchTmdbDiscover(
         : `&first_air_date.gte=${today}&vote_count.gte=0`;
   }
 
-  // Map genre name to TMDB ID
   if (genre && GENRE_MAP[genre]) {
     const genreId = type === "movie" ? GENRE_MAP[genre].tmdbMovie : GENRE_MAP[genre].tmdbTv;
     if (genreId) extraFilters += `&with_genres=${genreId}`;
@@ -86,11 +78,10 @@ async function fetchTmdbDiscover(
   }
 
   const endpoint = `/discover/${type}?sort_by=${sortBy}&page=${Math.min(page, 500)}&include_adult=false${extraFilters}`;
-  const data = await tmdbFetch(endpoint);
-
+  const data: TMDBResponse = await tmdbFetch(endpoint);
   const rawResults = Array.isArray(data?.results) ? data.results : [];
 
-  const results: UnifiedSearchResult[] = rawResults.map((item: any) => ({
+  const results: UnifiedSearchResult[] = rawResults.map((item) => ({
     externalId: `tmdb:${type}:${item.id}`,
     mediaType: type,
     title: item.title || item.name || "Untitled",
@@ -103,15 +94,12 @@ async function fetchTmdbDiscover(
 
   return NextResponse.json({
     results,
-    page: data?.page || 1,
-    totalPages: Math.min(data?.total_pages || 1, 500),
-    totalResults: data?.total_results || 0,
+    page: data.page || 1,
+    totalPages: Math.min(data.total_pages || 1, 500),
+    totalResults: data.total_results || 0,
   });
 }
 
-// -------------------------------------------------------------
-// IGDB Discover (Games)
-// -------------------------------------------------------------
 async function fetchIgdbDiscover(
   sort: string,
   genre: string | null,
@@ -121,8 +109,6 @@ async function fetchIgdbDiscover(
   const limit = 24;
   const offset = (page - 1) * limit;
   const now = Math.floor(Date.now() / 1000);
-
-  // Conditions that prevent IGDB 400 errors
   const conditions: string[] = ["cover != null", "cover.url != null"];
 
   let sortClause = "sort rating_count desc;";
@@ -134,7 +120,6 @@ async function fetchIgdbDiscover(
     conditions.push(`first_release_date > ${now}`);
     sortClause = "sort first_release_date asc;";
   } else {
-    // Popular / Trending
     conditions.push(`first_release_date <= ${now}`, "rating_count != null");
     sortClause = "sort rating_count desc;";
   }
@@ -152,11 +137,10 @@ async function fetchIgdbDiscover(
   const whereClause = `where ${conditions.join(" & ")};`;
   const apicalypse = `fields name,cover.url,first_release_date,summary,genres.name,rating; ${whereClause} ${sortClause} limit ${limit}; offset ${offset};`;
 
-  const games = await igdbFetch("/games", apicalypse);
-
+  const games: IGDBGameItem[] = await igdbFetch("/games", apicalypse);
   const rawGames = Array.isArray(games) ? games : [];
 
-  const results: UnifiedSearchResult[] = rawGames.map((g: any) => ({
+  const results: UnifiedSearchResult[] = rawGames.map((g) => ({
     externalId: `igdb:${g.id}`,
     mediaType: "game",
     title: g.name || "Untitled Game",
@@ -164,7 +148,7 @@ async function fetchIgdbDiscover(
     posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
     creator: null,
     summary: g.summary || null,
-    genres: Array.isArray(g.genres) ? g.genres.map((gen: any) => gen.name) : [],
+    genres: Array.isArray(g.genres) ? g.genres.map((gen) => gen.name) : [],
   }));
 
   return NextResponse.json({

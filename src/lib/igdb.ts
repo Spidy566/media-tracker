@@ -5,8 +5,15 @@ async function getAccessToken(): Promise<string> {
     return cachedToken.token;
   }
 
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error("TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET is not configured");
+  }
+
   const res = await fetch(
-    `https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=client_credentials`,
+    `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
     { method: "POST" },
   );
 
@@ -24,12 +31,17 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function igdbFetch(endpoint: string, body: string) {
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  if (!clientId) {
+    throw new Error("TWITCH_CLIENT_ID is not configured");
+  }
+
   const token = await getAccessToken();
 
   const res = await fetch(`https://api.igdb.com/v4${endpoint}`, {
     method: "POST",
     headers: {
-      "Client-ID": process.env.TWITCH_CLIENT_ID!,
+      "Client-ID": clientId,
       Authorization: `Bearer ${token}`,
       "Content-Type": "text/plain",
     },

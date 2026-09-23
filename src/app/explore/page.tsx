@@ -2,9 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { MediaCard } from "@/components/media-card";
 import { TrackDialog } from "@/components/track-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,6 +90,8 @@ export default function ExplorePage() {
 
   const hasActiveFilters = Boolean(genre || year || sort !== "popular");
 
+  const EXPLORE_SKELETON_IDS = Array.from({ length: 18 }, (_, i) => `explore-skel-${i + 1}`);
+
   return (
     <div className="min-h-screen bg-[#0e1015] text-[#e1e7ed]">
       {/* Sub-Header Toolbar */}
@@ -135,15 +137,16 @@ export default function ExplorePage() {
           <aside className="w-64 shrink-0 border-r border-white/10 p-5 space-y-6 bg-[#12151c]/60 min-h-[calc(100vh-7rem)]">
             {/* Category Switcher */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
                 Category
-              </label>
+              </span>
               <div className="grid grid-cols-3 gap-1 bg-black/50 p-1 rounded-lg border border-white/5">
                 {(["game", "movie", "tv"] as const).map((t) => (
                   <button
                     key={t}
+                    type="button"
                     onClick={() => handleMediaTypeChange(t)}
-                    className={`text-xs py-1.5 rounded capitalize font-medium transition ${
+                    className={`text-xs py-1.5 rounded capitalize font-medium transition cursor-pointer ${
                       mediaType === t
                         ? "bg-[#ff4b72] text-white shadow-xs"
                         : "text-muted-foreground hover:text-white"
@@ -157,13 +160,14 @@ export default function ExplorePage() {
 
             {/* Release Status */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
                 Release Status
-              </label>
+              </span>
               <div className="grid grid-cols-2 gap-1 bg-black/50 p-1 rounded-lg border border-white/5">
                 <button
+                  type="button"
                   onClick={() => handleSortChange("popular")}
-                  className={`text-xs py-1.5 rounded font-medium transition ${
+                  className={`text-xs py-1.5 rounded font-medium transition cursor-pointer ${
                     sort !== "upcoming"
                       ? "bg-white/15 text-white"
                       : "text-muted-foreground hover:text-white"
@@ -172,8 +176,9 @@ export default function ExplorePage() {
                   Released
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleSortChange("upcoming")}
-                  className={`text-xs py-1.5 rounded font-medium transition ${
+                  className={`text-xs py-1.5 rounded font-medium transition cursor-pointer ${
                     sort === "upcoming"
                       ? "bg-[#ff4b72] text-white"
                       : "text-muted-foreground hover:text-white"
@@ -186,9 +191,9 @@ export default function ExplorePage() {
 
             {/* Genre Filter */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
                 Genre
-              </label>
+              </span>
               <Select
                 value={genre || "all"}
                 onValueChange={(val) => {
@@ -212,9 +217,9 @@ export default function ExplorePage() {
 
             {/* Release Year */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
                 Release Year
-              </label>
+              </span>
               <Select
                 value={year || "any"}
                 onValueChange={(val) => {
@@ -227,7 +232,7 @@ export default function ExplorePage() {
                 </SelectTrigger>
                 <SelectContent className="bg-[#181c24] border-white/10 text-white max-h-56">
                   <SelectItem value="any">All Years</SelectItem>
-                  {Array.from({ length: 30 }, (_, i) => 2026 - i).map((y) => (
+                  {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((y) => (
                     <SelectItem key={y} value={y.toString()}>
                       {y}
                     </SelectItem>
@@ -269,9 +274,9 @@ export default function ExplorePage() {
           {/* Loading Skeletons */}
           {isLoading && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {Array.from({ length: 18 }).map((_, i) => (
+              {EXPLORE_SKELETON_IDS.map((id) => (
                 <div
-                  key={i}
+                  key={id}
                   className="aspect-2/3 bg-white/5 rounded-lg animate-pulse border border-white/5"
                 />
               ))}
@@ -299,41 +304,19 @@ export default function ExplorePage() {
           {/* Poster Cards Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {results.map((item) => (
-              <div
+              <MediaCard
                 key={item.externalId}
+                title={item.title}
+                mediaType={item.mediaType}
+                posterUrl={item.posterUrl}
+                releaseYear={item.releaseYear}
                 onClick={() => setSelectedMedia(item)}
-                className="group relative cursor-pointer aspect-2/3 rounded-lg overflow-hidden border border-white/10 bg-[#161a22] transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl hover:border-[#ff4b72]/60 hover:z-10"
-              >
-                {item.posterUrl ? (
-                  <Image
-                    src={item.posterUrl}
-                    alt={item.title}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-                    className="object-cover transition-opacity duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center text-xs text-muted-foreground bg-black/40">
-                    <span className="font-semibold text-white/80 line-clamp-3">{item.title}</span>
-                    <span className="text-[10px] text-muted-foreground mt-2 uppercase">
-                      {item.mediaType}
-                    </span>
-                  </div>
-                )}
-
-                {/* Backloggd-style Dark Gradient Overlay on Hover */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                  <p className="text-xs font-bold leading-tight line-clamp-2 text-white">
-                    {item.title}
-                  </p>
-                  <p className="text-[10px] text-white/70 mt-1 font-medium">
-                    {item.releaseYear || "TBA"}
-                  </p>
-                  <button className="mt-2.5 text-[10px] uppercase font-bold tracking-wider bg-[#ff4b72] text-white py-1 px-2.5 rounded shadow-sm w-fit transition hover:bg-[#ff335e]">
+                action={
+                  <span className="text-[10px] uppercase font-bold tracking-wider bg-[#ff4b72] text-white py-1 px-2.5 rounded shadow-sm w-fit inline-block">
                     + Log
-                  </button>
-                </div>
-              </div>
+                  </span>
+                }
+              />
             ))}
           </div>
 

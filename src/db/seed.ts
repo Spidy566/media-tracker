@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { users } from "@/db/schema";
 import { db } from "@/lib/db";
 

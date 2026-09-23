@@ -20,17 +20,19 @@ export function useActiveUser() {
   });
 
   const usersList = data?.users || [];
-  const [activeUserId, setActiveUserId] = useState<string | null>(null);
+  const [activeUserId, setActiveUserId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("active_user_id");
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem("active_user_id");
-    if (saved) {
-      setActiveUserId(saved);
-    } else if (usersList.length > 0) {
+    if (!activeUserId && usersList.length > 0) {
       setActiveUserId(usersList[0].id);
       localStorage.setItem("active_user_id", usersList[0].id);
     }
-  }, [usersList]);
+  }, [usersList, activeUserId]);
 
   const setActiveUser = (id: string) => {
     setActiveUserId(id);

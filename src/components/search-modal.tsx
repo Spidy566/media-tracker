@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,17 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
   const debouncedQuery = useDebounce(query, 300);
   const queryClient = useQueryClient();
 
+  // Close when pressing the physical Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isOpen, onClose]);
+
   // Search API query
   const { data, isLoading } = useQuery<{ results: UnifiedSearchResult[] }>({
     queryKey: ["search", debouncedQuery],
@@ -33,7 +44,6 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
     enabled: debouncedQuery.trim().length > 0,
   });
 
-  // 1-Click Quick Track Mutation (Zero Popup!)
   const { mutate: quickTrack, isPending } = useMutation({
     mutationFn: async (media: UnifiedSearchResult) => {
       const res = await fetch("/api/entries", {
@@ -49,9 +59,7 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
       return res.json();
     },
     onSuccess: (_, media) => {
-      // Mark as tracked locally for instant visual feedback
       setTrackedIds((prev) => new Set(prev).add(media.externalId));
-      // Invalidate queries so feed and stash update immediately
       queryClient.invalidateQueries({ queryKey: ["entries"] });
     },
   });
@@ -59,8 +67,18 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-xs flex items-start justify-center pt-16 p-4">
-      <div className="bg-[#141820] text-white border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[75vh] overflow-hidden">
+    <div className="fixed inset-0 z-40 flex items-start justify-center pt-16 p-4">
+      {/* Backdrop Button */}
+      <button
+        type="button"
+        aria-label="Close search"
+        onClick={onClose}
+        tabIndex={-1}
+        className="fixed inset-0 bg-black/70 backdrop-blur-xs cursor-default border-0"
+      />
+
+      {/* Modal Dialog Content */}
+      <div className="relative z-10 bg-[#141820] text-white border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[75vh] overflow-hidden">
         {/* Search Input Bar */}
         <div className="p-4 border-b border-white/10 flex items-center gap-3">
           <Input
@@ -131,7 +149,6 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
                   </p>
                 </div>
 
-                {/* Instant 1-Click Track Button */}
                 <Button
                   size="sm"
                   variant={isTracked ? "secondary" : "outline"}
