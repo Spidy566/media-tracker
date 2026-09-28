@@ -165,7 +165,7 @@ export default function MediaDetailPage() {
             className="object-cover object-top opacity-35"
           />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
 
         {/* Back Button */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-6">

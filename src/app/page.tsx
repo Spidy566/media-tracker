@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Clock, Film, Gamepad2, Layers, PlayCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
 
@@ -41,6 +41,16 @@ export default function HomePage() {
   // null = All Squad, or a specific user's ID
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [mediaFilter, setMediaFilter] = useState<"all" | "movie_tv" | "game">("all");
+
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  // Sync selectedUserId if tab=me is in the URL
+  useEffect(() => {
+    if (tabParam === "me" && currentUser) {
+      setSelectedUserId(currentUser.id);
+    }
+  }, [tabParam, currentUser]);
 
   const { data, isLoading } = useQuery<{ entries: Entry[] }>({
     queryKey: ["entries", selectedUserId],
