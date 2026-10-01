@@ -20,6 +20,8 @@ interface MediaCardProps {
   priority?: boolean;
 }
 
+const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
+
 export function MediaCard({
   title,
   mediaType,
@@ -48,7 +50,7 @@ export function MediaCard({
         )}
 
         {/* Poster Artwork */}
-        {posterUrl ? (
+        {posterUrl && !isStealthMode ? (
           <Image
             src={posterUrl}
             alt={title}

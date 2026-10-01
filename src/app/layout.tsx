@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { NavBar } from "@/components/nav-bar";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
           </Suspense>
           <div className="flex-1 pb-16 md:pb-0">{children}</div>
         </QueryProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

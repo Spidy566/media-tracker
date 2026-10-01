@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Clock, Film, Gamepad2, Layers, PlayCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
 
@@ -75,8 +76,19 @@ export default function HomePage() {
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["entries"] });
+
+      const statusLabels = {
+        want_to: "Added to Queue",
+        doing: "Marked as In Progress",
+        done: "Marked as Completed",
+        dropped: "Marked as Dropped",
+      };
+
+      toast.success(statusLabels[variables.status], {
+        description: variables.media.title,
+      });
     },
   });
 

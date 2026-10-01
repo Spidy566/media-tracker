@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { MediaCard } from "@/components/media-card";
 import { TrackDialog } from "@/components/track-dialog";
@@ -114,8 +115,18 @@ export default function ExplorePage() {
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["entries"] });
+
+      const statusLabels = {
+        want_to: "Added to Queue",
+        doing: "Marked as In Progress",
+        done: "Marked as Completed",
+      };
+
+      toast.success(statusLabels[variables.status], {
+        description: variables.media.title,
+      });
     },
   });
 

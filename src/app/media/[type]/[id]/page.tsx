@@ -36,6 +36,8 @@ interface MediaDetail {
   squadEntries: SquadMemberEntry[];
 }
 
+const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
+
 export default function MediaDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -156,7 +158,7 @@ export default function MediaDetailPage() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
       {/* Cinematic Backdrop with Gradient Fade */}
       <div className="relative w-full h-72 sm:h-96 overflow-hidden bg-zinc-900 border-b border-zinc-800/80">
-        {media.backdropUrl ? (
+        {media.backdropUrl && !isStealthMode ? (
           <Image
             src={media.backdropUrl}
             alt={media.title}
@@ -186,7 +188,7 @@ export default function MediaDetailPage() {
           {/* Left Column: Poster & Quick Action Card */}
           <div className="w-48 sm:w-56 shrink-0 mx-auto md:mx-0 space-y-4">
             <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl">
-              {media.posterUrl ? (
+              {media.posterUrl && !isStealthMode ? (
                 <Image
                   src={media.posterUrl}
                   alt={media.title}
