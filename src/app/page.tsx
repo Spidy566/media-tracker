@@ -1,10 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Clock, Film, Gamepad2, Layers, PlayCircle } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { ArrowRight, Calendar, CheckCircle2, Clock, PlayCircle, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
 
@@ -32,38 +33,61 @@ interface Entry {
   };
 }
 
-const FEED_SKELETON_IDS = Array.from({ length: 12 }, (_, i) => `feed-skel-${i + 1}`);
+const STATIC_SKELETON_KEYS = [
+  "skel-card-1",
+  "skel-card-2",
+  "skel-card-3",
+  "skel-card-4",
+  "skel-card-5",
+  "skel-card-6",
+];
 
 export default function HomePage() {
   const router = useRouter();
   const { users, currentUser } = useActiveUser();
   const queryClient = useQueryClient();
 
-  // null = All Squad, or a specific user's ID
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [mediaFilter, setMediaFilter] = useState<"all" | "movie_tv" | "game">("all");
+  const currentYear = new Date().getFullYear();
 
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
-
-  // Sync selectedUserId if tab=me is in the URL
-  useEffect(() => {
-    if (tabParam === "me" && currentUser) {
-      setSelectedUserId(currentUser.id);
-    }
-  }, [tabParam, currentUser]);
-
-  const { data, isLoading } = useQuery<{ entries: Entry[] }>({
-    queryKey: ["entries", selectedUserId],
+  // 1. Fetch current user's personal library
+  const { data: myData, isLoading: isMyLoading } = useQuery<{ entries: Entry[] }>({
+    queryKey: ["my-entries", currentUser?.id],
     queryFn: async () => {
-      const url = selectedUserId ? `/api/entries?userId=${selectedUserId}` : "/api/entries";
-      const res = await fetch(url);
+      if (!currentUser) return { entries: [] };
+      const res = await fetch(`/api/entries?userId=${currentUser.id}`);
+      return res.json();
+    },
+    enabled: Boolean(currentUser),
+  });
+
+  // 2. Fetch squad recent activity
+  const { data: squadData } = useQuery<{ entries: Entry[] }>({
+    queryKey: ["squad-entries"],
+    queryFn: async () => {
+      const res = await fetch("/api/entries");
       return res.json();
     },
   });
 
+  // 3. Fetch trending titles for the "Trending This Week" shelf
+  const { data: trendingData } = useQuery<{ results: UnifiedSearchResult[] }>({
+    queryKey: ["trending-home"],
+    queryFn: async () => {
+      const res = await fetch("/api/discover?type=movie&sort=popular&page=1");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 30, // 30 min cache
+  });
+
+  // 1-Click quick track mutation
   const { mutate: setQuickStatus } = useMutation({
-    mutationFn: async ({ media, status }: { media: Entry["media"]; status: MediaStatus }) => {
+    mutationFn: async ({
+      media,
+      status,
+    }: {
+      media: Entry["media"] | UnifiedSearchResult;
+      status: MediaStatus;
+    }) => {
       if (!currentUser) return;
       const res = await fetch("/api/entries", {
         method: "POST",
@@ -77,7 +101,8 @@ export default function HomePage() {
       return res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
+      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
 
       const statusLabels = {
         want_to: "Added to Queue",
@@ -92,249 +117,310 @@ export default function HomePage() {
     },
   });
 
-  const rawEntries = data?.entries || [];
+  const myEntries = myData?.entries || [];
+  const allSquadEntries = squadData?.entries || [];
+  const trendingResults = trendingData?.results?.slice(0, 6) || [];
 
-  const entries = rawEntries.filter((e) => {
-    if (mediaFilter === "movie_tv")
-      return e.media.mediaType === "movie" || e.media.mediaType === "tv";
-    if (mediaFilter === "game") return e.media.mediaType === "game";
-    return true;
-  });
+  // Filter personal shelves
+  const myActive = myEntries.filter((e) => e.status === "doing");
+  const myQueue = myEntries.filter((e) => e.status === "want_to");
+  const myCompleted = myEntries.filter((e) => e.status === "done");
 
-  const activeNow = entries.filter((e) => e.status === "doing");
-  const queue = entries.filter((e) => e.status === "want_to");
-  const completed = entries.filter((e) => e.status === "done");
+  // Release Radar: unreleased or current-year titles in user's queue
+  const releaseRadar = myQueue.filter(
+    (e) => e.media.releaseYear && e.media.releaseYear >= currentYear,
+  );
 
-  // Filter squad list: friends ONLY (excluding the logged in user)
-  const squadFriends = users.filter((u) => u.id !== currentUser?.id);
-  const isViewingMyList = selectedUserId === currentUser?.id;
-  const activeFriend = squadFriends.find((u) => u.id === selectedUserId);
+  // Recent Squad Finishes: titles friends marked "done", with their rating
+  const squadFinishes = allSquadEntries
+    .filter((e) => e.user.id !== currentUser?.id && e.status === "done")
+    .slice(0, 6);
 
-  const navigateToMedia = (media: Entry["media"]) => {
+  // Taste breakdown counts
+  const movieCount = myEntries.filter((e) => e.media.mediaType === "movie").length;
+  const gameCount = myEntries.filter((e) => e.media.mediaType === "game").length;
+  const tvCount = myEntries.filter((e) => e.media.mediaType === "tv").length;
+
+  const otherFriends = users.filter((u) => u.id !== currentUser?.id);
+
+  const navigateToMedia = (media: Entry["media"] | UnifiedSearchResult) => {
     const parts = media.externalId.split(":");
     const rawId = parts[parts.length - 1];
     router.push(`/media/${media.mediaType}/${rawId}`);
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-8">
-      {/* Top Filter Bar: Friends & Media Types */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
-        {/* Friend Tabs: All Squad -> My List -> Individual Squad Friends */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setSelectedUserId(null)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${
-              selectedUserId === null
-                ? "bg-zinc-100 text-zinc-950 font-semibold"
-                : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
-            }`}
-          >
-            All Squad
-          </button>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-10">
+      {/* ─────────────────────────────────────────────────────────────
+          1. HERO GREETING & TASTE BREAKDOWN
+      ───────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80">
+        <div className="space-y-1.5">
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            Welcome back, {currentUser?.displayName || "Friend"}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+            <span className="text-zinc-200 font-medium">{myActive.length} In Progress</span>
+            <span>•</span>
+            <span className="text-zinc-200 font-medium">{myQueue.length} in Queue</span>
+            <span>•</span>
+            <span className="text-zinc-200 font-medium">{myCompleted.length} Completed</span>
+          </div>
 
-          {currentUser && (
-            <button
-              type="button"
-              onClick={() => setSelectedUserId(currentUser.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${
-                isViewingMyList
-                  ? "bg-zinc-100 text-zinc-950 font-semibold"
-                  : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
-              }`}
-            >
-              My List
-            </button>
-          )}
+          {/* Taste Breakdown Pills */}
+          <div className="flex items-center gap-2 pt-1 text-[11px] text-zinc-400 font-medium">
+            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-800">
+              🎬 {movieCount} Movies
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-800">
+              🎮 {gameCount} Games
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-800">
+              📺 {tvCount} TV Shows
+            </span>
+          </div>
+        </div>
 
-          {squadFriends.map((friend) => {
-            const isSelected = selectedUserId === friend.id;
-
-            return (
+        {/* Squad Profile Pills */}
+        <div className="flex flex-col sm:items-end gap-1.5">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+            The Squad
+          </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            {otherFriends.map((friend) => (
               <button
                 key={friend.id}
                 type="button"
-                onClick={() => setSelectedUserId(friend.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${
-                  isSelected
-                    ? "bg-zinc-100 text-zinc-950 font-semibold"
-                    : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
-                }`}
+                onClick={() => router.push(`/squad/${friend.username}`)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition cursor-pointer shrink-0"
               >
-                {friend.displayName}
+                <div className="w-4 h-4 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                  {friend.displayName[0]}
+                </div>
+                <span>{friend.displayName}</span>
               </button>
-            );
-          })}
-        </div>
-
-        {/* Media Type Switcher */}
-        <div className="flex items-center bg-zinc-900 border border-zinc-800 p-1 rounded-lg shrink-0 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setMediaFilter("all")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
-              mediaFilter === "all"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>All</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMediaFilter("movie_tv")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
-              mediaFilter === "movie_tv"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Film className="w-3.5 h-3.5" />
-            <span>Movies & TV</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMediaFilter("game")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer ${
-              mediaFilter === "game"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Gamepad2 className="w-3.5 h-3.5" />
-            <span>Games</span>
-          </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Loading Skeletons */}
-      {isLoading && (
-        <div className="space-y-6">
-          <div className="h-4 w-36 bg-zinc-900 rounded animate-pulse" />
+      {/* ─────────────────────────────────────────────────────────────
+          2. JUMP BACK IN (Currently Playing / Watching)
+      ───────────────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <PlayCircle className="w-4 h-4 text-sky-400" />
+            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              Jump Back In
+            </h2>
+            <span className="text-[11px] text-zinc-500 font-mono">({myActive.length})</span>
+          </div>
+
+          <Link
+            href="/explore"
+            className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 transition"
+          >
+            <span>Browse Catalog</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        {isMyLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="aspect-2/3 bg-zinc-900 rounded-lg animate-pulse border border-zinc-800/60" />
+          </div>
+        ) : myActive.length === 0 ? (
+          <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/20 text-xs text-zinc-400 flex items-center justify-between">
+            <span>Nothing in progress right now. Pick a title from your queue to start!</span>
+            <button
+              type="button"
+              onClick={() => router.push("/explore")}
+              className="text-[11px] font-medium text-zinc-200 hover:text-white underline cursor-pointer"
+            >
+              Explore Titles
+            </button>
+          </div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {FEED_SKELETON_IDS.map((id) => (
+            {myActive.map((entry) => (
+              <div key={entry.id} className="max-w-50">
+                <MediaCard
+                  title={entry.media.title}
+                  mediaType={entry.media.mediaType}
+                  posterUrl={entry.media.posterUrl}
+                  releaseYear={entry.media.releaseYear}
+                  currentStatus={entry.status}
+                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+                  onClick={() => navigateToMedia(entry.media)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          3. UP NEXT IN YOUR QUEUE (Top 6 Only)
+      ───────────────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-amber-400" />
+            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              Up Next in Your Queue
+            </h2>
+            <span className="text-[11px] text-zinc-500 font-mono">({myQueue.length})</span>
+          </div>
+
+          {myQueue.length > 6 && (
+            <button
+              type="button"
+              onClick={() => router.push(`/squad/${currentUser?.username}?tab=queue`)}
+              className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 transition cursor-pointer"
+            >
+              <span>View all {myQueue.length}</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {isMyLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {STATIC_SKELETON_KEYS.map((key) => (
               <div
-                key={id}
+                key={key}
                 className="aspect-2/3 bg-zinc-900 rounded-lg animate-pulse border border-zinc-800/60"
               />
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && entries.length === 0 && (
-        <div className="text-center py-20 border border-dashed border-zinc-800 rounded-xl">
-          <p className="text-sm font-semibold text-zinc-200">
-            {activeFriend
-              ? `${activeFriend.displayName} hasn't tracked anything yet`
-              : isViewingMyList
-                ? "Your list is empty"
-                : "No titles tracked in the squad yet"}
-          </p>
-          <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-            Hit the search bar above (⌘K) to log your first title.
-          </p>
-        </div>
-      )}
-
-      {/* SHELF 1: IN PROGRESS */}
-      {!isLoading && activeNow.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <PlayCircle className="w-4 h-4 text-sky-400" />
-            <h2 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
-              {activeFriend
-                ? `${activeFriend.displayName} is Playing & Watching`
-                : isViewingMyList
-                  ? "You are Playing & Watching"
-                  : "Currently In Progress"}
-            </h2>
-            <span className="text-[11px] text-zinc-500 font-mono">({activeNow.length})</span>
+        ) : myQueue.length === 0 ? (
+          <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/20 text-xs text-zinc-400 flex items-center justify-between">
+            <span>Your queue is empty. Press ⌘K to search and bookmark movies or games.</span>
           </div>
-
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {activeNow.map((entry) => (
-              <MediaCard
-                key={entry.id}
-                title={entry.media.title}
-                mediaType={entry.media.mediaType}
-                posterUrl={entry.media.posterUrl}
-                releaseYear={entry.media.releaseYear}
-                subtitle={!selectedUserId ? entry.user.displayName : undefined}
-                currentStatus={currentUser?.id === entry.user.id ? entry.status : null}
-                onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                onClick={() => navigateToMedia(entry.media)}
-              />
+            {myQueue.slice(0, 6).map((entry) => (
+              <div key={entry.id} className="max-w-50">
+                <MediaCard
+                  title={entry.media.title}
+                  mediaType={entry.media.mediaType}
+                  posterUrl={entry.media.posterUrl}
+                  releaseYear={entry.media.releaseYear}
+                  currentStatus={entry.status}
+                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+                  onClick={() => navigateToMedia(entry.media)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          4. RELEASE RADAR (Upcoming countdowns from your queue)
+      ───────────────────────────────────────────────────────────── */}
+      {releaseRadar.length > 0 && (
+        <section className="space-y-3 p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/80">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              Release Radar
+            </h2>
+            <span className="text-[10px] text-emerald-400 font-mono px-1.5 py-0.5 rounded bg-emerald-500/10">
+              {releaseRadar.length} Upcoming
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400 -mt-1">Titles in your queue releasing soon.</p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-1">
+            {releaseRadar.slice(0, 6).map((entry) => (
+              <div key={entry.id} className="max-w-50">
+                <MediaCard
+                  title={entry.media.title}
+                  mediaType={entry.media.mediaType}
+                  posterUrl={entry.media.posterUrl}
+                  releaseYear={entry.media.releaseYear}
+                  subtitle={
+                    entry.media.releaseYear === currentYear
+                      ? "Coming this year"
+                      : `Coming in ${entry.media.releaseYear}`
+                  }
+                  currentStatus={entry.status}
+                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+                  onClick={() => navigateToMedia(entry.media)}
+                />
+              </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* SHELF 2: QUEUE / BACKLOG */}
-      {!isLoading && queue.length > 0 && (
+      {/* ─────────────────────────────────────────────────────────────
+          5. RECENT SQUAD FINISHES (Visual posters with ★ ratings)
+      ───────────────────────────────────────────────────────────── */}
+      {squadFinishes.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-400" />
-            <h2 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
-              {activeFriend
-                ? `${activeFriend.displayName}'s Queue`
-                : isViewingMyList
-                  ? "Your Queue"
-                  : "Squad Queue & Backlog"}
+            <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400" />
+            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              Recent Squad Finishes
             </h2>
-            <span className="text-[11px] text-zinc-500 font-mono">({queue.length})</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {queue.map((entry) => (
-              <MediaCard
-                key={entry.id}
-                title={entry.media.title}
-                mediaType={entry.media.mediaType}
-                posterUrl={entry.media.posterUrl}
-                releaseYear={entry.media.releaseYear}
-                subtitle={!selectedUserId ? entry.user.displayName : undefined}
-                currentStatus={currentUser?.id === entry.user.id ? entry.status : null}
-                onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                onClick={() => navigateToMedia(entry.media)}
-              />
+            {squadFinishes.map((entry) => (
+              <div key={entry.id} className="max-w-50">
+                <MediaCard
+                  title={entry.media.title}
+                  mediaType={entry.media.mediaType}
+                  posterUrl={entry.media.posterUrl}
+                  releaseYear={entry.media.releaseYear}
+                  rating={entry.rating}
+                  subtitle={`by ${entry.user.displayName}`}
+                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+                  onClick={() => navigateToMedia(entry.media)}
+                />
+              </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* SHELF 3: COMPLETED */}
-      {!isLoading && completed.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
-              {activeFriend
-                ? `${activeFriend.displayName}'s Finished Titles`
-                : isViewingMyList
-                  ? "Your Finished Titles"
-                  : "Completed"}
-            </h2>
-            <span className="text-[11px] text-zinc-500 font-mono">({completed.length})</span>
+      {/* ─────────────────────────────────────────────────────────────
+          6. TRENDING THIS WEEK (Quick Inspiration Shelf)
+      ───────────────────────────────────────────────────────────── */}
+      {trendingResults.length > 0 && (
+        <section className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
+              <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                Trending This Week
+              </h2>
+            </div>
+
+            <Link
+              href="/explore"
+              className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 transition"
+            >
+              <span>Explore More</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {completed.map((entry) => (
-              <MediaCard
-                key={entry.id}
-                title={entry.media.title}
-                mediaType={entry.media.mediaType}
-                posterUrl={entry.media.posterUrl}
-                releaseYear={entry.media.releaseYear}
-                rating={entry.rating}
-                subtitle={!selectedUserId ? entry.user.displayName : undefined}
-                currentStatus={currentUser?.id === entry.user.id ? entry.status : null}
-                onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                onClick={() => navigateToMedia(entry.media)}
-              />
+            {trendingResults.map((item) => (
+              <div key={item.externalId} className="max-w-50">
+                <MediaCard
+                  title={item.title}
+                  mediaType={item.mediaType}
+                  posterUrl={item.posterUrl}
+                  releaseYear={item.releaseYear}
+                  onQuickStatus={(status) => setQuickStatus({ media: item, status })}
+                  onClick={() => navigateToMedia(item)}
+                />
+              </div>
             ))}
           </div>
         </section>

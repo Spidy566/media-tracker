@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Compass, Film, Home, Search } from "lucide-react";
+import { Bookmark, Calendar, Compass, Film, Home, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,9 +23,9 @@ export function NavBar() {
 
   const isHome = pathname === "/" && !searchParams.get("tab");
   const isExplore = pathname === "/explore";
+  const isCalendar = pathname === "/calendar";
   const isMyList = pathname === "/" && searchParams.get("tab") === "me";
 
-  // Global ⌘K / Ctrl+K keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -68,6 +68,16 @@ export function NavBar() {
                 Home
               </Link>
               <Link
+                href="/calendar"
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                  isCalendar
+                    ? "bg-zinc-800 text-zinc-100 shadow-xs"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                }`}
+              >
+                Calendar
+              </Link>
+              <Link
                 href="/explore"
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
                   isExplore
@@ -95,7 +105,7 @@ export function NavBar() {
               </kbd>
             </button>
 
-            {/* Friend Switcher (Always visible on mobile & desktop) */}
+            {/* Friend Switcher */}
             {currentUser && (
               <div className="flex items-center pl-2 md:border-l md:border-zinc-800">
                 <Select value={currentUser.id} onValueChange={setActiveUser}>
@@ -117,10 +127,10 @@ export function NavBar() {
       </header>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. MOBILE BOTTOM TAB BAR (Yamtrack / Native App Style)
+          2. MOBILE BOTTOM TAB BAR (5 Tabs)
       ───────────────────────────────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800/80 px-2 py-1.5 safe-area-pb">
-        <div className="grid grid-cols-4 gap-1 max-w-md mx-auto">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800/80 px-2 py-1.5">
+        <div className="grid grid-cols-5 gap-1 max-w-md mx-auto">
           {/* 1. Home */}
           <Link
             href="/"
@@ -132,7 +142,18 @@ export function NavBar() {
             <span className="text-[10px] font-medium mt-0.5">Home</span>
           </Link>
 
-          {/* 2. Explore */}
+          {/* 2. Calendar */}
+          <Link
+            href="/calendar"
+            className={`flex flex-col items-center justify-center py-1 rounded-lg transition ${
+              isCalendar ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <Calendar className={`w-4 h-4 ${isCalendar ? "text-zinc-100" : "text-zinc-400"}`} />
+            <span className="text-[10px] font-medium mt-0.5">Calendar</span>
+          </Link>
+
+          {/* 3. Explore */}
           <Link
             href="/explore"
             className={`flex flex-col items-center justify-center py-1 rounded-lg transition ${
@@ -143,7 +164,7 @@ export function NavBar() {
             <span className="text-[10px] font-medium mt-0.5">Explore</span>
           </Link>
 
-          {/* 3. Search */}
+          {/* 4. Search */}
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
@@ -153,7 +174,7 @@ export function NavBar() {
             <span className="text-[10px] font-medium mt-0.5">Search</span>
           </button>
 
-          {/* 4. My List */}
+          {/* 5. My List */}
           <button
             type="button"
             onClick={() => router.push("/?tab=me")}
