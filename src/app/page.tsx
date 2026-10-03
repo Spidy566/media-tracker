@@ -1,7 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Calendar, CheckCircle2, Clock, PlayCircle, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  Clock,
+  Compass,
+  PlayCircle,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -33,23 +41,27 @@ interface Entry {
   };
 }
 
-const STATIC_SKELETON_KEYS = [
-  "skel-card-1",
-  "skel-card-2",
-  "skel-card-3",
-  "skel-card-4",
-  "skel-card-5",
-  "skel-card-6",
+const DASHBOARD_SKELETONS = [
+  "dash-skel-1",
+  "dash-skel-2",
+  "dash-skel-3",
+  "dash-skel-4",
+  "dash-skel-5",
+  "dash-skel-6",
 ];
+
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function HomePage() {
   const router = useRouter();
   const { users, currentUser } = useActiveUser();
   const queryClient = useQueryClient();
 
-  const currentYear = new Date().getFullYear();
-
-  // 1. Fetch current user's personal library
   const { data: myData, isLoading: isMyLoading } = useQuery<{ entries: Entry[] }>({
     queryKey: ["my-entries", currentUser?.id],
     queryFn: async () => {
@@ -60,26 +72,17 @@ export default function HomePage() {
     enabled: Boolean(currentUser),
   });
 
-  // 2. Fetch squad recent activity
-  const { data: squadData } = useQuery<{ entries: Entry[] }>({
-    queryKey: ["squad-entries"],
-    queryFn: async () => {
-      const res = await fetch("/api/entries");
-      return res.json();
-    },
-  });
-
-  // 3. Fetch trending titles for the "Trending This Week" shelf
-  const { data: trendingData } = useQuery<{ results: UnifiedSearchResult[] }>({
+  const { data: trendingData, isLoading: isTrendingLoading } = useQuery<{
+    results: UnifiedSearchResult[];
+  }>({
     queryKey: ["trending-home"],
     queryFn: async () => {
       const res = await fetch("/api/discover?type=movie&sort=popular&page=1");
       return res.json();
     },
-    staleTime: 1000 * 60 * 30, // 30 min cache
+    staleTime: 1000 * 60 * 30,
   });
 
-  // 1-Click quick track mutation
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({
       media,
@@ -102,46 +105,20 @@ export default function HomePage() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["my-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
-
-      const statusLabels = {
-        want_to: "Added to Queue",
-        doing: "Marked as In Progress",
-        done: "Marked as Completed",
-        dropped: "Marked as Dropped",
-      };
-
-      toast.success(statusLabels[variables.status], {
-        description: variables.media.title,
-      });
+      toast.success("Added to your library", { description: variables.media.title });
     },
   });
 
   const myEntries = myData?.entries || [];
-  const allSquadEntries = squadData?.entries || [];
-  const trendingResults = trendingData?.results?.slice(0, 6) || [];
+  const trendingResults = trendingData?.results || [];
 
-  // Filter personal shelves
   const myActive = myEntries.filter((e) => e.status === "doing");
   const myQueue = myEntries.filter((e) => e.status === "want_to");
   const myCompleted = myEntries.filter((e) => e.status === "done");
 
-  // Release Radar: unreleased or current-year titles in user's queue
-  const releaseRadar = myQueue.filter(
-    (e) => e.media.releaseYear && e.media.releaseYear >= currentYear,
-  );
-
-  // Recent Squad Finishes: titles friends marked "done", with their rating
-  const squadFinishes = allSquadEntries
-    .filter((e) => e.user.id !== currentUser?.id && e.status === "done")
-    .slice(0, 6);
-
-  // Taste breakdown counts
-  const movieCount = myEntries.filter((e) => e.media.mediaType === "movie").length;
-  const gameCount = myEntries.filter((e) => e.media.mediaType === "game").length;
-  const tvCount = myEntries.filter((e) => e.media.mediaType === "tv").length;
-
-  const otherFriends = users.filter((u) => u.id !== currentUser?.id);
+  const _movieCount = myEntries.filter((e) => e.media.mediaType === "movie").length;
+  const _gameCount = myEntries.filter((e) => e.media.mediaType === "game").length;
+  const _tvCount = myEntries.filter((e) => e.media.mediaType === "tv").length;
 
   const navigateToMedia = (media: Entry["media"] | UnifiedSearchResult) => {
     const parts = media.externalId.split(":");
@@ -149,282 +126,235 @@ export default function HomePage() {
     router.push(`/media/${media.mediaType}/${rawId}`);
   };
 
-  return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-10">
-      {/* ─────────────────────────────────────────────────────────────
-          1. HERO GREETING & TASTE BREAKDOWN
-      ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/80">
-        <div className="space-y-1.5">
-          <h1 className="text-xl font-bold tracking-tight text-white">
-            Welcome back, {currentUser?.displayName || "Friend"}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-            <span className="text-zinc-200 font-medium">{myActive.length} In Progress</span>
-            <span>•</span>
-            <span className="text-zinc-200 font-medium">{myQueue.length} in Queue</span>
-            <span>•</span>
-            <span className="text-zinc-200 font-medium">{myCompleted.length} Completed</span>
-          </div>
+  const isBrandNew = myEntries.length === 0;
 
-          {/* Taste Breakdown Pills */}
-          <div className="flex items-center gap-2 pt-1 text-[11px] text-zinc-400 font-medium">
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-800">
-              🎬 {movieCount} Movies
-            </span>
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-800">
-              🎮 {gameCount} Games
-            </span>
-            <span className="px-2 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-800">
-              📺 {tvCount} TV Shows
-            </span>
-          </div>
+  return (
+    <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+      {/* ─────────────────────────────────────────────────────────────
+          1. HEADER & COMPACT STATS PILL
+      ───────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+            {getTimeGreeting()}, {currentUser?.displayName || "Friend"}
+          </h1>
+          <p className="text-sm font-medium text-muted-foreground mt-1">
+            Track your movies, TV shows, and games. Bookmark titles with 1 click.
+          </p>
         </div>
 
-        {/* Squad Profile Pills */}
-        <div className="flex flex-col sm:items-end gap-1.5">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
-            The Squad
-          </span>
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            {otherFriends.map((friend) => (
-              <button
-                key={friend.id}
-                type="button"
-                onClick={() => router.push(`/squad/${friend.username}`)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition cursor-pointer shrink-0"
-              >
-                <div className="w-4 h-4 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                  {friend.displayName[0]}
-                </div>
-                <span>{friend.displayName}</span>
-              </button>
-            ))}
+        {/* Sleek Stats Pill (Only shown if you have items, or clean summary) */}
+        <div className="flex items-center gap-5 bg-card border border-border p-3 px-6 rounded-2xl shadow-xs shrink-0">
+          <div>
+            <span className="text-2xl font-black text-foreground">{myCompleted.length}</span>
+            <span className="text-xs font-semibold text-muted-foreground block">Completed</span>
+          </div>
+          <div className="w-px h-7 bg-border" />
+          <div>
+            <span className="text-2xl font-black text-emerald-500">{myActive.length}</span>
+            <span className="text-xs font-semibold text-muted-foreground block">Active</span>
+          </div>
+          <div className="w-px h-7 bg-border" />
+          <div>
+            <span className="text-2xl font-black text-amber-500">{myQueue.length}</span>
+            <span className="text-xs font-semibold text-muted-foreground block">Queue</span>
           </div>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. JUMP BACK IN (Currently Playing / Watching)
+          2. WELCOME HERO (If user has 0 tracked titles)
       ───────────────────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <PlayCircle className="w-4 h-4 text-sky-400" />
-            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-              Jump Back In
-            </h2>
-            <span className="text-[11px] text-zinc-500 font-mono">({myActive.length})</span>
-          </div>
-
-          <Link
-            href="/explore"
-            className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 transition"
-          >
-            <span>Browse Catalog</span>
-            <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-
-        {isMyLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div className="aspect-2/3 bg-zinc-900 rounded-lg animate-pulse border border-zinc-800/60" />
-          </div>
-        ) : myActive.length === 0 ? (
-          <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/20 text-xs text-zinc-400 flex items-center justify-between">
-            <span>Nothing in progress right now. Pick a title from your queue to start!</span>
-            <button
-              type="button"
-              onClick={() => router.push("/explore")}
-              className="text-[11px] font-medium text-zinc-200 hover:text-white underline cursor-pointer"
-            >
-              Explore Titles
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {myActive.map((entry) => (
-              <div key={entry.id} className="max-w-50">
-                <MediaCard
-                  title={entry.media.title}
-                  mediaType={entry.media.mediaType}
-                  posterUrl={entry.media.posterUrl}
-                  releaseYear={entry.media.releaseYear}
-                  currentStatus={entry.status}
-                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                  onClick={() => navigateToMedia(entry.media)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────
-          3. UP NEXT IN YOUR QUEUE (Top 6 Only)
-      ───────────────────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-              Up Next in Your Queue
-            </h2>
-            <span className="text-[11px] text-zinc-500 font-mono">({myQueue.length})</span>
-          </div>
-
-          {myQueue.length > 6 && (
-            <button
-              type="button"
-              onClick={() => router.push(`/squad/${currentUser?.username}?tab=queue`)}
-              className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 transition cursor-pointer"
-            >
-              <span>View all {myQueue.length}</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-
-        {isMyLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {STATIC_SKELETON_KEYS.map((key) => (
-              <div
-                key={key}
-                className="aspect-2/3 bg-zinc-900 rounded-lg animate-pulse border border-zinc-800/60"
-              />
-            ))}
-          </div>
-        ) : myQueue.length === 0 ? (
-          <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/20 text-xs text-zinc-400 flex items-center justify-between">
-            <span>Your queue is empty. Press ⌘K to search and bookmark movies or games.</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {myQueue.slice(0, 6).map((entry) => (
-              <div key={entry.id} className="max-w-50">
-                <MediaCard
-                  title={entry.media.title}
-                  mediaType={entry.media.mediaType}
-                  posterUrl={entry.media.posterUrl}
-                  releaseYear={entry.media.releaseYear}
-                  currentStatus={entry.status}
-                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                  onClick={() => navigateToMedia(entry.media)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────
-          4. RELEASE RADAR (Upcoming countdowns from your queue)
-      ───────────────────────────────────────────────────────────── */}
-      {releaseRadar.length > 0 && (
-        <section className="space-y-3 p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/80">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-              Release Radar
-            </h2>
-            <span className="text-[10px] text-emerald-400 font-mono px-1.5 py-0.5 rounded bg-emerald-500/10">
-              {releaseRadar.length} Upcoming
+      {isBrandNew && !isMyLoading && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-card border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              Get Started
             </span>
+            <h2 className="text-xl font-bold text-foreground">Your library is currently empty</h2>
+            <p className="text-xs text-muted-foreground max-w-xl">
+              Hover over any poster below to bookmark it to your Queue (🔖), mark it In Progress
+              (▶), or Completed (✓). Or search for any title across TMDB and IGDB.
+            </p>
           </div>
-          <p className="text-[11px] text-zinc-400 -mt-1">Titles in your queue releasing soon.</p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-1">
-            {releaseRadar.slice(0, 6).map((entry) => (
-              <div key={entry.id} className="max-w-50">
-                <MediaCard
-                  title={entry.media.title}
-                  mediaType={entry.media.mediaType}
-                  posterUrl={entry.media.posterUrl}
-                  releaseYear={entry.media.releaseYear}
-                  subtitle={
-                    entry.media.releaseYear === currentYear
-                      ? "Coming this year"
-                      : `Coming in ${entry.media.releaseYear}`
-                  }
-                  currentStatus={entry.status}
-                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                  onClick={() => navigateToMedia(entry.media)}
-                />
-              </div>
-            ))}
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              href="/explore"
+              className="text-xs font-bold px-4 py-2.5 rounded-full bg-foreground text-background hover:opacity-90 transition shadow-xs flex items-center gap-2"
+            >
+              <Compass className="w-4 h-4" />
+              <span>Explore Catalog</span>
+            </Link>
+            <Link
+              href="/calendar"
+              className="text-xs font-bold px-4 py-2.5 rounded-full bg-muted text-foreground hover:bg-muted/80 transition flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Release Calendar</span>
+            </Link>
           </div>
-        </section>
+        </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          5. RECENT SQUAD FINISHES (Visual posters with ★ ratings)
+          3. JUMP BACK IN (Only shown when you actually have active items)
       ───────────────────────────────────────────────────────────── */}
-      {squadFinishes.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400" />
-            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-              Recent Squad Finishes
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {squadFinishes.map((entry) => (
-              <div key={entry.id} className="max-w-50">
-                <MediaCard
-                  title={entry.media.title}
-                  mediaType={entry.media.mediaType}
-                  posterUrl={entry.media.posterUrl}
-                  releaseYear={entry.media.releaseYear}
-                  rating={entry.rating}
-                  subtitle={`by ${entry.user.displayName}`}
-                  onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                  onClick={() => navigateToMedia(entry.media)}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-          6. TRENDING THIS WEEK (Quick Inspiration Shelf)
-      ───────────────────────────────────────────────────────────── */}
-      {trendingResults.length > 0 && (
-        <section className="space-y-3 pt-2">
+      {myActive.length > 0 && (
+        <section className="bg-card border border-border rounded-3xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
-              <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
-                Trending This Week
+              <PlayCircle className="w-4 h-4 text-emerald-500" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                Jump Back In
               </h2>
+              <span className="text-xs text-muted-foreground font-mono">({myActive.length})</span>
             </div>
 
             <Link
-              href="/explore"
-              className="text-[11px] text-zinc-400 hover:text-zinc-200 flex items-center gap-1 transition"
+              href="/library"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 transition"
             >
-              <span>Explore More</span>
-              <ArrowRight className="w-3 h-3" />
+              <span>View Library</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {trendingResults.map((item) => (
-              <div key={item.externalId} className="max-w-50">
-                <MediaCard
-                  title={item.title}
-                  mediaType={item.mediaType}
-                  posterUrl={item.posterUrl}
-                  releaseYear={item.releaseYear}
-                  onQuickStatus={(status) => setQuickStatus({ media: item, status })}
-                  onClick={() => navigateToMedia(item)}
-                />
-              </div>
+            {myActive.map((entry) => (
+              <MediaCard
+                key={entry.id}
+                title={entry.media.title}
+                mediaType={entry.media.mediaType}
+                posterUrl={entry.media.posterUrl}
+                releaseYear={entry.media.releaseYear}
+                currentStatus={entry.status}
+                onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+                onClick={() => navigateToMedia(entry.media)}
+              />
             ))}
           </div>
         </section>
       )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          4. UP NEXT IN QUEUE (Only shown when you have queue items)
+      ───────────────────────────────────────────────────────────── */}
+      {myQueue.length > 0 && (
+        <section className="bg-card border border-border rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                Up Next in Queue
+              </h2>
+              <span className="text-xs text-muted-foreground font-mono">({myQueue.length})</span>
+            </div>
+
+            <Link
+              href="/library"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 transition"
+            >
+              <span>View All</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {myQueue.slice(0, 6).map((entry) => (
+              <MediaCard
+                key={entry.id}
+                title={entry.media.title}
+                mediaType={entry.media.mediaType}
+                posterUrl={entry.media.posterUrl}
+                releaseYear={entry.media.releaseYear}
+                currentStatus={entry.status}
+                onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+                onClick={() => navigateToMedia(entry.media)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          5. TRENDING WORLDWIDE (Art-forward: Posters Front & Center!)
+      ───────────────────────────────────────────────────────────── */}
+      <section className="bg-card border border-border rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-foreground">Trending This Week</h2>
+              <p className="text-xs text-muted-foreground">
+                Most popular movies & blockbusters worldwide
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/explore"
+            className="text-xs font-bold text-muted-foreground hover:text-foreground flex items-center gap-1 transition"
+          >
+            <span>Explore All</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {isTrendingLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {DASHBOARD_SKELETONS.map((key) => (
+              <div key={key} className="aspect-2/3 bg-muted rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {trendingResults.slice(0, 12).map((item) => (
+              <MediaCard
+                key={item.externalId}
+                title={item.title}
+                mediaType={item.mediaType}
+                posterUrl={item.posterUrl}
+                releaseYear={item.releaseYear}
+                onQuickStatus={(status) => setQuickStatus({ media: item, status })}
+                onClick={() => navigateToMedia(item)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          6. SQUAD MEMBERS OVERVIEW (Clean Persona Pills)
+      ───────────────────────────────────────────────────────────── */}
+      <section className="bg-card border border-border rounded-3xl p-6 shadow-xs space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
+          The Squad
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {users.map((friend) => (
+            <div
+              key={friend.id}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 border border-border"
+            >
+              <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center font-black text-sm shrink-0">
+                {friend.displayName[0]}
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-bold text-foreground block truncate">
+                  {friend.displayName}
+                </span>
+                <span className="text-xs text-muted-foreground font-mono block truncate">
+                  @{friend.username}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

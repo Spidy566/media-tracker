@@ -2,9 +2,10 @@
 
 import { Bookmark, Calendar, Compass, Film, Home, Search } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SearchModal } from "@/components/search-modal";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Select,
   SelectContent,
@@ -16,15 +17,13 @@ import { useActiveUser } from "@/hooks/use-active-user";
 
 export function NavBar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const { users, currentUser, setActiveUser } = useActiveUser();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const isHome = pathname === "/" && !searchParams.get("tab");
+  const isHome = pathname === "/";
   const isExplore = pathname === "/explore";
   const isCalendar = pathname === "/calendar";
-  const isMyList = pathname === "/" && searchParams.get("tab") === "me";
+  const isLibrary = pathname === "/library";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,156 +38,138 @@ export function NavBar() {
 
   return (
     <>
-      {/* ─────────────────────────────────────────────────────────────
-          1. TOP NAVBAR (Static on Desktop, Minimal on Mobile)
-      ───────────────────────────────────────────────────────────── */}
-      <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          {/* Logo & Desktop Nav Links */}
+      <header className="border-b border-border bg-card/90 backdrop-blur-xl sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-6">
+          {/* Logo & Navigation Tabs */}
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700/60 flex items-center justify-center text-zinc-100 group-hover:border-zinc-500 transition">
-                <Film className="w-3.5 h-3.5 text-zinc-300" />
+            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+              <div className="w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition">
+                <Film className="w-4 h-4 stroke-[2.5]" />
               </div>
-              <span className="font-bold text-sm tracking-tight text-zinc-100 group-hover:text-white transition">
+              <span className="font-extrabold text-base tracking-tight text-foreground">
                 Tracklist
               </span>
             </Link>
 
-            {/* Desktop-only Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center bg-muted/60 p-1 rounded-full border border-border">
               <Link
                 href="/"
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
                   isHome
-                    ? "bg-zinc-800 text-zinc-100 shadow-xs"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                    ? "bg-foreground text-background shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Home
+                Dashboard
+              </Link>
+              <Link
+                href="/explore"
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
+                  isExplore
+                    ? "bg-foreground text-background shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Explore
               </Link>
               <Link
                 href="/calendar"
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
                   isCalendar
-                    ? "bg-zinc-800 text-zinc-100 shadow-xs"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                    ? "bg-foreground text-background shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Calendar
               </Link>
               <Link
-                href="/explore"
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
-                  isExplore
-                    ? "bg-zinc-800 text-zinc-100 shadow-xs"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                href="/library"
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
+                  isLibrary
+                    ? "bg-foreground text-background shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Explore
+                Library
               </Link>
             </nav>
           </div>
 
-          {/* Quick Search & Friend Switcher */}
-          <div className="flex items-center gap-3">
-            {/* Desktop Search Trigger */}
+          {/* Right Action Island: Search + Theme Toggle + User Switcher */}
+          <div className="flex items-center gap-2.5">
+            {/* Single Unified Search Button */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="hidden md:flex items-center gap-2.5 h-8 px-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition cursor-pointer"
+              className="flex items-center gap-2.5 h-9 px-3.5 rounded-full bg-muted/50 hover:bg-muted border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition cursor-pointer"
             >
-              <Search className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Search movies, shows, games...</span>
-              <kbd className="inline-flex items-center gap-0.5 ml-3 px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-400 rounded border border-zinc-700/50">
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Search titles...</span>
+              <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-background text-muted-foreground border border-border">
                 ⌘K
               </kbd>
             </button>
 
-            {/* Friend Switcher */}
+            {/* Sun / Moon Theme Switcher */}
+            <ThemeToggle />
+
+            {/* Active User Switcher */}
             {currentUser && (
-              <div className="flex items-center pl-2 md:border-l md:border-zinc-800">
-                <Select value={currentUser.id} onValueChange={setActiveUser}>
-                  <SelectTrigger className="h-8 text-xs font-medium border-zinc-800 bg-zinc-900 text-zinc-200 hover:border-zinc-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-200">
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id} className="text-xs">
-                        {u.displayName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={currentUser.id} onValueChange={setActiveUser}>
+                <SelectTrigger className="h-9 rounded-full border-border bg-card text-foreground px-3 text-xs font-semibold cursor-pointer hover:bg-muted gap-2 shadow-xs">
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[10px] font-black">
+                    {currentUser.displayName[0]}
+                  </div>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border text-popover-foreground rounded-xl shadow-xl">
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.id} className="text-xs font-medium py-1.5">
+                      {u.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
         </div>
       </header>
 
-      {/* ─────────────────────────────────────────────────────────────
-          2. MOBILE BOTTOM TAB BAR (5 Tabs)
-      ───────────────────────────────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800/80 px-2 py-1.5">
-        <div className="grid grid-cols-5 gap-1 max-w-md mx-auto">
-          {/* 1. Home */}
-          <Link
-            href="/"
-            className={`flex flex-col items-center justify-center py-1 rounded-lg transition ${
-              isHome ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Home className={`w-4 h-4 ${isHome ? "text-zinc-100" : "text-zinc-400"}`} />
-            <span className="text-[10px] font-medium mt-0.5">Home</span>
-          </Link>
-
-          {/* 2. Calendar */}
-          <Link
-            href="/calendar"
-            className={`flex flex-col items-center justify-center py-1 rounded-lg transition ${
-              isCalendar ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Calendar className={`w-4 h-4 ${isCalendar ? "text-zinc-100" : "text-zinc-400"}`} />
-            <span className="text-[10px] font-medium mt-0.5">Calendar</span>
-          </Link>
-
-          {/* 3. Explore */}
-          <Link
-            href="/explore"
-            className={`flex flex-col items-center justify-center py-1 rounded-lg transition ${
-              isExplore ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Compass className={`w-4 h-4 ${isExplore ? "text-zinc-100" : "text-zinc-400"}`} />
-            <span className="text-[10px] font-medium mt-0.5">Explore</span>
-          </Link>
-
-          {/* 4. Search */}
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(true)}
-            className="flex flex-col items-center justify-center py-1 rounded-lg text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
-          >
-            <Search className="w-4 h-4" />
-            <span className="text-[10px] font-medium mt-0.5">Search</span>
-          </button>
-
-          {/* 5. My List */}
-          <button
-            type="button"
-            onClick={() => router.push("/?tab=me")}
-            className={`flex flex-col items-center justify-center py-1 rounded-lg transition cursor-pointer ${
-              isMyList ? "text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Bookmark className={`w-4 h-4 ${isMyList ? "text-zinc-100" : "text-zinc-400"}`} />
-            <span className="text-[10px] font-medium mt-0.5">My List</span>
-          </button>
-        </div>
+      {/* Mobile Bottom Dock */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border py-2 px-6 flex justify-around">
+        <Link
+          href="/"
+          className={`p-2 rounded-lg ${isHome ? "text-foreground font-bold" : "text-muted-foreground"}`}
+        >
+          <Home className="w-5 h-5 stroke-[2.2]" />
+        </Link>
+        <Link
+          href="/explore"
+          className={`p-2 rounded-lg ${isExplore ? "text-foreground font-bold" : "text-muted-foreground"}`}
+        >
+          <Compass className="w-5 h-5 stroke-[2.2]" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          className="p-2 text-muted-foreground"
+        >
+          <Search className="w-5 h-5 stroke-[2.2]" />
+        </button>
+        <Link
+          href="/calendar"
+          className={`p-2 rounded-lg ${isCalendar ? "text-foreground font-bold" : "text-muted-foreground"}`}
+        >
+          <Calendar className="w-5 h-5 stroke-[2.2]" />
+        </Link>
+        <Link
+          href="/library"
+          className={`p-2 rounded-lg ${isLibrary ? "text-foreground font-bold" : "text-muted-foreground"}`}
+        >
+          <Bookmark className="w-5 h-5 stroke-[2.2]" />
+        </Link>
       </nav>
 
-      {/* Global Search Modal */}
       {currentUser && (
         <SearchModal
           userId={currentUser.id}
