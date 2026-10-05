@@ -1,10 +1,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bookmark, Check, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, Bookmark, Check, Play, Star, Trash2, Users } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
 
@@ -36,9 +38,8 @@ interface MediaDetail {
   squadEntries: SquadMemberEntry[];
 }
 
-const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
-
 const STAR_VALUES = [1, 2, 3, 4, 5];
+const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
 
 export default function MediaDetailPage() {
   const router = useRouter();
@@ -66,10 +67,7 @@ export default function MediaDetailPage() {
     },
   });
 
-  // Current user's entry for this item (if any)
   const myEntry = media?.squadEntries?.find((e) => e.user.id === currentUser?.id);
-
-  // Sync state with existing entry
   const activeStatus = myEntry?.status || null;
   const currentRating = rating ?? myEntry?.rating ?? null;
   const currentNote = note || myEntry?.reviewNote || "";
@@ -110,8 +108,10 @@ export default function MediaDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["media-detail", type, id] });
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
+      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
       setIsEditingNote(false);
+      toast.success("Updated your log", { description: media?.title });
     },
   });
 
@@ -126,17 +126,19 @@ export default function MediaDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["media-detail", type, id] });
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
+      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
       setRating(null);
       setNote("");
+      toast.info("Removed from your library", { description: media?.title });
     },
   });
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-12 animate-pulse space-y-6">
-        <div className="h-64 bg-zinc-900 rounded-xl" />
-        <div className="h-8 w-60 bg-zinc-900 rounded" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12 animate-pulse space-y-6">
+        <div className="h-72 bg-muted rounded-3xl" />
+        <div className="h-8 w-64 bg-muted rounded-xl" />
       </div>
     );
   }
@@ -144,11 +146,14 @@ export default function MediaDetailPage() {
   if (isError || !media) {
     return (
       <div className="max-w-md mx-auto py-24 text-center space-y-4">
-        <p className="text-zinc-300 font-semibold">Title not found</p>
+        <h2 className="text-xl font-bold text-foreground">Title Not Found</h2>
+        <p className="text-xs text-muted-foreground">
+          Unable to fetch details for this media title.
+        </p>
         <button
           type="button"
           onClick={() => router.back()}
-          className="text-xs text-zinc-400 hover:text-white underline cursor-pointer"
+          className="text-xs font-semibold px-4 py-2 rounded-full bg-foreground text-background cursor-pointer"
         >
           Go Back
         </button>
@@ -157,26 +162,28 @@ export default function MediaDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16">
-      {/* Cinematic Backdrop with Gradient Fade */}
-      <div className="relative w-full h-72 sm:h-96 overflow-hidden bg-zinc-900 border-b border-zinc-800/80">
+    <div className="min-h-screen bg-background text-foreground pb-20">
+      {/* ─────────────────────────────────────────────────────────────
+          1. CINEMATIC BACKDROP BANNER
+      ───────────────────────────────────────────────────────────── */}
+      <div className="relative w-full h-64 sm:h-96 overflow-hidden bg-muted border-b border-border">
         {media.backdropUrl && !isStealthMode ? (
           <Image
             src={media.backdropUrl}
             alt={media.title}
             fill
             priority
-            className="object-cover object-top opacity-35"
+            className="object-cover object-top opacity-30 dark:opacity-40"
           />
         ) : null}
-        <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
 
         {/* Back Button */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-6">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 pt-6">
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 text-xs font-medium text-zinc-300 backdrop-blur-md border border-zinc-800 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card/80 hover:bg-muted text-xs font-bold text-foreground backdrop-blur-md border border-border transition cursor-pointer shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>
@@ -184,12 +191,15 @@ export default function MediaDetailPage() {
         </div>
       </div>
 
-      {/* Main Content Container */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 -mt-36 relative z-10">
+      {/* ─────────────────────────────────────────────────────────────
+          2. MAIN CONTENT CONTAINER
+      ───────────────────────────────────────────────────────────── */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-8 -mt-28 sm:-mt-36 relative z-10">
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Left Column: Poster & Quick Action Card */}
-          <div className="w-48 sm:w-56 shrink-0 mx-auto md:mx-0 space-y-4">
-            <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl">
+          {/* Left Column: Poster & Personal Tracking Card */}
+          <div className="w-56 sm:w-64 shrink-0 mx-auto md:mx-0 space-y-4">
+            {/* Poster Frame */}
+            <div className="relative aspect-2/3 w-full rounded-3xl overflow-hidden bg-muted border border-border shadow-2xl">
               {media.posterUrl && !isStealthMode ? (
                 <Image
                   src={media.posterUrl}
@@ -199,72 +209,74 @@ export default function MediaDetailPage() {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-zinc-500">
-                  No Poster
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
+                  <span className="font-bold text-xs text-muted-foreground uppercase tracking-wider font-mono">
+                    No Poster Art
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Letterboxd-Style Tracking Panel */}
-            <div className="bg-zinc-900/90 backdrop-blur-md rounded-xl p-3 border border-zinc-800 space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
+            {/* Tactile Log Box */}
+            <div className="bg-card border border-border rounded-3xl p-5 shadow-lg space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono block">
                 Your Log
               </span>
 
-              {/* Status Selector */}
-              <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800/80">
+              {/* Status Switcher (3 Buttons) */}
+              <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border">
                 <button
                   type="button"
-                  title="Queue"
+                  title="Add to Queue"
                   onClick={() => updateEntry({ status: "want_to" })}
-                  className={`flex flex-col items-center py-2 rounded-md text-[11px] font-medium transition cursor-pointer ${
+                  className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     activeStatus === "want_to"
-                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-amber-400 text-black shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Bookmark className="w-3.5 h-3.5 mb-0.5" />
+                  <Bookmark className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
                   <span>Queue</span>
                 </button>
 
                 <button
                   type="button"
-                  title="In Progress"
+                  title="Currently In Progress"
                   onClick={() => updateEntry({ status: "doing" })}
-                  className={`flex flex-col items-center py-2 rounded-md text-[11px] font-medium transition cursor-pointer ${
+                  className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     activeStatus === "doing"
-                      ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-sky-400 text-black shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Play className="w-3.5 h-3.5 mb-0.5" />
+                  <Play className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
                   <span>Active</span>
                 </button>
 
                 <button
                   type="button"
-                  title="Finished"
+                  title="Mark as Completed"
                   onClick={() => updateEntry({ status: "done" })}
-                  className={`flex flex-col items-center py-2 rounded-md text-[11px] font-medium transition cursor-pointer ${
+                  className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                     activeStatus === "done"
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-emerald-500 text-black shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Check className="w-3.5 h-3.5 mb-0.5" />
+                  <Check className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
                   <span>Done</span>
                 </button>
               </div>
 
-              {/* Star Rating (1-5 Scale) */}
+              {/* 5-Star Rating Selector */}
               <div className="pt-3 border-t border-border">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-muted-foreground">Your Rating</span>
-                  <span className="text-xs font-extrabold text-amber-500 font-mono">
+                  <span className="text-xs font-black text-amber-500 font-mono">
                     {currentRating ? `★ ${currentRating} / 5` : "Not rated"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-1 bg-muted/40 p-2 rounded-xl border border-border">
+                <div className="flex items-center justify-between gap-1 bg-muted/40 p-2 rounded-2xl border border-border">
                   {STAR_VALUES.map((star) => (
                     <button
                       key={star}
@@ -275,49 +287,49 @@ export default function MediaDetailPage() {
                         setRating(next);
                         updateEntry({ newRating: next });
                       }}
-                      className="p-1.5 rounded-lg transition hover:scale-110 cursor-pointer"
+                      className="p-1 cursor-pointer transition hover:scale-110"
                     >
-                      <span
-                        className={`text-base font-black ${
+                      <Star
+                        className={`w-4 h-4 ${
                           currentRating && currentRating >= star
-                            ? "text-amber-400"
+                            ? "fill-amber-400 text-amber-400"
                             : "text-muted-foreground/30 hover:text-muted-foreground"
                         }`}
-                      >
-                        ★
-                      </span>
+                      />
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Optional Quick Note */}
-              <div className="pt-2 border-t border-zinc-800/60">
+              {/* Review Note */}
+              <div className="pt-3 border-t border-border">
                 {!isEditingNote && currentNote ? (
-                  <div className="space-y-1">
-                    <p className="text-xs text-zinc-300 italic">&ldquo;{currentNote}&rdquo;</p>
+                  <div className="space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border">
+                    <p className="text-xs text-foreground italic leading-relaxed">
+                      &ldquo;{currentNote}&rdquo;
+                    </p>
                     <button
                       type="button"
                       onClick={() => setIsEditingNote(true)}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-foreground underline cursor-pointer"
                     >
                       Edit note
                     </button>
                   </div>
                 ) : isEditingNote ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <textarea
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      placeholder="One line thought..."
-                      rows={2}
-                      className="w-full text-xs bg-zinc-950 border border-zinc-800 rounded p-1.5 text-zinc-200 outline-none focus:border-zinc-600"
+                      placeholder="Your one-line thought..."
+                      rows={3}
+                      className="w-full text-xs bg-background border border-border rounded-xl p-2.5 text-foreground placeholder:text-muted-foreground outline-none resize-none"
                     />
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => setIsEditingNote(false)}
-                        className="text-[10px] px-2 py-0.5 rounded text-zinc-400 hover:text-white"
+                        className="text-xs px-2.5 py-1 rounded-lg text-muted-foreground hover:text-foreground"
                       >
                         Cancel
                       </button>
@@ -325,7 +337,7 @@ export default function MediaDetailPage() {
                         type="button"
                         disabled={isPending}
                         onClick={() => updateEntry({ newNote: note })}
-                        className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-white hover:bg-zinc-700"
+                        className="text-xs font-bold px-3 py-1 rounded-lg bg-foreground text-background hover:opacity-90"
                       >
                         Save
                       </button>
@@ -335,55 +347,55 @@ export default function MediaDetailPage() {
                   <button
                     type="button"
                     onClick={() => setIsEditingNote(true)}
-                    className="text-[11px] text-zinc-500 hover:text-zinc-300 transition cursor-pointer block"
+                    className="text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer block"
                   >
-                    + Add a short note
+                    + Add a review note
                   </button>
                 )}
               </div>
 
-              {/* Remove Entry button if already tracked */}
+              {/* Remove Entry */}
               {myEntry && (
                 <button
                   type="button"
                   onClick={() => removeEntry()}
-                  className="w-full flex items-center justify-center gap-1 text-[10px] text-red-400 hover:text-red-300 pt-2 border-t border-zinc-800/60 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600 pt-2 border-t border-border cursor-pointer transition"
                 >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Remove from Tracklist</span>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Remove from Stash</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Right Column: Title, Metadata, Synopsis, Squad Activity & Trailer */}
+          {/* Right Column: Title, Synopsis, Squad Activity, Trailer */}
           <div className="flex-1 space-y-8 min-w-0">
-            {/* Title & Metadata Header */}
+            {/* Header Metadata */}
             <div>
-              <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
                 <span>{media.releaseYear || "TBA"}</span>
                 <span>•</span>
-                <span className="uppercase font-mono text-[10px] tracking-wider px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-                  {media.mediaType}
+                <span className="uppercase font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted border border-border text-foreground">
+                  {media.mediaType === "tv" ? "TV Series" : media.mediaType}
                 </span>
                 {media.creator && (
                   <>
                     <span>•</span>
-                    <span className="text-zinc-300">{media.creator}</span>
+                    <span className="text-foreground font-semibold">{media.creator}</span>
                   </>
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
                 {media.title}
               </h1>
 
-              {/* Genres */}
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {/* Genre Pills */}
+              <div className="flex flex-wrap gap-1.5 mt-3">
                 {media.genres.map((g) => (
                   <span
                     key={g}
-                    className="text-[11px] px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400"
+                    className="text-xs font-semibold px-3 py-1 rounded-full bg-muted/60 border border-border text-muted-foreground"
                   >
                     {g}
                   </span>
@@ -394,76 +406,87 @@ export default function MediaDetailPage() {
             {/* Synopsis */}
             {media.summary && (
               <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
                   Synopsis
                 </h3>
-                <p className="text-sm text-zinc-300 leading-relaxed max-w-2xl">{media.summary}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">
+                  {media.summary}
+                </p>
               </div>
             )}
 
-            {/* SQUAD ACTIVITY BOX (Killer feature) */}
-            <div className="space-y-3 bg-zinc-900/60 border border-zinc-800 rounded-xl p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-                <span>Squad Activity</span>
-                <span className="text-[10px] text-zinc-500 font-mono">
-                  ({media.squadEntries.length})
+            {/* SQUAD ACTIVITY BOX */}
+            <div className="space-y-4 bg-card border border-border rounded-3xl p-6 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-emerald-500" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-mono">
+                    Squad Activity
+                  </h3>
+                </div>
+                <span className="text-xs font-mono font-bold text-muted-foreground">
+                  {media.squadEntries.length} logged
                 </span>
-              </h3>
+              </div>
 
               {media.squadEntries.length === 0 ? (
-                <p className="text-xs text-zinc-500">
-                  No one in the squad has logged this yet. Be the first!
+                <p className="text-xs text-muted-foreground">
+                  No one in the squad has logged this title yet. Be the first!
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {media.squadEntries.map((entry) => (
                     <div
                       key={entry.id}
-                      className="flex items-start gap-3 p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80"
+                      className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-2"
                     >
-                      <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300 shrink-0">
-                        {entry.user.displayName[0]}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-semibold text-zinc-200 truncate">
-                            {entry.user.displayName}
-                          </span>
-                          {entry.rating && (
-                            <span className="text-xs font-bold text-amber-400">
-                              ★ {entry.rating}
+                      <div className="flex items-center justify-between">
+                        <Link
+                          href={`/squad/${entry.user.username}`}
+                          className="flex items-center gap-2 hover:opacity-80 transition"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center font-black text-xs">
+                            {entry.user.displayName[0]}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-foreground block">
+                              {entry.user.displayName}
                             </span>
-                          )}
-                        </div>
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                              {entry.status === "want_to"
+                                ? "In Queue"
+                                : entry.status === "doing"
+                                  ? "In Progress"
+                                  : "Completed"}
+                            </span>
+                          </div>
+                        </Link>
 
-                        <span className="text-[10px] uppercase font-mono text-zinc-500 block">
-                          {entry.status === "want_to"
-                            ? "In Queue"
-                            : entry.status === "doing"
-                              ? "Currently Playing/Watching"
-                              : "Completed"}
-                        </span>
-
-                        {entry.reviewNote && (
-                          <p className="text-xs text-zinc-400 italic mt-1 bg-zinc-900 p-1.5 rounded border border-zinc-800/60">
-                            &ldquo;{entry.reviewNote}&rdquo;
-                          </p>
+                        {entry.rating && (
+                          <span className="text-xs font-black text-amber-500 font-mono bg-background px-2 py-0.5 rounded-full border border-border shadow-xs">
+                            ★ {entry.rating} / 5
+                          </span>
                         )}
                       </div>
+
+                      {entry.reviewNote && (
+                        <p className="text-xs text-foreground/90 italic p-2.5 rounded-xl bg-background border border-border leading-relaxed">
+                          &ldquo;{entry.reviewNote}&rdquo;
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* YouTube Trailer (if present) */}
+            {/* YouTube Trailer */}
             {media.trailerUrl && (
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
                   Trailer
                 </h3>
-                <div className="aspect-video w-full max-w-2xl rounded-xl overflow-hidden border border-zinc-800 bg-black">
+                <div className="aspect-video w-full max-w-2xl rounded-3xl overflow-hidden border border-border bg-black shadow-lg">
                   <iframe
                     src={media.trailerUrl}
                     title={`${media.title} Trailer`}
