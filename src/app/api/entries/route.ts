@@ -17,7 +17,7 @@ const createEntrySchema = z.object({
     genres: z.array(z.string()).optional().default([]),
   }),
   status: z.enum(["want_to", "doing", "done", "dropped"]).default("want_to"),
-  rating: z.number().min(1).max(10).nullable().optional(),
+  rating: z.number().min(1).max(5).nullable().optional(),
   reviewNote: z.string().max(280).nullable().optional(),
 });
 

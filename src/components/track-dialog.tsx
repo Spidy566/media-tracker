@@ -126,7 +126,7 @@ export function TrackDialog({
 
           <div>
             <span className="text-xs font-medium text-muted-foreground mb-1 block">
-              Score (1-10)
+              Score (1-5)
             </span>
             <Select
               value={rating?.toString() ?? "none"}
@@ -137,9 +137,9 @@ export function TrackDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">No Rating</SelectItem>
-                {Array.from({ length: 10 }, (_, i) => 10 - i).map((n) => (
+                {[5, 4, 3, 2, 1].map((n) => (
                   <SelectItem key={n} value={n.toString()}>
-                    {n} / 10
+                    ★ {n} / 5
                   </SelectItem>
                 ))}
               </SelectContent>

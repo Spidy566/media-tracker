@@ -38,6 +38,8 @@ interface MediaDetail {
 
 const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
 
+const STAR_VALUES = [1, 2, 3, 4, 5];
+
 export default function MediaDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -254,31 +256,36 @@ export default function MediaDetailPage() {
                 </button>
               </div>
 
-              {/* Star Rating (1-10) */}
-              <div className="pt-2 border-t border-zinc-800/60">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] text-zinc-400">Score</span>
-                  <span className="text-xs font-bold text-amber-400">
-                    {currentRating ? `★ ${currentRating}/10` : "Not rated"}
+              {/* Star Rating (1-5 Scale) */}
+              <div className="pt-3 border-t border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-muted-foreground">Your Rating</span>
+                  <span className="text-xs font-extrabold text-amber-500 font-mono">
+                    {currentRating ? `★ ${currentRating} / 5` : "Not rated"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-1">
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((star) => (
+                <div className="flex items-center justify-between gap-1 bg-muted/40 p-2 rounded-xl border border-border">
+                  {STAR_VALUES.map((star) => (
                     <button
                       key={star}
                       type="button"
+                      aria-label={`Rate ${star} out of 5 stars`}
                       onClick={() => {
                         const next = currentRating === star ? null : star;
                         setRating(next);
                         updateEntry({ newRating: next });
                       }}
-                      className={`p-1 text-[11px] font-bold rounded transition cursor-pointer ${
-                        currentRating && currentRating >= star
-                          ? "text-amber-400 hover:text-amber-300"
-                          : "text-zinc-600 hover:text-zinc-400"
-                      }`}
+                      className="p-1.5 rounded-lg transition hover:scale-110 cursor-pointer"
                     >
-                      ★
+                      <span
+                        className={`text-base font-black ${
+                          currentRating && currentRating >= star
+                            ? "text-amber-400"
+                            : "text-muted-foreground/30 hover:text-muted-foreground"
+                        }`}
+                      >
+                        ★
+                      </span>
                     </button>
                   ))}
                 </div>

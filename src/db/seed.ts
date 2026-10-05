@@ -145,14 +145,14 @@ const ENTRIES: {
     username: "spidy",
     externalId: "tmdb:movie:872585",
     status: "done",
-    rating: 9,
+    rating: 5, // <-- Scaled to 5
     reviewNote: "Nolan's sound design in IMAX was unreal. Cillian Murphy gave a masterclass.",
   },
   {
     username: "spidy",
     externalId: "tmdb:movie:569094",
     status: "done",
-    rating: 10,
+    rating: 5, // <-- Scaled to 5
     reviewNote:
       "Visual masterpiece. The soundtrack and animation transitions alone deserve every award.",
   },
@@ -163,14 +163,14 @@ const ENTRIES: {
     username: "dave",
     externalId: "igdb:119133",
     status: "done",
-    rating: 10,
+    rating: 5, // <-- Scaled to 5
     reviewNote: "Hardest boss fights I've ever experienced, but completely worth 120 hours.",
   },
   {
     username: "dave",
     externalId: "tmdb:movie:414906",
     status: "done",
-    rating: 8,
+    rating: 4, // <-- Scaled to 4
     reviewNote: "Genuinely gritty detective noir take that worked really well.",
   },
 
@@ -179,14 +179,14 @@ const ENTRIES: {
     username: "alex",
     externalId: "igdb:1877",
     status: "done",
-    rating: 9,
+    rating: 4, // <-- Scaled to 4
     reviewNote: "Phantom Liberty fixed everything. Night City looks unbelievable on max settings.",
   },
   {
     username: "alex",
     externalId: "tmdb:movie:693134",
     status: "done",
-    rating: 10,
+    rating: 5, // <-- Scaled to 5
     reviewNote:
       "Denis Villeneuve does not miss. The cinematography during the desert battle was breathtaking.",
   },
@@ -194,7 +194,7 @@ const ENTRIES: {
     username: "alex",
     externalId: "tmdb:tv:95396",
     status: "done",
-    rating: 9,
+    rating: 5, // <-- Scaled to 5
     reviewNote: "The season finale was one of the most tense hours of television ever made.",
   },
 ];
@@ -217,8 +217,8 @@ async function seed() {
     if (!catalogIds.has(e.externalId))
       throw new Error(`Entry references unknown media: ${e.externalId}`);
     if (!usernames.has(e.username)) throw new Error(`Entry references unknown user: ${e.username}`);
-    if (e.rating !== undefined && (e.rating < 1 || e.rating > 10)) {
-      throw new Error(`Rating out of range (1-10) for ${e.username}/${e.externalId}`);
+    if (e.rating !== undefined && (e.rating < 1 || e.rating > 5)) {
+      throw new Error(`Rating out of range (1-5) for ${e.username}/${e.externalId}`);
     }
   }
 
