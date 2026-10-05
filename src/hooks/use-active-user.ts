@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useSyncExternalStore } from "react";
 
 export interface User {
   id: string;
@@ -10,7 +10,42 @@ export interface User {
   avatarUrl: string | null;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Module-Level Reactive Store (Shares state across all components)
+// ─────────────────────────────────────────────────────────────
+let currentActiveUserId: string | null =
+  typeof window !== "undefined" ? localStorage.getItem("active_user_id") : null;
+const listeners = new Set<() => void>();
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
+function getSnapshot() {
+  return currentActiveUserId;
+}
+
+function getServerSnapshot() {
+  return null;
+}
+
+function setGlobalActiveUserId(id: string) {
+  currentActiveUserId = id;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("active_user_id", id);
+  }
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
 export function useActiveUser() {
+  const queryClient = useQueryClient();
+  const activeUserId = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
   const { data } = useQuery<{ users: User[] }>({
     queryKey: ["users"],
     queryFn: async () => {
@@ -20,23 +55,19 @@ export function useActiveUser() {
   });
 
   const usersList = data?.users || [];
-  const [activeUserId, setActiveUserId] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("active_user_id");
-    }
-    return null;
-  });
 
+  // Default to first user if none set
   useEffect(() => {
     if (!activeUserId && usersList.length > 0) {
-      setActiveUserId(usersList[0].id);
-      localStorage.setItem("active_user_id", usersList[0].id);
+      setGlobalActiveUserId(usersList[0].id);
     }
-  }, [usersList, activeUserId]);
+  }, [activeUserId, usersList]);
 
+  // When switching users, update globally and refresh queries immediately
   const setActiveUser = (id: string) => {
-    setActiveUserId(id);
-    localStorage.setItem("active_user_id", id);
+    setGlobalActiveUserId(id);
+    queryClient.invalidateQueries({ queryKey: ["my-entries"] });
+    queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
   };
 
   const currentUser = usersList.find((u) => u.id === activeUserId) || usersList[0] || null;

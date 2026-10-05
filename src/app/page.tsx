@@ -328,7 +328,7 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          6. SQUAD MEMBERS OVERVIEW (Clean Persona Pills)
+          6. SQUAD MEMBERS OVERVIEW (Clickable Links)
       ───────────────────────────────────────────────────────────── */}
       <section className="bg-card border border-border rounded-3xl p-6 shadow-xs space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
@@ -336,22 +336,23 @@ export default function HomePage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {users.map((friend) => (
-            <div
+            <Link
               key={friend.id}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 border border-border"
+              href={`/squad/${friend.username}`}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-muted/40 hover:bg-muted border border-border transition-all cursor-pointer group"
             >
-              <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center font-black text-sm shrink-0">
+              <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center font-black text-sm shrink-0 group-hover:scale-105 transition">
                 {friend.displayName[0]}
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-sm font-bold text-foreground block truncate">
+                <span className="text-sm font-bold text-foreground block truncate group-hover:text-emerald-500 transition">
                   {friend.displayName}
                 </span>
                 <span className="text-xs text-muted-foreground font-mono block truncate">
                   @{friend.username}
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>

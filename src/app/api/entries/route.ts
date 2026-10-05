@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const userId = searchParams.get("userId");
+    const username = searchParams.get("username");
 
     const baseQuery = db
       .select({
@@ -125,6 +126,13 @@ export async function GET(request: NextRequest) {
     if (userId) {
       const rows = await baseQuery
         .where(eq(userMediaEntries.userId, userId))
+        .orderBy(desc(userMediaEntries.updatedAt));
+      return NextResponse.json({ entries: rows });
+    }
+
+    if (username) {
+      const rows = await baseQuery
+        .where(eq(users.username, username))
         .orderBy(desc(userMediaEntries.updatedAt));
       return NextResponse.json({ entries: rows });
     }
