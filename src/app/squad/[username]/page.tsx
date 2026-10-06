@@ -8,30 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
-
-interface Entry {
-  id: string;
-  status: MediaStatus;
-  rating: number | null;
-  reviewNote: string | null;
-  updatedAt: string;
-  user: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  media: {
-    id: string;
-    externalId: string;
-    mediaType: "movie" | "tv" | "game";
-    title: string;
-    releaseYear: number | null;
-    posterUrl: string | null;
-    creator: string | null;
-    genres: string[];
-  };
-}
+import type { Entry } from "@/types/entry";
 
 const SQUAD_SKELETON_KEYS = [
   "squad-skel-1",

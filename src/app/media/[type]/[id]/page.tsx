@@ -9,20 +9,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
-
-interface SquadMemberEntry {
-  id: string;
-  status: MediaStatus;
-  rating: number | null;
-  reviewNote: string | null;
-  updatedAt: string;
-  user: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
-}
+import type { Entry } from "@/types/entry";
 
 interface MediaDetail {
   externalId: string;
@@ -35,7 +22,7 @@ interface MediaDetail {
   genres: string[];
   creator: string | null;
   trailerUrl: string | null;
-  squadEntries: SquadMemberEntry[];
+  squadEntries: Entry[];
 }
 
 const STAR_VALUES = [1, 2, 3, 4, 5];

@@ -16,30 +16,7 @@ import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { useActiveUser } from "@/hooks/use-active-user";
-
-interface Entry {
-  id: string;
-  status: "want_to" | "doing" | "done" | "dropped";
-  rating: number | null;
-  reviewNote: string | null;
-  updatedAt: string;
-  user: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  media: {
-    id: string;
-    externalId: string;
-    mediaType: "movie" | "tv" | "game";
-    title: string;
-    releaseYear: number | null;
-    posterUrl: string | null;
-    creator: string | null;
-    genres: string[];
-  };
-}
+import type { Entry } from "@/types/entry";
 
 const DASHBOARD_SKELETONS = [
   "dash-skel-1",
