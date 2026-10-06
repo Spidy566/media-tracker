@@ -1,7 +1,8 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useSyncExternalStore } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation"; // 1. Import useRouter
+import { useEffect } from "react";
 
 export interface User {
   id: string;
@@ -10,43 +11,12 @@ export interface User {
   avatarUrl: string | null;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Module-Level Reactive Store (Shares state across all components)
-// ─────────────────────────────────────────────────────────────
-let currentActiveUserId: string | null =
-  typeof window !== "undefined" ? localStorage.getItem("active_user_id") : null;
-const listeners = new Set<() => void>();
-
-function subscribe(callback: () => void) {
-  listeners.add(callback);
-  return () => {
-    listeners.delete(callback);
-  };
-}
-
-function getSnapshot() {
-  return currentActiveUserId;
-}
-
-function getServerSnapshot() {
-  return null;
-}
-
-function setGlobalActiveUserId(id: string) {
-  currentActiveUserId = id;
-  if (typeof window !== "undefined") {
-    localStorage.setItem("active_user_id", id);
-  }
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
 export function useActiveUser() {
+  const router = useRouter(); // 2. Initialize router
   const queryClient = useQueryClient();
-  const activeUserId = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const { data } = useQuery<{ users: User[] }>({
+  // Fetch squad users
+  const { data: usersData } = useQuery<{ users: User[] }>({
     queryKey: ["users"],
     queryFn: async () => {
       const res = await fetch("/api/users");
@@ -54,27 +24,42 @@ export function useActiveUser() {
     },
   });
 
-  const usersList = data?.users || [];
+  const usersList = usersData?.users || [];
 
-  // Default to first user if none set
+  // Fetch session user
+  const { data: sessionData } = useQuery<{ user: User | null }>({
+    queryKey: ["session-user"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/session");
+      return res.json();
+    },
+  });
+
+  // Switch user mutation
+  const { mutate: switchUser } = useMutation({
+    mutationFn: async (userId: string) => {
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["session-user"] });
+      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
+      router.refresh(); // 3. Re-runs Server Components with the new session cookie!
+    },
+  });
+
   useEffect(() => {
-    if (!activeUserId && usersList.length > 0) {
-      setGlobalActiveUserId(usersList[0].id);
+    if (sessionData && !sessionData.user && usersList.length > 0) {
+      switchUser(usersList[0].id);
     }
-  }, [activeUserId, usersList]);
-
-  // When switching users, update globally and refresh queries immediately
-  const setActiveUser = (id: string) => {
-    setGlobalActiveUserId(id);
-    queryClient.invalidateQueries({ queryKey: ["my-entries"] });
-    queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
-  };
-
-  const currentUser = usersList.find((u) => u.id === activeUserId) || usersList[0] || null;
+  }, [sessionData, usersList, switchUser]);
 
   return {
     users: usersList,
-    currentUser,
-    setActiveUser,
+    currentUser: sessionData?.user ?? null,
+    setActiveUser: switchUser,
   };
 }

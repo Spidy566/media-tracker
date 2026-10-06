@@ -2,10 +2,10 @@ import { and, desc, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 const createEntrySchema = z.object({
-  userId: z.uuid(),
   media: z.object({
     externalId: z.string().min(1),
     mediaType: z.enum(["movie", "tv", "game"]),
@@ -24,6 +24,11 @@ const createEntrySchema = z.object({
 // POST /api/entries — Track or update an item
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized. Please log in." }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = createEntrySchema.safeParse(body);
 
@@ -34,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, media, status, rating, reviewNote } = parsed.data;
+    const { media, status, rating, reviewNote } = parsed.data;
 
     // Wrap both writes in a transaction so they succeed or fail together
     const { savedItem, entry } = await db.transaction(async (tx) => {
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
       const [userEntry] = await tx
         .insert(userMediaEntries)
         .values({
-          userId,
+          userId: user.id,
           mediaItemId: item.id,
           status,
           rating: rating ?? null,
@@ -149,24 +154,26 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// DELETE /api/entries?id=...&userId=... — Remove an entry from stash
+// DELETE /api/entries?id=... — Remove an entry from stash
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
-    const id = searchParams.get("id");
-    const userId = searchParams.get("userId");
-
-    if (!id || !userId) {
-      return NextResponse.json(
-        { error: "Missing required params: id and userId" },
-        { status: 400 },
-      );
+    // 1. Get user identity from cookie
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Delete only if the entry belongs to this user
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing required param: id" }, { status: 400 });
+    }
+
+    // 2. Delete ONLY if the entry belongs to THIS logged-in user
     const [deleted] = await db
       .delete(userMediaEntries)
-      .where(and(eq(userMediaEntries.id, id), eq(userMediaEntries.userId, userId)))
+      .where(and(eq(userMediaEntries.id, id), eq(userMediaEntries.userId, user.id)))
       .returning();
 
     if (!deleted) {
