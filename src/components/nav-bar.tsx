@@ -1,24 +1,19 @@
 "use client";
 
-import { Bookmark, Calendar, Compass, Film, Home, Search } from "lucide-react";
+import { Bookmark, Calendar, Compass, Film, Home, LogIn, LogOut, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthModal } from "@/components/auth-modal";
 import { SearchModal } from "@/components/search-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useActiveUser } from "@/hooks/use-active-user";
 
 export function NavBar() {
   const pathname = usePathname();
-  const { users, currentUser, setActiveUser } = useActiveUser();
+  const { currentUser, logout, isLoggingOut } = useActiveUser();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const isHome = pathname === "/";
   const isExplore = pathname === "/explore";
@@ -95,7 +90,7 @@ export function NavBar() {
             </nav>
           </div>
 
-          {/* Right Action Island: Search + Theme Toggle + User Switcher */}
+          {/* Right Action Island: Search + Theme Toggle + Auth / Profile */}
           <div className="flex items-center gap-2.5">
             {/* Single Unified Search Button */}
             <button
@@ -113,23 +108,40 @@ export function NavBar() {
             {/* Sun / Moon Theme Switcher */}
             <ThemeToggle />
 
-            {/* Active User Switcher */}
-            {currentUser && (
-              <Select value={currentUser.id} onValueChange={setActiveUser}>
-                <SelectTrigger className="h-9 rounded-full border-border bg-card text-foreground px-3 text-xs font-semibold cursor-pointer hover:bg-muted gap-2 shadow-xs">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[10px] font-black">
-                    {currentUser.displayName[0]}
+            {/* User Profile or Login Trigger */}
+            {currentUser ? (
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href={`/squad/${currentUser.username}`}
+                  className="flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full bg-muted/60 hover:bg-muted border border-border text-xs font-semibold text-foreground transition"
+                  title="View Profile"
+                >
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[11px] font-black shrink-0">
+                    {currentUser.displayName[0]?.toUpperCase()}
                   </div>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border text-popover-foreground rounded-xl shadow-xl">
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={u.id} className="text-xs font-medium py-1.5">
-                      {u.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <span className="max-w-[100px] truncate hidden sm:inline">
+                    {currentUser.displayName}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  disabled={isLoggingOut}
+                  title="Log out"
+                  className="h-9 w-9 rounded-full bg-muted/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border border-border flex items-center justify-center text-muted-foreground transition cursor-pointer disabled:opacity-50"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAuthOpen(true)}
+                className="h-9 px-4 rounded-full bg-foreground text-background font-bold text-xs hover:opacity-90 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Log In</span>
+              </button>
             )}
           </div>
         </div>
@@ -171,6 +183,7 @@ export function NavBar() {
       </nav>
 
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </>
   );
 }

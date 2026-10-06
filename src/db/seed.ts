@@ -16,8 +16,12 @@ if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "tr
 /*  Data                                                                      */
 /* -------------------------------------------------------------------------- */
 
+import { hashSync } from "bcrypt-ts";
+
 type MediaType = "movie" | "tv" | "game";
 type Status = "want_to" | "doing" | "done";
+
+const DEFAULT_PASSWORD_HASH = hashSync("password123", 10);
 
 const SQUAD = [
   { username: "spidy", displayName: "Spidy" },
@@ -25,6 +29,7 @@ const SQUAD = [
   { username: "alex", displayName: "Alex" },
 ].map((u) => ({
   ...u,
+  passwordHash: DEFAULT_PASSWORD_HASH,
   avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${u.username}`,
 }));
 
@@ -242,6 +247,7 @@ async function seed() {
         set: {
           displayName: sql`excluded.display_name`,
           avatarUrl: sql`excluded.avatar_url`,
+          passwordHash: sql`excluded.password_hash`,
         },
       })
       .returning({ id: users.id, username: users.username });

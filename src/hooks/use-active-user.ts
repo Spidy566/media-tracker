@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation"; // 1. Import useRouter
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export interface User {
   id: string;
@@ -12,7 +12,7 @@ export interface User {
 }
 
 export function useActiveUser() {
-  const router = useRouter(); // 2. Initialize router
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   // Fetch squad users
@@ -27,7 +27,7 @@ export function useActiveUser() {
   const usersList = usersData?.users || [];
 
   // Fetch session user
-  const { data: sessionData } = useQuery<{ user: User | null }>({
+  const { data: sessionData, isLoading } = useQuery<{ user: User | null }>({
     queryKey: ["session-user"],
     queryFn: async () => {
       const res = await fetch("/api/auth/session");
@@ -35,31 +35,27 @@ export function useActiveUser() {
     },
   });
 
-  // Switch user mutation
-  const { mutate: switchUser } = useMutation({
-    mutationFn: async (userId: string) => {
-      await fetch("/api/auth/session", {
+  // Logout mutation
+  const { mutate: logout, isPending: isLoggingOut } = useMutation({
+    mutationFn: async () => {
+      await fetch("/api/auth/logout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
       });
     },
     onSuccess: () => {
+      queryClient.setQueryData(["session-user"], { user: null });
       queryClient.invalidateQueries({ queryKey: ["session-user"] });
       queryClient.invalidateQueries({ queryKey: ["my-entries"] });
-      router.refresh(); // 3. Re-runs Server Components with the new session cookie!
+      router.refresh();
+      toast.success("Logged out successfully");
     },
   });
-
-  useEffect(() => {
-    if (sessionData && !sessionData.user && usersList.length > 0) {
-      switchUser(usersList[0].id);
-    }
-  }, [sessionData, usersList, switchUser]);
 
   return {
     users: usersList,
     currentUser: sessionData?.user ?? null,
-    setActiveUser: switchUser,
+    isLoading,
+    logout,
+    isLoggingOut,
   };
 }
