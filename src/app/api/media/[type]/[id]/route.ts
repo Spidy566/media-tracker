@@ -12,6 +12,15 @@ export async function GET(
   { params }: { params: Promise<{ type: string; id: string }> },
 ) {
   const { type, id } = await params;
+
+  if (type !== "movie" && type !== "tv" && type !== "game") {
+    return NextResponse.json({ error: "Invalid media type" }, { status: 400 });
+  }
+
+  if (!/^\d+$/.test(id)) {
+    return NextResponse.json({ error: "Invalid media ID" }, { status: 400 });
+  }
+
   const externalId = type === "game" ? `igdb:${id}` : `tmdb:${type}:${id}`;
 
   try {

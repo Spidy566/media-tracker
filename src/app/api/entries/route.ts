@@ -36,50 +36,54 @@ export async function POST(request: NextRequest) {
 
     const { userId, media, status, rating, reviewNote } = parsed.data;
 
-    // 1. Ensure the media item exists in our shared catalog (cache on demand)
-    const [savedItem] = await db
-      .insert(mediaItems)
-      .values({
-        externalId: media.externalId,
-        mediaType: media.mediaType,
-        title: media.title,
-        releaseYear: media.releaseYear ?? null,
-        posterUrl: media.posterUrl ?? null,
-        creator: media.creator ?? null,
-        summary: media.summary ?? null,
-        genres: media.genres ?? [],
-      })
-      .onConflictDoUpdate({
-        target: mediaItems.externalId,
-        set: {
-          // Update poster or summary if it was previously null
-          posterUrl: media.posterUrl ?? undefined,
-          summary: media.summary ?? undefined,
-        },
-      })
-      .returning();
+    // Wrap both writes in a transaction so they succeed or fail together
+    const { savedItem, entry } = await db.transaction(async (tx) => {
+      // 1. Ensure the media item exists in our shared catalog
+      const [item] = await tx
+        .insert(mediaItems)
+        .values({
+          externalId: media.externalId,
+          mediaType: media.mediaType,
+          title: media.title,
+          releaseYear: media.releaseYear ?? null,
+          posterUrl: media.posterUrl ?? null,
+          creator: media.creator ?? null,
+          summary: media.summary ?? null,
+          genres: media.genres ?? [],
+        })
+        .onConflictDoUpdate({
+          target: mediaItems.externalId,
+          set: {
+            posterUrl: media.posterUrl ?? undefined,
+            summary: media.summary ?? undefined,
+          },
+        })
+        .returning();
 
-    // 2. Link the user to the media item (or update their current status/rating)
-    const [entry] = await db
-      .insert(userMediaEntries)
-      .values({
-        userId,
-        mediaItemId: savedItem.id,
-        status,
-        rating: rating ?? null,
-        reviewNote: reviewNote ?? null,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [userMediaEntries.userId, userMediaEntries.mediaItemId],
-        set: {
+      // 2. Link the user to the media item
+      const [userEntry] = await tx
+        .insert(userMediaEntries)
+        .values({
+          userId,
+          mediaItemId: item.id,
           status,
           rating: rating ?? null,
           reviewNote: reviewNote ?? null,
           updatedAt: new Date(),
-        },
-      })
-      .returning();
+        })
+        .onConflictDoUpdate({
+          target: [userMediaEntries.userId, userMediaEntries.mediaItemId],
+          set: {
+            status,
+            rating: rating ?? null,
+            reviewNote: reviewNote ?? null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      return { savedItem: item, entry: userEntry };
+    });
 
     return NextResponse.json({ success: true, entry, media: savedItem }, { status: 201 });
   } catch (error) {
