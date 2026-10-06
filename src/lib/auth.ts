@@ -4,9 +4,6 @@ import { users } from "@/db/schema";
 import { db } from "@/lib/db";
 
 const SESSION_COOKIE_NAME = "tracklist_session";
-// Fallback cookie name for seamless backward compatibility during development
-const LEGACY_COOKIE_NAME = "tracklist_user_id";
-
 const AUTH_SECRET = process.env.AUTH_SECRET || "tracklist-dev-secret-key-replace-in-prod";
 
 async function signValue(value: string): Promise<string> {
@@ -56,11 +53,6 @@ export async function getCurrentUser() {
     }
   }
 
-  // Fallback to legacy dev cookie if session cookie is not set
-  if (!userId) {
-    userId = cookieStore.get(LEGACY_COOKIE_NAME)?.value || null;
-  }
-
   if (!userId) {
     return null;
   }
@@ -94,14 +86,12 @@ export async function setSessionUser(userId: string) {
     path: "/",
     maxAge: 60 * 60 * 24 * 30, // 30 days
   });
-
-  // Clean up legacy cookie if present
-  cookieStore.delete(LEGACY_COOKIE_NAME);
 }
 
 // 3. Clear session cookie (Log out)
 export async function clearSession() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
-  cookieStore.delete(LEGACY_COOKIE_NAME);
+  // Also clean up old legacy cookie if present
+  cookieStore.delete("tracklist_user_id");
 }
