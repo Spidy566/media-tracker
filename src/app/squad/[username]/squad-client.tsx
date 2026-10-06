@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
-import { useActiveUser } from "@/hooks/use-active-user";
 import type { Entry } from "@/types/entry";
 
 interface SquadClientProps {
@@ -14,7 +13,6 @@ interface SquadClientProps {
 
 export function SquadClient({ entries }: SquadClientProps) {
   const router = useRouter();
-  const { currentUser } = useActiveUser();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<"all" | MediaStatus>("done");
@@ -22,16 +20,15 @@ export function SquadClient({ entries }: SquadClientProps) {
 
   const { mutate: quickTrack } = useMutation({
     mutationFn: async ({ media, status }: { media: Entry["media"]; status: MediaStatus }) => {
-      if (!currentUser) return;
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: currentUser.id,
           media,
           status,
         }),
       });
+      if (!res.ok) throw new Error("Failed to track");
       return res.json();
     },
     onSuccess: (_, variables) => {

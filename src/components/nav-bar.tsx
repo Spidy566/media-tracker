@@ -170,13 +170,7 @@ export function NavBar() {
         </Link>
       </nav>
 
-      {currentUser && (
-        <SearchModal
-          userId={currentUser.id}
-          isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
-        />
-      )}
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );
 }

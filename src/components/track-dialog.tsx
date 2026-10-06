@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface TrackDialogProps {
   media: UnifiedSearchResult;
-  userId: string;
   onClose: () => void;
   initialStatus?: "want_to" | "doing" | "done" | "dropped";
   initialRating?: number | null;
@@ -25,7 +24,6 @@ interface TrackDialogProps {
 
 export function TrackDialog({
   media,
-  userId,
   onClose,
   initialStatus = "want_to",
   initialRating = null,
@@ -52,7 +50,6 @@ export function TrackDialog({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
           media,
           status,
           rating,

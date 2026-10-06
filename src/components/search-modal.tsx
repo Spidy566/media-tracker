@@ -9,14 +9,13 @@ import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { useDebounce } from "@/hooks/use-debounce";
 
 interface SearchModalProps {
-  userId: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
 
-export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
+export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState("");
   const [trackedStatus, setTrackedStatus] = useState<Record<string, string>>({});
   const [activeLoggingId, setActiveLoggingId] = useState<string | null>(null);
@@ -62,7 +61,6 @@ export function SearchModal({ userId, isOpen, onClose }: SearchModalProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
           media,
           status,
           rating: userRating ?? null,

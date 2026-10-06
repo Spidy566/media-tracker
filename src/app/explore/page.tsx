@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useActiveUser } from "@/hooks/use-active-user";
 
 const GENRES = [
   "Action",
@@ -35,7 +34,6 @@ const EXPLORE_SKELETON_IDS = Array.from({ length: 18 }, (_, i) => `explore-skel-
 
 export default function ExplorePage() {
   const router = useRouter();
-  const { currentUser } = useActiveUser();
 
   const [mediaType, setMediaType] = useState<"game" | "movie" | "tv">("game");
   const [sort, setSort] = useState("popular");
@@ -103,16 +101,15 @@ export default function ExplorePage() {
       media: UnifiedSearchResult;
       status: "want_to" | "doing" | "done";
     }) => {
-      if (!currentUser) return;
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: currentUser.id,
           media,
           status,
         }),
       });
+      if (!res.ok) throw new Error("Failed to track");
       return res.json();
     },
     onSuccess: (_, variables) => {
@@ -402,12 +399,8 @@ export default function ExplorePage() {
       </div>
 
       {/* Quick-Log Modal */}
-      {selectedMedia && currentUser && (
-        <TrackDialog
-          media={selectedMedia}
-          userId={currentUser.id}
-          onClose={() => setSelectedMedia(null)}
-        />
+      {selectedMedia && (
+        <TrackDialog media={selectedMedia} onClose={() => setSelectedMedia(null)} />
       )}
     </div>
   );

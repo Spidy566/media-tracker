@@ -7,7 +7,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { CalendarItem } from "@/app/api/calendar/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
-import { useActiveUser } from "@/hooks/use-active-user";
 
 const CALENDAR_SKELETON_KEYS = [
   "cal-skel-1",
@@ -54,7 +53,6 @@ function getMonthGroup(dateStr: string | null) {
 
 export default function CalendarPage() {
   const router = useRouter();
-  const { currentUser } = useActiveUser();
   const queryClient = useQueryClient();
   const [mediaFilter, setMediaFilter] = useState<"all" | "movie_tv" | "game">("all");
   const [langFilter, setLangFilter] = useState<string>("all");
@@ -70,16 +68,15 @@ export default function CalendarPage() {
 
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({ media, status }: { media: CalendarItem; status: MediaStatus }) => {
-      if (!currentUser) return;
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: currentUser.id,
           media,
           status,
         }),
       });
+      if (!res.ok) throw new Error("Failed to track");
       return res.json();
     },
     onSuccess: (_, variables) => {
