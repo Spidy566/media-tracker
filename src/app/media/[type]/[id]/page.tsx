@@ -1,163 +1,169 @@
-"use client";
-
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bookmark, Check, Play, Star, Trash2, Users } from "lucide-react";
+import { eq } from "drizzle-orm";
+import { ArrowLeft, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
-import { toast } from "sonner";
-import type { MediaStatus } from "@/components/media-card";
-import { useActiveUser } from "@/hooks/use-active-user";
+import { notFound } from "next/navigation";
+import { mediaItems, userMediaEntries, users } from "@/db/schema";
+import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { igdbFetch } from "@/lib/igdb";
+import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
+import { tmdbFetch } from "@/lib/tmdb";
 import type { Entry } from "@/types/entry";
+import type { IGDBGameItem } from "@/types/igdb";
+import { MediaLogCard } from "./media-log-card";
 
-interface MediaDetail {
-  externalId: string;
-  mediaType: "movie" | "tv" | "game";
-  title: string;
-  releaseYear: number | null;
-  posterUrl: string | null;
-  backdropUrl: string | null;
-  summary: string | null;
-  genres: string[];
-  creator: string | null;
-  trailerUrl: string | null;
-  squadEntries: Entry[];
-}
-
-const STAR_VALUES = [1, 2, 3, 4, 5];
 const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
 
-export default function MediaDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const queryClient = useQueryClient();
-  const { currentUser } = useActiveUser();
+export default async function MediaDetailPage({
+  params,
+}: {
+  params: Promise<{ type: string; id: string }>;
+}) {
+  const { type, id } = await params;
 
-  const type = params.type as string;
-  const id = params.id as string;
-
-  const [rating, setRating] = useState<number | null>(null);
-  const [note, setNote] = useState<string>("");
-  const [isEditingNote, setIsEditingNote] = useState(false);
-
-  const {
-    data: media,
-    isLoading,
-    isError,
-  } = useQuery<MediaDetail>({
-    queryKey: ["media-detail", type, id],
-    queryFn: async () => {
-      const res = await fetch(`/api/media/${type}/${id}`);
-      if (!res.ok) throw new Error("Failed to load details");
-      return res.json();
-    },
-  });
-
-  const myEntry = media?.squadEntries?.find((e) => e.user.id === currentUser?.id);
-  const activeStatus = myEntry?.status || null;
-  const currentRating = rating ?? myEntry?.rating ?? null;
-  const currentNote = note || myEntry?.reviewNote || "";
-
-  // Save / Update mutation
-  const { mutate: updateEntry, isPending } = useMutation({
-    mutationFn: async ({
-      status,
-      newRating,
-      newNote,
-    }: {
-      status?: MediaStatus;
-      newRating?: number | null;
-      newNote?: string | null;
-    }) => {
-      if (!currentUser || !media) return;
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          media: {
-            externalId: media.externalId,
-            mediaType: media.mediaType,
-            title: media.title,
-            releaseYear: media.releaseYear,
-            posterUrl: media.posterUrl,
-            creator: media.creator,
-            summary: media.summary,
-            genres: media.genres,
-          },
-          status: status || activeStatus || "want_to",
-          rating: newRating !== undefined ? newRating : currentRating,
-          reviewNote: newNote !== undefined ? newNote : currentNote || null,
-        }),
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["media-detail", type, id] });
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
-      setIsEditingNote(false);
-      toast.success("Updated your log", { description: media?.title });
-    },
-  });
-
-  // Delete mutation
-  const { mutate: removeEntry } = useMutation({
-    mutationFn: async () => {
-      if (!myEntry || !currentUser) return;
-      const res = await fetch(`/api/entries?id=${myEntry.id}&userId=${currentUser.id}`, {
-        method: "DELETE",
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["media-detail", type, id] });
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
-      queryClient.invalidateQueries({ queryKey: ["squad-entries"] });
-      setRating(null);
-      setNote("");
-      toast.info("Removed from your library", { description: media?.title });
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12 animate-pulse space-y-6">
-        <div className="h-72 bg-muted rounded-3xl" />
-        <div className="h-8 w-64 bg-muted rounded-xl" />
-      </div>
-    );
+  if (type !== "movie" && type !== "tv" && type !== "game") {
+    notFound();
+  }
+  if (!/^\d+$/.test(id)) {
+    notFound();
   }
 
-  if (isError || !media) {
-    return (
-      <div className="max-w-md mx-auto py-24 text-center space-y-4">
-        <h2 className="text-xl font-bold text-foreground">Title Not Found</h2>
-        <p className="text-xs text-muted-foreground">
-          Unable to fetch details for this media title.
-        </p>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="text-xs font-semibold px-4 py-2 rounded-full bg-foreground text-background cursor-pointer"
-        >
-          Go Back
-        </button>
-      </div>
-    );
+  const externalId = type === "game" ? `igdb:${id}` : `tmdb:${type}:${id}`;
+  const currentUser = await getCurrentUser();
+
+  // 1. Fetch metadata from TMDB or IGDB
+  let title = "Untitled";
+  let releaseYear: number | null = null;
+  let posterUrl: string | null = null;
+  let backdropUrl: string | null = null;
+  let summary: string | null = null;
+  let genres: string[] = [];
+  let creator: string | null = null;
+  let trailerUrl: string | null = null;
+
+  try {
+    if (type === "movie" || type === "tv") {
+      const tmdbData = await tmdbFetch(`/${type}/${id}?append_to_response=videos,credits`);
+      title = tmdbData.title || tmdbData.name || "Untitled";
+      const dateStr = tmdbData.release_date || tmdbData.first_air_date;
+      releaseYear = dateStr ? new Date(dateStr).getFullYear() : null;
+      posterUrl = tmdbData.poster_path
+        ? `https://image.tmdb.org/t/p/w780${tmdbData.poster_path}`
+        : null;
+      backdropUrl = tmdbData.backdrop_path
+        ? `https://image.tmdb.org/t/p/w1280${tmdbData.backdrop_path}`
+        : null;
+      summary = tmdbData.overview || null;
+      genres = tmdbData.genres?.map((g: { name: string }) => g.name) || [];
+
+      const director =
+        tmdbData.credits?.crew?.find((c: { job: string; name: string }) => c.job === "Director")
+          ?.name ||
+        tmdbData.created_by?.[0]?.name ||
+        null;
+      creator = director;
+
+      const trailer = tmdbData.videos?.results?.find(
+        (v: { site: string; type: string; key: string }) =>
+          v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"),
+      );
+      trailerUrl = trailer?.key ? `https://www.youtube.com/embed/${trailer.key}` : null;
+    } else {
+      const apicalypse = `where id = ${id}; fields name,summary,cover.url,screenshots.url,videos.video_id,first_release_date,genres.name,involved_companies.company.name; limit 1;`;
+      const [game]: IGDBGameItem[] = await igdbFetch("/games", apicalypse);
+
+      if (!game) notFound();
+
+      title = game.name;
+      releaseYear = game.first_release_date
+        ? new Date(game.first_release_date * 1000).getFullYear()
+        : null;
+      posterUrl = getIgdbCoverUrl(game.cover?.url, "cover_big");
+      const screenshots = (game as { screenshots?: { url: string }[] }).screenshots;
+      backdropUrl = screenshots?.[0]?.url
+        ? `https:${screenshots[0].url.replace("t_thumb", "t_1080p")}`
+        : null;
+      summary = game.summary || null;
+      genres = game.genres?.map((g) => g.name) || [];
+      creator = game.involved_companies?.[0]?.company?.name || null;
+
+      const videos = (game as { videos?: { video_id: string }[] }).videos;
+      trailerUrl = videos?.[0]?.video_id
+        ? `https://www.youtube.com/embed/${videos[0].video_id}`
+        : null;
+    }
+  } catch (err) {
+    console.error("Failed to fetch media details:", err);
+    notFound();
   }
+
+  // 2. Fetch squad activity from database
+  const [savedItem] = await db
+    .select()
+    .from(mediaItems)
+    .where(eq(mediaItems.externalId, externalId))
+    .limit(1);
+
+  let squadEntries: Entry[] = [];
+  if (savedItem) {
+    const rawSquad = await db
+      .select({
+        id: userMediaEntries.id,
+        status: userMediaEntries.status,
+        rating: userMediaEntries.rating,
+        reviewNote: userMediaEntries.reviewNote,
+        updatedAt: userMediaEntries.updatedAt,
+        user: {
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          avatarUrl: users.avatarUrl,
+        },
+        media: {
+          id: mediaItems.id,
+          externalId: mediaItems.externalId,
+          mediaType: mediaItems.mediaType,
+          title: mediaItems.title,
+          releaseYear: mediaItems.releaseYear,
+          posterUrl: mediaItems.posterUrl,
+          creator: mediaItems.creator,
+          genres: mediaItems.genres,
+        },
+      })
+      .from(userMediaEntries)
+      .innerJoin(users, eq(userMediaEntries.userId, users.id))
+      .innerJoin(mediaItems, eq(userMediaEntries.mediaItemId, mediaItems.id))
+      .where(eq(userMediaEntries.mediaItemId, savedItem.id));
+
+    squadEntries = rawSquad.map((e) => ({
+      ...e,
+      updatedAt: e.updatedAt.toISOString(),
+    }));
+  }
+
+  const myEntry = squadEntries.find((e) => e.user.id === currentUser?.id) || null;
+
+  const mediaData = {
+    id: savedItem?.id || externalId,
+    externalId,
+    mediaType: type as "movie" | "tv" | "game",
+    title,
+    releaseYear,
+    posterUrl,
+    creator,
+    summary,
+    genres,
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
-      {/* ─────────────────────────────────────────────────────────────
-          1. CINEMATIC BACKDROP BANNER
-      ───────────────────────────────────────────────────────────── */}
+      {/* 1. Backdrop */}
       <div className="relative w-full h-64 sm:h-96 overflow-hidden bg-muted border-b border-border">
-        {media.backdropUrl && !isStealthMode ? (
+        {backdropUrl && !isStealthMode ? (
           <Image
-            src={media.backdropUrl}
-            alt={media.title}
+            src={backdropUrl}
+            alt={title}
             fill
             priority
             className="object-cover object-top opacity-30 dark:opacity-40"
@@ -165,36 +171,25 @@ export default function MediaDetailPage() {
         ) : null}
         <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
 
-        {/* Back Button */}
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 pt-6">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card/80 hover:bg-muted text-xs font-bold text-foreground backdrop-blur-md border border-border transition cursor-pointer shadow-xs"
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card/80 hover:bg-muted text-xs font-bold text-foreground backdrop-blur-md border border-border transition shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>
-          </button>
+          </Link>
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          2. MAIN CONTENT CONTAINER
-      ───────────────────────────────────────────────────────────── */}
+      {/* 2. Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-8 -mt-28 sm:-mt-36 relative z-10">
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Left Column: Poster & Personal Tracking Card */}
+          {/* Left: Poster & Interactive Log Card */}
           <div className="w-56 sm:w-64 shrink-0 mx-auto md:mx-0 space-y-4">
-            {/* Poster Frame */}
             <div className="relative aspect-2/3 w-full rounded-3xl overflow-hidden bg-muted border border-border shadow-2xl">
-              {media.posterUrl && !isStealthMode ? (
-                <Image
-                  src={media.posterUrl}
-                  alt={media.title}
-                  fill
-                  priority
-                  className="object-cover"
-                />
+              {posterUrl && !isStealthMode ? (
+                <Image src={posterUrl} alt={title} fill priority className="object-cover" />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
                   <span className="font-bold text-xs text-muted-foreground uppercase tracking-wider font-mono">
@@ -204,182 +199,32 @@ export default function MediaDetailPage() {
               )}
             </div>
 
-            {/* Tactile Log Box */}
-            <div className="bg-card border border-border rounded-3xl p-5 shadow-lg space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono block">
-                Your Log
-              </span>
-
-              {/* Status Switcher (3 Buttons) */}
-              <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border">
-                <button
-                  type="button"
-                  title="Add to Queue"
-                  onClick={() => updateEntry({ status: "want_to" })}
-                  className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    activeStatus === "want_to"
-                      ? "bg-amber-400 text-black shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Bookmark className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-                  <span>Queue</span>
-                </button>
-
-                <button
-                  type="button"
-                  title="Currently In Progress"
-                  onClick={() => updateEntry({ status: "doing" })}
-                  className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    activeStatus === "doing"
-                      ? "bg-sky-400 text-black shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Play className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-                  <span>Active</span>
-                </button>
-
-                <button
-                  type="button"
-                  title="Mark as Completed"
-                  onClick={() => updateEntry({ status: "done" })}
-                  className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    activeStatus === "done"
-                      ? "bg-emerald-500 text-black shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Check className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-                  <span>Done</span>
-                </button>
-              </div>
-
-              {/* 5-Star Rating Selector */}
-              <div className="pt-3 border-t border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-muted-foreground">Your Rating</span>
-                  <span className="text-xs font-black text-amber-500 font-mono">
-                    {currentRating ? `★ ${currentRating} / 5` : "Not rated"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-1 bg-muted/40 p-2 rounded-2xl border border-border">
-                  {STAR_VALUES.map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      aria-label={`Rate ${star} out of 5 stars`}
-                      onClick={() => {
-                        const next = currentRating === star ? null : star;
-                        setRating(next);
-                        updateEntry({ newRating: next });
-                      }}
-                      className="p-1 cursor-pointer transition hover:scale-110"
-                    >
-                      <Star
-                        className={`w-4 h-4 ${
-                          currentRating && currentRating >= star
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-muted-foreground/30 hover:text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Review Note */}
-              <div className="pt-3 border-t border-border">
-                {!isEditingNote && currentNote ? (
-                  <div className="space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border">
-                    <p className="text-xs text-foreground italic leading-relaxed">
-                      &ldquo;{currentNote}&rdquo;
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingNote(true)}
-                      className="text-[11px] font-semibold text-muted-foreground hover:text-foreground underline cursor-pointer"
-                    >
-                      Edit note
-                    </button>
-                  </div>
-                ) : isEditingNote ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Your one-line thought..."
-                      rows={3}
-                      className="w-full text-xs bg-background border border-border rounded-xl p-2.5 text-foreground placeholder:text-muted-foreground outline-none resize-none"
-                    />
-                    <div className="flex justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingNote(false)}
-                        className="text-xs px-2.5 py-1 rounded-lg text-muted-foreground hover:text-foreground"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => updateEntry({ newNote: note })}
-                        className="text-xs font-bold px-3 py-1 rounded-lg bg-foreground text-background hover:opacity-90"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingNote(true)}
-                    className="text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer block"
-                  >
-                    + Add a review note
-                  </button>
-                )}
-              </div>
-
-              {/* Remove Entry */}
-              {myEntry && (
-                <button
-                  type="button"
-                  onClick={() => removeEntry()}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600 pt-2 border-t border-border cursor-pointer transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove from Stash</span>
-                </button>
-              )}
-            </div>
+            <MediaLogCard media={mediaData} initialEntry={myEntry} />
           </div>
 
-          {/* Right Column: Title, Synopsis, Squad Activity, Trailer */}
+          {/* Right: Details & Squad Activity */}
           <div className="flex-1 space-y-8 min-w-0">
-            {/* Header Metadata */}
             <div>
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
-                <span>{media.releaseYear || "TBA"}</span>
+                <span>{releaseYear || "TBA"}</span>
                 <span>•</span>
                 <span className="uppercase font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted border border-border text-foreground">
-                  {media.mediaType === "tv" ? "TV Series" : media.mediaType}
+                  {type === "tv" ? "TV Series" : type}
                 </span>
-                {media.creator && (
+                {creator && (
                   <>
                     <span>•</span>
-                    <span className="text-foreground font-semibold">{media.creator}</span>
+                    <span className="text-foreground font-semibold">{creator}</span>
                   </>
                 )}
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
-                {media.title}
+                {title}
               </h1>
 
-              {/* Genre Pills */}
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {media.genres.map((g) => (
+                {genres.map((g) => (
                   <span
                     key={g}
                     className="text-xs font-semibold px-3 py-1 rounded-full bg-muted/60 border border-border text-muted-foreground"
@@ -390,19 +235,16 @@ export default function MediaDetailPage() {
               </div>
             </div>
 
-            {/* Synopsis */}
-            {media.summary && (
+            {summary && (
               <div className="space-y-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
                   Synopsis
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">
-                  {media.summary}
-                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">{summary}</p>
               </div>
             )}
 
-            {/* SQUAD ACTIVITY BOX */}
+            {/* Squad Activity */}
             <div className="space-y-4 bg-card border border-border rounded-3xl p-6 shadow-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -412,17 +254,17 @@ export default function MediaDetailPage() {
                   </h3>
                 </div>
                 <span className="text-xs font-mono font-bold text-muted-foreground">
-                  {media.squadEntries.length} logged
+                  {squadEntries.length} logged
                 </span>
               </div>
 
-              {media.squadEntries.length === 0 ? (
+              {squadEntries.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   No one in the squad has logged this title yet. Be the first!
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {media.squadEntries.map((entry) => (
+                  {squadEntries.map((entry) => (
                     <div
                       key={entry.id}
                       className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-2"
@@ -467,16 +309,15 @@ export default function MediaDetailPage() {
               )}
             </div>
 
-            {/* YouTube Trailer */}
-            {media.trailerUrl && (
+            {trailerUrl && (
               <div className="space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
                   Trailer
                 </h3>
                 <div className="aspect-video w-full max-w-2xl rounded-3xl overflow-hidden border border-border bg-black shadow-lg">
                   <iframe
-                    src={media.trailerUrl}
-                    title={`${media.title} Trailer`}
+                    src={trailerUrl}
+                    title={`${title} Trailer`}
                     className="w-full h-full"
                     allowFullScreen
                   />
