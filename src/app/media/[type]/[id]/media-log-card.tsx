@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { MediaStatus } from "@/components/media-card";
+import { logEntryApi } from "@/lib/api-entries";
 import type { Entry } from "@/types/entry";
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
@@ -36,17 +37,12 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
       newRating?: number | null;
       newNote?: string | null;
     }) => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status: status || activeStatus || "want_to",
-          rating: newRating !== undefined ? newRating : rating,
-          reviewNote: newNote !== undefined ? newNote : note || null,
-        }),
+      return logEntryApi({
+        media,
+        status: status || activeStatus || "want_to",
+        rating: newRating !== undefined ? newRating : rating,
+        reviewNote: newNote !== undefined ? newNote : note || null,
       });
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-entries"] });

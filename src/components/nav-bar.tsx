@@ -8,6 +8,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { SearchModal } from "@/components/search-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useActiveUser } from "@/hooks/use-active-user";
+import { AUTH_MODAL_EVENT } from "@/lib/auth-events";
 
 export function NavBar() {
   const pathname = usePathname();
@@ -19,6 +20,12 @@ export function NavBar() {
   const isExplore = pathname === "/explore";
   const isCalendar = pathname === "/calendar";
   const isLibrary = pathname === "/library";
+
+  useEffect(() => {
+    const handleOpenAuth = () => setIsAuthOpen(true);
+    window.addEventListener(AUTH_MODAL_EVENT, handleOpenAuth);
+    return () => window.removeEventListener(AUTH_MODAL_EVENT, handleOpenAuth);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -119,7 +126,7 @@ export function NavBar() {
                   <div className="w-6 h-6 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[11px] font-black shrink-0">
                     {currentUser.displayName[0]?.toUpperCase()}
                   </div>
-                  <span className="max-w-[100px] truncate hidden sm:inline">
+                  <span className="max-w-25 truncate hidden sm:inline">
                     {currentUser.displayName}
                   </span>
                 </Link>

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { CalendarItem } from "@/app/api/calendar/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { logEntryApi } from "@/lib/api-entries";
 
 const CALENDAR_SKELETON_KEYS = [
   "cal-skel-1",
@@ -68,16 +69,10 @@ export default function CalendarPage() {
 
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({ media, status }: { media: CalendarItem; status: MediaStatus }) => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status,
-        }),
+      return logEntryApi({
+        media,
+        status,
       });
-      if (!res.ok) throw new Error("Failed to track");
-      return res.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["my-entries"] });

@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { logEntryApi } from "@/lib/api-entries";
 import type { Entry, EntryUser } from "@/types/entry";
 
 interface DashboardClientProps {
@@ -49,15 +50,10 @@ export function DashboardClient({
       media: Entry["media"] | UnifiedSearchResult;
       status: MediaStatus;
     }) => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status,
-        }),
+      return logEntryApi({
+        media,
+        status,
       });
-      return res.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["my-entries"] });

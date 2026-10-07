@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { logEntryApi } from "@/lib/api-entries";
 
 const GENRES = [
   "Action",
@@ -101,16 +102,10 @@ export default function ExplorePage() {
       media: UnifiedSearchResult;
       status: "want_to" | "doing" | "done";
     }) => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status,
-        }),
+      return logEntryApi({
+        media,
+        status,
       });
-      if (!res.ok) throw new Error("Failed to track");
-      return res.json();
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["entries"] });

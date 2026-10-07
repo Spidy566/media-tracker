@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { useDebounce } from "@/hooks/use-debounce";
+import { logEntryApi } from "@/lib/api-entries";
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -57,18 +58,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       userRating?: number | null;
       reviewNote?: string | null;
     }) => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status,
-          rating: userRating ?? null,
-          reviewNote: reviewNote || null,
-        }),
+      return logEntryApi({
+        media,
+        status,
+        rating: userRating ?? null,
+        reviewNote: reviewNote || null,
       });
-      if (!res.ok) throw new Error("Failed to track");
-      return res.json();
     },
     onSuccess: (_, variables) => {
       setTrackedStatus((prev) => ({

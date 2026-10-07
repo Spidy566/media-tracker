@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { logEntryApi } from "@/lib/api-entries";
 import type { Entry } from "@/types/entry";
 
 interface LibraryClientProps {
@@ -21,15 +22,10 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
 
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({ media, status }: { media: Entry["media"]; status: MediaStatus }) => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status,
-        }),
+      return logEntryApi({
+        media,
+        status,
       });
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-entries"] });

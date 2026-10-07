@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { logEntryApi } from "@/lib/api-entries";
 
 interface TrackDialogProps {
   media: UnifiedSearchResult;
@@ -46,19 +47,12 @@ export function TrackDialog({
 
   const { mutate: saveEntry, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          media,
-          status,
-          rating,
-          reviewNote: note.trim().length > 0 ? note.trim() : null,
-        }),
+      return logEntryApi({
+        media,
+        status,
+        rating,
+        reviewNote: note.trim().length > 0 ? note.trim() : null,
       });
-
-      if (!res.ok) throw new Error("Failed to save entry");
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["entries"] });
