@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { ArrowLeft, Users } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PosterImage } from "@/components/poster-image";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -12,8 +12,7 @@ import { tmdbFetch } from "@/lib/tmdb";
 import type { Entry } from "@/types/entry";
 import type { IGDBGameItem } from "@/types/igdb";
 import { MediaLogCard } from "./media-log-card";
-
-const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
+import { TrailerEmbed } from "./trailer-embed";
 
 export default async function MediaDetailPage({
   params,
@@ -160,15 +159,15 @@ export default async function MediaDetailPage({
     <div className="min-h-screen bg-background text-foreground pb-20">
       {/* 1. Backdrop */}
       <div className="relative w-full h-64 sm:h-96 overflow-hidden bg-muted border-b border-border">
-        {backdropUrl && !isStealthMode ? (
-          <Image
+        {backdropUrl && (
+          <PosterImage
             src={backdropUrl}
-            alt={title}
-            fill
+            title={title}
             priority
             className="object-cover object-top opacity-30 dark:opacity-40"
+            fallback="none"
           />
-        ) : null}
+        )}
         <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 pt-6">
@@ -188,15 +187,13 @@ export default async function MediaDetailPage({
           {/* Left: Poster & Interactive Log Card */}
           <div className="w-56 sm:w-64 shrink-0 mx-auto md:mx-0 space-y-4">
             <div className="relative aspect-2/3 w-full rounded-3xl overflow-hidden bg-muted border border-border shadow-2xl">
-              {posterUrl && !isStealthMode ? (
-                <Image src={posterUrl} alt={title} fill priority className="object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
-                  <span className="font-bold text-xs text-muted-foreground uppercase tracking-wider font-mono">
-                    No Poster Art
-                  </span>
-                </div>
-              )}
+              <PosterImage
+                src={posterUrl}
+                title={title}
+                mediaType={type}
+                priority
+                className="object-cover"
+              />
             </div>
 
             <MediaLogCard media={mediaData} initialEntry={myEntry} />
@@ -314,14 +311,7 @@ export default async function MediaDetailPage({
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono">
                   Trailer
                 </h3>
-                <div className="aspect-video w-full max-w-2xl rounded-3xl overflow-hidden border border-border bg-black shadow-lg">
-                  <iframe
-                    src={trailerUrl}
-                    title={`${title} Trailer`}
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
-                </div>
+                <TrailerEmbed trailerUrl={trailerUrl} title={title} />
               </div>
             )}
           </div>

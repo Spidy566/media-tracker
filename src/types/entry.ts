@@ -14,6 +14,8 @@ export interface EntryMedia {
   title: string;
   releaseYear: number | null;
   posterUrl: string | null;
+  backdropUrl?: string | null;
+  summary?: string | null;
   creator: string | null;
   genres: string[];
 }

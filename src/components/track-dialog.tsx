@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { PosterImage } from "@/components/poster-image";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -74,19 +74,15 @@ export function TrackDialog({
       {/* Dialog Content */}
       <div className="relative z-10 bg-card text-card-foreground w-full max-w-md rounded-xl p-6 shadow-2xl border flex flex-col gap-4">
         <div className="flex gap-4 items-start">
-          {media.posterUrl ? (
-            <Image
+          <div className="relative w-20 aspect-2/3 shrink-0 overflow-hidden rounded-md border border-border">
+            <PosterImage
               src={media.posterUrl}
-              alt={media.title}
-              width={80}
-              height={120}
-              className="rounded-md object-cover aspect-2/3 w-20"
+              title={media.title}
+              mediaType={media.mediaType}
+              sizes="80px"
+              className="object-cover"
             />
-          ) : (
-            <div className="w-20 aspect-2/3 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
-              No Art
-            </div>
-          )}
+          </div>
 
           <div className="flex-1 min-w-0">
             <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">

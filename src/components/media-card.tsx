@@ -1,8 +1,8 @@
 "use client";
 
 import { Bookmark, Check, Play } from "lucide-react";
-import Image from "next/image";
 import type { ReactNode } from "react";
+import { PosterImage } from "@/components/poster-image";
 
 export type MediaStatus = "want_to" | "doing" | "done" | "dropped";
 
@@ -19,8 +19,6 @@ interface MediaCardProps {
   onClick?: () => void;
   priority?: boolean;
 }
-
-const isStealthMode = process.env.NEXT_PUBLIC_STEALTH_MODE === "true";
 
 export function MediaCard({
   title,
@@ -48,23 +46,14 @@ export function MediaCard({
           />
         )}
 
-        {posterUrl && !isStealthMode ? (
-          <Image
-            src={posterUrl}
-            alt={title}
-            fill
-            sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 15vw"
-            className="object-cover transition duration-300 group-hover:scale-103 pointer-events-none"
-            priority={priority}
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-muted pointer-events-none">
-            <span className="font-semibold text-xs text-foreground line-clamp-2">{title}</span>
-            <span className="text-[10px] text-muted-foreground mt-1 uppercase font-mono">
-              {mediaType}
-            </span>
-          </div>
-        )}
+        <PosterImage
+          src={posterUrl}
+          title={title}
+          mediaType={mediaType}
+          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 15vw"
+          priority={priority}
+          className="object-cover transition duration-300 group-hover:scale-103 pointer-events-none"
+        />
 
         {/* Top Floating Badge */}
         <div className="absolute top-2 inset-x-2 flex items-center justify-between gap-1 z-10 pointer-events-none">

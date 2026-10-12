@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthModal } from "@/components/auth-modal";
+import { PosterToggle } from "@/components/poster-toggle";
 import { SearchModal } from "@/components/search-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useActiveUser } from "@/hooks/use-active-user";
@@ -111,6 +112,9 @@ export function NavBar() {
                 ⌘K
               </kbd>
             </button>
+
+            {/* Poster Visibility Toggle */}
+            <PosterToggle />
 
             {/* Sun / Moon Theme Switcher */}
             <ThemeToggle />

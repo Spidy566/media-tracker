@@ -2,10 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Check, Play, Search, Star, X } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
+import { PosterImage } from "@/components/poster-image";
 import { useDebounce } from "@/hooks/use-debounce";
 import { logEntryApi } from "@/lib/api-entries";
 
@@ -151,19 +151,15 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 className="flex flex-col p-3 rounded-2xl bg-muted/40 hover:bg-muted/70 border border-border transition-all"
               >
                 <div className="flex items-center gap-4">
-                  {item.posterUrl ? (
-                    <Image
+                  <div className="relative w-11 aspect-2/3 shrink-0 overflow-hidden rounded-xl border border-border">
+                    <PosterImage
                       src={item.posterUrl}
-                      alt={item.title}
-                      width={44}
-                      height={66}
-                      className="rounded-xl object-cover aspect-2/3 w-11 border border-border shrink-0"
+                      title={item.title}
+                      mediaType={item.mediaType}
+                      sizes="44px"
+                      className="object-cover"
                     />
-                  ) : (
-                    <div className="w-11 aspect-2/3 bg-muted border border-border rounded-xl flex items-center justify-center text-[9px] text-muted-foreground font-mono font-bold shrink-0">
-                      NO ART
-                    </div>
-                  )}
+                  </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

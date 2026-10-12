@@ -4,6 +4,7 @@ import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { tmdbFetch } from "@/lib/tmdb";
+import type { Entry } from "@/types/entry";
 import type { TMDBResponse } from "@/types/tmdb";
 import { DashboardClient } from "./dashboard-client";
 
@@ -23,29 +24,7 @@ export default async function HomePage() {
     .orderBy(users.displayName);
 
   // 3. Query current user's tracked entries directly from Postgres
-  let userEntries: {
-    id: string;
-    status: "want_to" | "doing" | "done" | "dropped";
-    rating: number | null;
-    reviewNote: string | null;
-    updatedAt: string;
-    user: {
-      id: string;
-      username: string;
-      displayName: string;
-      avatarUrl: string | null;
-    };
-    media: {
-      id: string;
-      externalId: string;
-      mediaType: "movie" | "tv" | "game";
-      title: string;
-      releaseYear: number | null;
-      posterUrl: string | null;
-      creator: string | null;
-      genres: string[];
-    };
-  }[] = [];
+  let userEntries: Entry[] = [];
 
   if (currentUser) {
     const rawEntries = await db
@@ -68,6 +47,8 @@ export default async function HomePage() {
           title: mediaItems.title,
           releaseYear: mediaItems.releaseYear,
           posterUrl: mediaItems.posterUrl,
+          backdropUrl: mediaItems.backdropUrl,
+          summary: mediaItems.summary,
           creator: mediaItems.creator,
           genres: mediaItems.genres,
         },
