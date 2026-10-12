@@ -1,3 +1,5 @@
+import { env } from "@/lib/env";
+
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 async function getAccessToken(): Promise<string> {
@@ -5,12 +7,8 @@ async function getAccessToken(): Promise<string> {
     return cachedToken.token;
   }
 
-  const clientId = process.env.TWITCH_CLIENT_ID;
-  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error("TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET is not configured");
-  }
+  const clientId = env.TWITCH_CLIENT_ID;
+  const clientSecret = env.TWITCH_CLIENT_SECRET;
 
   const res = await fetch(
     `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
@@ -31,11 +29,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function igdbFetch(endpoint: string, body: string) {
-  const clientId = process.env.TWITCH_CLIENT_ID;
-  if (!clientId) {
-    throw new Error("TWITCH_CLIENT_ID is not configured");
-  }
-
+  const clientId = env.TWITCH_CLIENT_ID;
   const token = await getAccessToken();
 
   const res = await fetch(`https://api.igdb.com/v4${endpoint}`, {
