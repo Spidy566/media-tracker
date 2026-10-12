@@ -5,6 +5,7 @@ import { users } from "@/db/schema";
 import { setSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
+import { rateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   username: z.string().trim().min(1, "Username is required"),
@@ -12,6 +13,27 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "localhost";
+
+  const { success, resetInSeconds } = rateLimit({
+    key: `login:${ip}`,
+    limit: 5,
+    windowMs: 60 * 1000,
+  });
+
+  if (!success) {
+    return NextResponse.json(
+      { error: `Too many login attempts. Please wait ${resetInSeconds} seconds.` },
+      {
+        status: 429,
+        headers: { "Retry-After": resetInSeconds.toString() },
+      },
+    );
+  }
+
   try {
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);

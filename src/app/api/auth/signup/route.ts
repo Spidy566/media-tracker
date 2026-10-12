@@ -5,6 +5,7 @@ import { users } from "@/db/schema";
 import { setSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { rateLimit } from "@/lib/rate-limit";
 
 const signupSchema = z.object({
   username: z
@@ -21,6 +22,27 @@ const signupSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "localhost";
+
+  const { success, resetInSeconds } = rateLimit({
+    key: `signup:${ip}`,
+    limit: 3,
+    windowMs: 60 * 1000,
+  });
+
+  if (!success) {
+    return NextResponse.json(
+      { error: `Too many accounts created. Please wait ${resetInSeconds} seconds.` },
+      {
+        status: 429,
+        headers: { "Retry-After": resetInSeconds.toString() },
+      },
+    );
+  }
+
   try {
     const body = await request.json();
     const parsed = signupSchema.safeParse(body);
