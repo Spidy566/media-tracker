@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Host_Grotesk } from "next/font/google";
+import { Barlow_Condensed, Geist_Mono, Host_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { NavBar } from "@/components/nav-bar";
@@ -10,6 +10,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HIDE_POSTERS_COOKIE } from "@/lib/poster-cookie";
 import "./globals.css";
+
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-barlow-condensed",
+  weight: ["500", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 const hostGrotesk = Host_Grotesk({
   variable: "--font-host-grotesk",
@@ -41,7 +48,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${hostGrotesk.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${barlowCondensed.variable} ${hostGrotesk.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider
