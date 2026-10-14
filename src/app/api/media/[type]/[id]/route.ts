@@ -3,8 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { db } from "@/lib/db";
 import { igdbFetch } from "@/lib/igdb";
-import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
-import { tmdbFetch } from "@/lib/tmdb";
+import { getIgdbCoverUrl, selectIgdbBackdrop } from "@/lib/igdb-helpers";
+import { selectTmdbBackdrop, selectTmdbTrailer, tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGameItem } from "@/types/igdb";
 
 export async function GET(
@@ -67,18 +67,30 @@ export async function GET(
 
     // 2. Fetch rich metadata from external API (TMDB or IGDB)
     if (type === "movie" || type === "tv") {
-      const tmdbData = await tmdbFetch(`/${type}/${id}?append_to_response=videos,credits`);
-
-      const trailer = tmdbData.videos?.results?.find(
-        (v: { site: string; type: string; key: string }) =>
-          v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"),
+      const tmdbData = await tmdbFetch(
+        `/${type}/${id}?append_to_response=videos,credits,images&include_image_language=en,null`,
       );
+
+      const trailerUrl = selectTmdbTrailer(tmdbData.videos?.results);
 
       const director =
         tmdbData.credits?.crew?.find((c: { job: string; name: string }) => c.job === "Director")
           ?.name ||
         tmdbData.created_by?.[0]?.name ||
         null;
+
+      const backdropUrl = selectTmdbBackdrop(tmdbData.images, tmdbData.backdrop_path);
+
+      if (savedItem && backdropUrl && savedItem.backdropUrl !== backdropUrl) {
+        try {
+          db.update(mediaItems)
+            .set({ backdropUrl })
+            .where(eq(mediaItems.id, savedItem.id))
+            .catch((err) => console.warn("Failed to persist backdropUrl:", err));
+        } catch (err) {
+          console.warn("Failed to update backdropUrl:", err);
+        }
+      }
 
       return NextResponse.json({
         externalId,
@@ -91,29 +103,40 @@ export async function GET(
         posterUrl: tmdbData.poster_path
           ? `https://image.tmdb.org/t/p/w780${tmdbData.poster_path}`
           : null,
-        backdropUrl: tmdbData.backdrop_path
-          ? `https://image.tmdb.org/t/p/w1280${tmdbData.backdrop_path}`
-          : null,
+        backdropUrl,
         summary: tmdbData.overview || null,
         genres: tmdbData.genres?.map((g: { name: string }) => g.name) || [],
         creator: director,
-        trailerUrl: trailer?.key ? `https://www.youtube.com/embed/${trailer.key}` : null,
+        trailerUrl,
         squadEntries,
       });
     }
 
     // IGDB Games
-    const apicalypse = `where id = ${id}; fields name,summary,storyline,cover.url,screenshots.url,videos.video_id,first_release_date,genres.name,involved_companies.company.name; limit 1;`;
+    const apicalypse = `where id = ${id}; fields name,summary,storyline,cover.url,artworks.url,artworks.width,artworks.height,screenshots.url,screenshots.width,screenshots.height,videos.video_id,first_release_date,genres.name,involved_companies.company.name; limit 1;`;
     const [game]: IGDBGameItem[] = await igdbFetch("/games", apicalypse);
 
     if (!game) {
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
     }
 
-    const screenshots = (game as { screenshots?: { url: string }[] }).screenshots;
-    const backdropUrl = screenshots?.[0]?.url
-      ? `https:${screenshots[0].url.replace("t_thumb", "t_1080p")}`
-      : null;
+    const artworks = (game as { artworks?: { url?: string; width?: number; height?: number }[] })
+      .artworks;
+    const screenshots = (
+      game as { screenshots?: { url?: string; width?: number; height?: number }[] }
+    ).screenshots;
+    const backdropUrl = await selectIgdbBackdrop(artworks, screenshots);
+
+    if (savedItem && backdropUrl && savedItem.backdropUrl !== backdropUrl) {
+      try {
+        db.update(mediaItems)
+          .set({ backdropUrl })
+          .where(eq(mediaItems.id, savedItem.id))
+          .catch((err) => console.warn("Failed to persist backdropUrl:", err));
+      } catch (err) {
+        console.warn("Failed to update backdropUrl:", err);
+      }
+    }
 
     const videos = (game as { videos?: { video_id: string }[] }).videos;
     const trailerUrl = videos?.[0]?.video_id

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { db } from "@/lib/db";
+import { ensureMediaBackdrop } from "@/lib/media-backdrop";
 
 /* -------------------------------------------------------------------------- */
 /*  Safety                                                                    */
@@ -229,7 +230,7 @@ async function seed() {
 
   const reset = process.argv.includes("--reset");
 
-  await db.transaction(async (tx) => {
+  const insertedItemsList = await db.transaction(async (tx) => {
     if (reset) {
       console.log("🧹 Clearing existing data...");
       // Children first, so foreign keys don't block the deletes.
@@ -263,12 +264,18 @@ async function seed() {
           title: sql`excluded.title`,
           releaseYear: sql`excluded.release_year`,
           posterUrl: sql`excluded.poster_url`,
+          backdropUrl: sql`coalesce(excluded.backdrop_url, media_items.backdrop_url)`,
           creator: sql`excluded.creator`,
           summary: sql`excluded.summary`,
           genres: sql`excluded.genres`,
         },
       })
-      .returning({ id: mediaItems.id, externalId: mediaItems.externalId });
+      .returning({
+        id: mediaItems.id,
+        externalId: mediaItems.externalId,
+        mediaType: mediaItems.mediaType,
+        backdropUrl: mediaItems.backdropUrl,
+      });
     const itemIds = new Map(insertedItems.map((m) => [m.externalId, m.id]));
 
     console.log("⭐ Seeding squad reviews and backlog tracking...");
@@ -294,7 +301,18 @@ async function seed() {
           updatedAt: now,
         },
       });
+
+    return insertedItems;
   });
+
+  console.log("🖼️ Resolving backdrop images for catalog items...");
+  for (const item of insertedItemsList) {
+    try {
+      await ensureMediaBackdrop(item);
+    } catch (err) {
+      console.warn(`Failed to resolve backdrop for ${item.externalId}:`, err);
+    }
+  }
 
   console.log(
     `✅ Seed complete: ${SQUAD.length} users, ${CATALOG.length} media items, ${ENTRIES.length} entries.`,

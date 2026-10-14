@@ -12,6 +12,7 @@ const createEntrySchema = z.object({
     title: z.string().min(1),
     releaseYear: z.number().nullable().optional(),
     posterUrl: z.string().nullable().optional(),
+    backdropUrl: z.string().nullable().optional(),
     creator: z.string().nullable().optional(),
     summary: z.string().nullable().optional(),
     genres: z.array(z.string()).optional().default([]),
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
           title: media.title,
           releaseYear: media.releaseYear ?? null,
           posterUrl: media.posterUrl ?? null,
+          backdropUrl: media.backdropUrl ?? null,
           creator: media.creator ?? null,
           summary: media.summary ?? null,
           genres: media.genres ?? [],
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
           target: mediaItems.externalId,
           set: {
             posterUrl: media.posterUrl ?? undefined,
+            backdropUrl: media.backdropUrl ?? undefined,
             summary: media.summary ?? undefined,
           },
         })

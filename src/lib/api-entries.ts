@@ -7,6 +7,7 @@ export interface LogEntryPayload {
     title: string;
     releaseYear?: number | null;
     posterUrl?: string | null;
+    backdropUrl?: string | null;
     creator?: string | null;
     summary?: string | null;
     genres?: string[];
