@@ -17,15 +17,15 @@ export default function GlobalError({
 
   return (
     <main className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 shadow-xs">
+      <div className="w-16 h-16 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive mb-6 shadow-xs">
         <AlertTriangle className="w-8 h-8 stroke-[1.5]" />
       </div>
 
-      <span className="text-xs font-mono font-bold uppercase tracking-wider text-red-500 mb-2">
+      <span className="text-xs font-mono font-bold uppercase tracking-wider text-destructive mb-2">
         Application Error
       </span>
 
-      <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground mb-3">
+      <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-3">
         Something went wrong
       </h1>
 

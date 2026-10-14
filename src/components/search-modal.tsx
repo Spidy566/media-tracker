@@ -95,7 +95,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         type="button"
         aria-label="Close search"
         onClick={onClose}
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm cursor-default border-0"
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm cursor-default border-0"
       />
 
       {/* Modal Dialog */}
@@ -184,7 +184,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       onClick={() => logMedia({ media: item, status: "want_to" })}
                       className={`p-2 rounded-xl transition cursor-pointer ${
                         currentLoggedStatus === "want_to"
-                          ? "bg-amber-400 text-black font-bold"
+                          ? "bg-status-queue/20 text-status-queue border border-status-queue/40 font-bold"
                           : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted border border-border"
                       }`}
                     >
@@ -199,7 +199,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       onClick={() => logMedia({ media: item, status: "doing" })}
                       className={`p-2 rounded-xl transition cursor-pointer ${
                         currentLoggedStatus === "doing"
-                          ? "bg-sky-400 text-black font-bold"
+                          ? "bg-status-doing/20 text-status-doing border border-status-doing/40 font-bold"
                           : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted border border-border"
                       }`}
                     >
@@ -214,7 +214,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       onClick={() => setActiveLoggingId(isLoggingThis ? null : item.externalId)}
                       className={`p-2 rounded-xl transition cursor-pointer ${
                         currentLoggedStatus === "done" || isLoggingThis
-                          ? "bg-emerald-500 text-black font-bold"
+                          ? "bg-status-done/20 text-status-done border border-status-done/40 font-bold"
                           : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted border border-border"
                       }`}
                     >
@@ -238,14 +238,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                           >
                             <Star
                               className={`w-4 h-4 ${
-                                star <= rating
-                                  ? "fill-amber-400 text-amber-400"
-                                  : "text-muted-foreground"
+                                star <= rating ? "fill-rating text-rating" : "text-muted-foreground"
                               }`}
                             />
                           </button>
                         ))}
-                        <span className="text-xs font-black text-amber-500 ml-1.5 font-mono">
+                        <span className="text-xs font-semibold text-rating ml-1.5 font-mono">
                           {rating} / 5
                         </span>
                       </div>
@@ -278,7 +276,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             reviewNote: note,
                           })
                         }
-                        className="text-xs font-bold px-4 py-1.5 rounded-lg bg-emerald-500 text-black hover:bg-emerald-400 transition"
+                        className="text-xs font-bold px-4 py-1.5 rounded-lg bg-brand text-brand-foreground hover:opacity-90 transition"
                       >
                         Save Finished
                       </button>

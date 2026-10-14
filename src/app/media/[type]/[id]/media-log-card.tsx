@@ -84,7 +84,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
           onClick={() => updateEntry({ status: "want_to" })}
           className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeStatus === "want_to"
-              ? "bg-amber-400 text-black shadow-xs"
+              ? "bg-status-queue/20 text-status-queue border border-status-queue/40 shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -98,7 +98,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
           onClick={() => updateEntry({ status: "doing" })}
           className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeStatus === "doing"
-              ? "bg-sky-400 text-black shadow-xs"
+              ? "bg-status-doing/20 text-status-doing border border-status-doing/40 shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -112,7 +112,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
           onClick={() => updateEntry({ status: "done" })}
           className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeStatus === "done"
-              ? "bg-emerald-500 text-black shadow-xs"
+              ? "bg-status-done/20 text-status-done border border-status-done/40 shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -125,7 +125,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
       <div className="pt-3 border-t border-border">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-muted-foreground">Your Rating</span>
-          <span className="text-xs font-black text-amber-500 font-mono">
+          <span className="text-xs font-semibold text-rating font-mono">
             {rating ? `★ ${rating} / 5` : "Not rated"}
           </span>
         </div>
@@ -145,7 +145,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
               <Star
                 className={`w-4 h-4 ${
                   rating && rating >= star
-                    ? "fill-amber-400 text-amber-400"
+                    ? "fill-rating text-rating"
                     : "text-muted-foreground/30 hover:text-muted-foreground"
                 }`}
               />
@@ -210,7 +210,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
         <button
           type="button"
           onClick={() => removeEntry()}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600 pt-2 border-t border-border cursor-pointer transition"
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-destructive hover:opacity-80 pt-2 border-t border-border cursor-pointer transition"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Remove from Stash</span>

@@ -24,7 +24,7 @@ export function TrailerEmbed({ trailerUrl, title }: TrailerEmbedProps) {
   }
 
   return (
-    <div className="aspect-video w-full max-w-2xl rounded-3xl overflow-hidden border border-border bg-black shadow-lg">
+    <div className="aspect-video w-full max-w-2xl rounded-3xl overflow-hidden border border-border bg-background shadow-lg">
       <iframe
         src={trailerUrl}
         title={`${title} Trailer`}

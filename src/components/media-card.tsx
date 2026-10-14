@@ -59,7 +59,7 @@ export function MediaCard({
         <div className="absolute top-2 inset-x-2 flex items-center justify-between gap-1 z-10 pointer-events-none">
           {badge ? <div className="pointer-events-auto">{badge}</div> : <div />}
           {rating ? (
-            <span className="bg-background/90 text-amber-500 font-bold text-[10px] px-2 py-0.5 rounded-full border border-border shadow-xs pointer-events-auto">
+            <span className="bg-background/90 text-rating font-bold text-[10px] px-2 py-0.5 rounded-full border border-border shadow-xs pointer-events-auto">
               ★ {rating}
             </span>
           ) : null}
@@ -78,7 +78,7 @@ export function MediaCard({
                 }}
                 className={`p-1.5 rounded-full transition cursor-pointer ${
                   currentStatus === "want_to"
-                    ? "bg-amber-400 text-black font-bold"
+                    ? "bg-status-queue/20 text-status-queue border border-status-queue/40 font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
@@ -94,7 +94,7 @@ export function MediaCard({
                 }}
                 className={`p-1.5 rounded-full transition cursor-pointer ${
                   currentStatus === "doing"
-                    ? "bg-sky-400 text-black font-bold"
+                    ? "bg-status-doing/20 text-status-doing border border-status-doing/40 font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
@@ -110,7 +110,7 @@ export function MediaCard({
                 }}
                 className={`p-1.5 rounded-full transition cursor-pointer ${
                   currentStatus === "done"
-                    ? "bg-emerald-400 text-black font-bold"
+                    ? "bg-status-done/20 text-status-done border border-status-done/40 font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
@@ -123,7 +123,7 @@ export function MediaCard({
 
       {/* Title & Metadata */}
       <div className="flex flex-col min-w-0">
-        <h4 className="text-xs font-bold text-foreground truncate group-hover:text-emerald-500 transition">
+        <h4 className="text-xs font-bold text-foreground truncate group-hover:opacity-80 transition">
           {title}
         </h4>
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">

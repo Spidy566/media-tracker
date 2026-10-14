@@ -76,11 +76,11 @@ export default async function SquadMemberPage({
       {/* Hero Header (Zero loading spinners! Rendered instantly by the server) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-card border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-2xl shadow-md shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-muted border border-border text-foreground flex items-center justify-center font-semibold text-2xl shadow-xs shrink-0">
             {member.displayName[0]}
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
               {member.displayName}
             </h1>
             <p className="text-xs font-mono text-muted-foreground mt-0.5">@{username}</p>
@@ -89,17 +89,17 @@ export default async function SquadMemberPage({
 
         <div className="flex items-center gap-5 bg-muted/40 border border-border p-3 px-6 rounded-2xl shrink-0">
           <div>
-            <span className="text-2xl font-black text-foreground">{completedCount}</span>
+            <span className="text-2xl font-semibold text-status-done">{completedCount}</span>
             <span className="text-xs font-semibold text-muted-foreground block">Completed</span>
           </div>
           <div className="w-px h-7 bg-border" />
           <div>
-            <span className="text-2xl font-black text-emerald-500">{activeCount}</span>
+            <span className="text-2xl font-semibold text-status-doing">{activeCount}</span>
             <span className="text-xs font-semibold text-muted-foreground block">Active</span>
           </div>
           <div className="w-px h-7 bg-border" />
           <div>
-            <span className="text-2xl font-black text-amber-500">{queueCount}</span>
+            <span className="text-2xl font-semibold text-status-queue">{queueCount}</span>
             <span className="text-xs font-semibold text-muted-foreground block">In Queue</span>
           </div>
         </div>

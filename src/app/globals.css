@@ -7,8 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-host-grotesk), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -25,56 +26,120 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Brand + semantic tokens */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-status-queue: var(--status-queue);
+  --color-status-doing: var(--status-doing);
+  --color-status-done: var(--status-done);
+  --color-status-dropped: var(--status-dropped);
+  --color-rating: var(--rating);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 }
 
+/* Projector Warm: light */
 :root {
-  --background: #F4F5F7;
-  --foreground: #09090B;
-  --card: #FFFFFF;
-  --card-foreground: #09090B;
-  --popover: #FFFFFF;
-  --popover-foreground: #09090B;
-  --primary: #09090B;
-  --primary-foreground: #FAFAFA;
-  --secondary: #EAEBED;
-  --secondary-foreground: #09090B;
-  --muted: #F0F1F3;
-  --muted-foreground: #64748B;
-  --accent: #EAEBED;
-  --accent-foreground: #09090B;
-  --destructive: #EF4444;
-  --border: #E2E4E8;
-  --input: #E2E4E8;
-  --ring: #09090B;
+  --radius: 0.75rem;
+
+  --background: #F4EFE7;
+  --foreground: #1C1815;
+  --card: #FBF8F2;
+  --card-foreground: #1C1815;
+  --popover: #FBF8F2;
+  --popover-foreground: #1C1815;
+
+  --primary: #C8431D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EDE6DA;
+  --secondary-foreground: #1C1815;
+  --muted: #EFE9DE;
+  --muted-foreground: #6E655B;
+  --accent: #EDE6DA;
+  --accent-foreground: #1C1815;
+  --destructive: #C23A46;
+
+  --border: #E3DBCF;
+  --input: #E3DBCF;
+  --ring: #C8431D;
+
+  --brand: #C8431D;
+  --brand-foreground: #FFFFFF;
+
+  --status-queue: #8A6F3C;
+  --status-doing: #C8431D;
+  --status-done: #4F7A4A;
+  --status-dropped: #7A7068;
+  --rating: #A87A1E;
+
+  --sidebar: #EBE4D8;
+  --sidebar-foreground: #1C1815;
+  --sidebar-primary: #C8431D;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #DDD4C5;
+  --sidebar-accent-foreground: #1C1815;
+  --sidebar-border: #DDD4C5;
+  --sidebar-ring: #C8431D;
 }
 
+/* Projector Warm: dark */
 .dark {
-  --background: #090A0F;
-  --foreground: #F8FAFC;
-  --card: #12141C;
-  --card-foreground: #F8FAFC;
-  --popover: #12141C;
-  --popover-foreground: #F8FAFC;
-  --primary: #F8FAFC;
-  --primary-foreground: #090A0F;
-  --secondary: #1A1D28;
-  --secondary-foreground: #F8FAFC;
-  --muted: #161822;
-  --muted-foreground: #94A3B8;
-  --accent: #1A1D28;
-  --accent-foreground: #F8FAFC;
-  --destructive: #EF4444;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: #38BDF8;
+  --background: #12100E;
+  --foreground: #F1EBE2;
+  --card: #1A1714;
+  --card-foreground: #F1EBE2;
+  --popover: #1A1714;
+  --popover-foreground: #F1EBE2;
+
+  --primary: #E4572E;
+  --primary-foreground: #12100E;
+  --secondary: #231F1B;
+  --secondary-foreground: #F1EBE2;
+  --muted: #1F1B18;
+  --muted-foreground: #8F857A;
+  --accent: #231F1B;
+  --accent-foreground: #F1EBE2;
+  --destructive: #D9515C;
+
+  --border: #2E2924;
+  --input: #2E2924;
+  --ring: #E4572E;
+
+  --brand: #E4572E;
+  --brand-foreground: #12100E;
+
+  --status-queue: #D9C7A3;
+  --status-doing: #E4572E;
+  --status-done: #8FB38A;
+  --status-dropped: #7A7068;
+  --rating: #D9B25F;
+
+  --sidebar: #0F0D0B;
+  --sidebar-foreground: #F1EBE2;
+  --sidebar-primary: #E4572E;
+  --sidebar-primary-foreground: #12100E;
+  --sidebar-accent: #231F1B;
+  --sidebar-accent-foreground: #F1EBE2;
+  --sidebar-border: #2E2924;
+  --sidebar-ring: #E4572E;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
   body {
     background-color: var(--background);
@@ -84,6 +149,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
   html {
-    @apply font-sans;
+    font-family: var(--font-sans);
   }
 }

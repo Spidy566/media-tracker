@@ -114,7 +114,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
         type="button"
         aria-label="Close authentication modal"
         onClick={onClose}
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm cursor-default border-0"
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm cursor-default border-0"
       />
 
       {/* Modal Dialog */}
@@ -122,7 +122,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center font-black">
+            <div className="w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center font-semibold">
               {tab === "login" ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             </div>
             <h2 className="text-lg font-bold text-foreground">
@@ -241,7 +241,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           <button
             type="submit"
             disabled={isPending}
-            className="w-full mt-2 py-2.5 rounded-xl bg-foreground text-background font-bold text-sm hover:opacity-90 transition cursor-pointer disabled:opacity-50"
+            className="w-full mt-2 py-2.5 rounded-xl bg-brand text-brand-foreground font-bold text-sm hover:opacity-90 transition cursor-pointer disabled:opacity-50"
           >
             {isPending ? "Please wait..." : tab === "login" ? "Sign In" : "Create Account"}
           </button>

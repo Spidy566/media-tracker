@@ -12,7 +12,7 @@ export default async function LibraryPage() {
     return (
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
             Your Library
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -62,7 +62,7 @@ export default async function LibraryPage() {
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
           Your Library
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">

@@ -1,26 +1,26 @@
 "use client";
 
-import { Bookmark, Calendar, Compass, Film, Home, LogIn, LogOut, Search } from "lucide-react";
+import { Bookmark, Calendar, Compass, Film, Home, Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthModal } from "@/components/auth-modal";
+import { MenuCard } from "@/components/menu-card";
 import { PosterToggle } from "@/components/poster-toggle";
 import { SearchModal } from "@/components/search-modal";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useActiveUser } from "@/hooks/use-active-user";
 import { AUTH_MODAL_EVENT } from "@/lib/auth-events";
+import { cn } from "@/lib/utils";
 
 export function NavBar() {
   const pathname = usePathname();
-  const { currentUser, logout, isLoggingOut } = useActiveUser();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const isHome = pathname === "/";
-  const isExplore = pathname === "/explore";
-  const isCalendar = pathname === "/calendar";
-  const isLibrary = pathname === "/library";
+  const isExplore = pathname.startsWith("/explore");
+  const isLibrary = pathname.startsWith("/library");
+  const isCalendar = pathname.startsWith("/calendar");
 
   useEffect(() => {
     const handleOpenAuth = () => setIsAuthOpen(true);
@@ -41,124 +41,128 @@ export function NavBar() {
 
   return (
     <>
-      <header className="border-b border-border bg-card/90 backdrop-blur-xl sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-6">
-          {/* Logo & Navigation Tabs */}
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition">
-                <Film className="w-4 h-4 stroke-[2.5]" />
-              </div>
-              <span className="font-extrabold text-base tracking-tight text-foreground">
-                Tracklist
-              </span>
-            </Link>
-
-            <nav className="hidden md:flex items-center bg-muted/60 p-1 rounded-full border border-border">
-              <Link
-                href="/"
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
-                  isHome
-                    ? "bg-foreground text-background shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/explore"
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
-                  isExplore
-                    ? "bg-foreground text-background shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Explore
-              </Link>
-              <Link
-                href="/calendar"
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
-                  isCalendar
-                    ? "bg-foreground text-background shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Calendar
-              </Link>
-              <Link
-                href="/library"
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition ${
-                  isLibrary
-                    ? "bg-foreground text-background shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Library
-              </Link>
-            </nav>
+      <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-md border-b border-border/30 w-full transition-colors">
+        <div className="w-full px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          {/* Left Zone: Menu Button */}
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(true)}
+              aria-label="Open menu"
+              className="size-10 rounded-xl border border-border bg-card/80 hover:bg-card text-foreground transition cursor-pointer shadow-xs flex items-center justify-center focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Menu className="size-5" />
+            </button>
           </div>
 
-          {/* Right Action Island: Search + Theme Toggle + Auth / Profile */}
+          {/* Center Zone: Home · Explore · [Tracklist logo mark] · Library · Calendar */}
+          <nav className="flex items-center gap-2.5 sm:gap-3.5" aria-label="Main Navigation">
+            {/* Desktop Left Links: Home · Explore */}
+            <div className="hidden md:flex items-center gap-2.5 sm:gap-3.5">
+              <Link
+                href="/"
+                className={cn(
+                  "relative py-1 text-xs font-medium uppercase tracking-wide transition-colors",
+                  isHome
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Home
+                {isHome && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-1 rounded-full bg-brand" />
+                )}
+              </Link>
+              <span className="text-muted-foreground/30 text-xs select-none" aria-hidden="true">
+                ·
+              </span>
+              <Link
+                href="/explore"
+                className={cn(
+                  "relative py-1 text-xs font-medium uppercase tracking-wide transition-colors",
+                  isExplore
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Explore
+                {isExplore && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-1 rounded-full bg-brand" />
+                )}
+              </Link>
+              <span className="text-muted-foreground/30 text-xs select-none" aria-hidden="true">
+                ·
+              </span>
+            </div>
+
+            {/* Tracklist Logo Mark */}
+            <Link
+              href="/"
+              className="flex items-center group px-1"
+              title="Tracklist"
+              aria-label="Tracklist home"
+            >
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-foreground text-background shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <Film className="size-4.5 stroke-[2.5]" />
+              </div>
+            </Link>
+
+            {/* Desktop Right Links: Library · Calendar */}
+            <div className="hidden md:flex items-center gap-2.5 sm:gap-3.5">
+              <span className="text-muted-foreground/30 text-xs select-none" aria-hidden="true">
+                ·
+              </span>
+              <Link
+                href="/library"
+                className={cn(
+                  "relative py-1 text-xs font-medium uppercase tracking-wide transition-colors",
+                  isLibrary
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Library
+                {isLibrary && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-1 rounded-full bg-brand" />
+                )}
+              </Link>
+              <span className="text-muted-foreground/30 text-xs select-none" aria-hidden="true">
+                ·
+              </span>
+              <Link
+                href="/calendar"
+                className={cn(
+                  "relative py-1 text-xs font-medium uppercase tracking-wide transition-colors",
+                  isCalendar
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Calendar
+                {isCalendar && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-1 rounded-full bg-brand" />
+                )}
+              </Link>
+            </div>
+          </nav>
+
+          {/* Right Zone: Search button (no ⌘K badge) & Poster Toggle */}
           <div className="flex items-center gap-2.5">
-            {/* Single Unified Search Button */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2.5 h-9 px-3.5 rounded-full bg-muted/50 hover:bg-muted border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition cursor-pointer"
+              className="flex items-center gap-2 h-9 px-3.5 rounded-full bg-muted/50 hover:bg-muted border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition cursor-pointer focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <Search className="w-3.5 h-3.5" />
+              <Search className="size-3.5" />
               <span className="hidden sm:inline">Search titles...</span>
-              <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-background text-muted-foreground border border-border">
-                ⌘K
-              </kbd>
             </button>
 
-            {/* Poster Visibility Toggle */}
             <PosterToggle />
-
-            {/* Sun / Moon Theme Switcher */}
-            <ThemeToggle />
-
-            {/* User Profile or Login Trigger */}
-            {currentUser ? (
-              <div className="flex items-center gap-1.5">
-                <Link
-                  href={`/squad/${currentUser.username}`}
-                  className="flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-full bg-muted/60 hover:bg-muted border border-border text-xs font-semibold text-foreground transition"
-                  title="View Profile"
-                >
-                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-black flex items-center justify-center text-[11px] font-black shrink-0">
-                    {currentUser.displayName[0]?.toUpperCase()}
-                  </div>
-                  <span className="max-w-25 truncate hidden sm:inline">
-                    {currentUser.displayName}
-                  </span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => logout()}
-                  disabled={isLoggingOut}
-                  title="Log out"
-                  className="h-9 w-9 rounded-full bg-muted/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border border-border flex items-center justify-center text-muted-foreground transition cursor-pointer disabled:opacity-50"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsAuthOpen(true)}
-                className="h-9 px-4 rounded-full bg-foreground text-background font-bold text-xs hover:opacity-90 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Log In</span>
-              </button>
-            )}
           </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Dock */}
+      {/* Mobile Bottom Dock (Retained) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-card/95 backdrop-blur-xl border-t border-border py-2 px-6 flex justify-around">
         <Link
           href="/"
@@ -176,6 +180,7 @@ export function NavBar() {
           type="button"
           onClick={() => setIsSearchOpen(true)}
           className="p-2 text-muted-foreground"
+          aria-label="Search"
         >
           <Search className="w-5 h-5 stroke-[2.2]" />
         </button>
@@ -193,6 +198,7 @@ export function NavBar() {
         </Link>
       </nav>
 
+      <MenuCard isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </>

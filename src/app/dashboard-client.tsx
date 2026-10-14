@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import type { MediaStatus } from "@/components/media-card";
+import { MediaGrid } from "@/components/media-grid";
 import { PosterImage } from "@/components/poster-image";
 import { logEntryApi } from "@/lib/api-entries";
 import type { Entry, EntryUser } from "@/types/entry";
@@ -101,10 +102,10 @@ export function DashboardClient({
   };
 
   return (
-    <div className="min-h-full bg-zinc-950 text-zinc-100 flex flex-col">
+    <div className="min-h-full bg-background text-foreground flex flex-col">
       {/* 1. Full-Width Cinematic Hero Banner */}
       {heroEntry && (
-        <section className="relative w-full h-125 sm:h-140 lg:hlg:h-155rflow-hidden select-none bg-zinc-950">
+        <section className="relative w-full h-125 sm:h-140 lg:h-155 overflow-hidden select-none bg-background">
           {/* Backdrop Image */}
           {heroBackdrop && (
             <div className="absolute inset-0">
@@ -121,20 +122,20 @@ export function DashboardClient({
           )}
 
           {/* Cinematic Vignettes & Gradient Fades */}
-          <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/70 to-transparent" />
-          <div className="absolute inset-0 bg-linear-to-r from-zinc-950 via-zinc-950/60 to-transparent" />
-          <div className="absolute inset-x-0 top-0 h-28 bg-linear-to-b from-zinc-950/80 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-r from-background via-background/60 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-28 bg-linear-to-b from-background/80 to-transparent" />
 
           {/* Hero Content Overlay */}
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 h-full flex flex-col justify-end pb-12 sm:pb-16 pt-10">
             {/* Top Toolbar (Greeting) */}
             <div className="absolute top-6 left-4 sm:left-8 right-4 sm:right-8 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs sm:text-sm font-semibold tracking-wide text-zinc-300">
+                <span className="text-xs sm:text-sm font-semibold tracking-wide text-muted-foreground">
                   {getTimeGreeting()}, {currentUser?.displayName || "Friend"}
                 </span>
-                <span className="text-zinc-600 hidden sm:inline">•</span>
-                <span className="text-xs text-zinc-400 hidden sm:inline font-mono">
+                <span className="text-muted-foreground/50 hidden sm:inline">•</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline font-mono">
                   {myCompleted.length} done · {myActive.length} active · {myQueue.length} queued
                 </span>
               </div>
@@ -142,30 +143,36 @@ export function DashboardClient({
 
             {/* Media Meta Pill */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-amber-400 text-black shadow-sm">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase border shadow-xs ${
+                  isHeroActive
+                    ? "bg-status-doing/15 text-status-doing border-status-doing/30"
+                    : "bg-status-queue/15 text-status-queue border-status-queue/30"
+                }`}
+              >
                 {isHeroActive ? "In Progress" : "Up Next in Queue"}
               </span>
 
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-zinc-400 bg-zinc-900/90 border border-zinc-800 px-2.5 py-1 rounded-md backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-muted-foreground bg-card/90 border border-border px-2.5 py-1 rounded-md backdrop-blur-md">
                 {getMediaTypeIcon(heroEntry.media.mediaType)}
                 <span>{heroEntry.media.mediaType}</span>
               </span>
 
               {heroEntry.media.releaseYear && (
-                <span className="text-xs font-mono text-zinc-400 px-1">
+                <span className="text-xs font-mono text-muted-foreground px-1">
                   {heroEntry.media.releaseYear}
                 </span>
               )}
             </div>
 
             {/* Cinematic Big Title */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-4xl leading-[1.08] drop-shadow-md">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground max-w-4xl leading-[1.08] drop-shadow-md">
               {heroEntry.media.title}
             </h1>
 
             {/* Summary Snippet */}
             {heroEntry.media.summary && (
-              <p className="mt-3 text-sm sm:text-base text-zinc-300 line-clamp-2 max-w-2xl leading-relaxed drop-shadow-sm font-normal">
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground line-clamp-2 max-w-2xl leading-relaxed drop-shadow-xs font-normal">
                 {heroEntry.media.summary}
               </p>
             )}
@@ -176,7 +183,7 @@ export function DashboardClient({
                 type="button"
                 onClick={handleHeroOneTap}
                 disabled={isPending}
-                className="h-11 px-6 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-sm flex items-center gap-2 transition hover:scale-102 active:scale-98 cursor-pointer shadow-lg shadow-amber-950/40 disabled:opacity-50"
+                className="h-11 px-6 rounded-full bg-brand hover:opacity-90 text-brand-foreground font-semibold text-sm flex items-center gap-2 transition hover:scale-102 active:scale-98 cursor-pointer shadow-sm disabled:opacity-50"
               >
                 {isHeroActive ? (
                   <>
@@ -195,9 +202,9 @@ export function DashboardClient({
 
               <Link
                 href={getMediaHref(heroEntry.media)}
-                className="h-11 px-5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-200 font-semibold text-sm flex items-center gap-2 transition backdrop-blur-md"
+                className="h-11 px-5 rounded-full bg-card/90 hover:bg-accent border border-border text-foreground font-semibold text-sm flex items-center gap-2 transition backdrop-blur-md"
               >
-                <Info className="w-4 h-4 text-zinc-400" />
+                <Info className="w-4 h-4 text-muted-foreground" />
                 <span>Details</span>
               </Link>
             </div>
@@ -207,13 +214,13 @@ export function DashboardClient({
 
       {/* Hero Fallback when 0 items exist */}
       {!heroEntry && (
-        <section className="relative w-full py-16 px-4 sm:px-8 border-b border-zinc-900 bg-linear-to-b from-zinc-900/50 to-zinc-950">
+        <section className="relative w-full py-16 px-4 sm:px-8 border-b border-border bg-linear-to-b from-card/50 to-background">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
                 {getTimeGreeting()}, {currentUser?.displayName || "Friend"}
               </h1>
-              <p className="text-sm text-zinc-400 mt-2 max-w-xl">
+              <p className="text-sm text-muted-foreground mt-2 max-w-xl">
                 Your queue is currently empty. Bookmark titles from the trending shelf below or
                 explore the catalog to build your shelf.
               </p>
@@ -221,7 +228,7 @@ export function DashboardClient({
             <div className="flex items-center gap-3 shrink-0">
               <Link
                 href="/explore"
-                className="h-10 px-5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-2 transition"
+                className="h-10 px-5 rounded-full bg-brand hover:opacity-90 text-brand-foreground font-bold text-xs flex items-center gap-2 transition"
               >
                 <Compass className="w-4 h-4" />
                 <span>Explore Catalog</span>
@@ -236,29 +243,29 @@ export function DashboardClient({
         {/* 2. Jump Back In Poster Row */}
         {myActive.length > 0 && (
           <section className="space-y-4">
-            <div className="flex items-baseline justify-between border-b border-zinc-900 pb-3">
+            <div className="flex items-baseline justify-between border-b border-border pb-3">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+                <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
                   Jump Back In
                 </h2>
-                <span className="text-xs font-mono font-bold text-amber-400">
+                <span className="text-xs font-mono font-bold text-status-doing">
                   {myActive.length} active
                 </span>
               </div>
               <Link
                 href="/library"
-                className="text-xs font-semibold text-zinc-400 hover:text-white transition flex items-center gap-1"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center gap-1"
               >
                 <span>View Library</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+            <MediaGrid>
               {myActive.map((entry) => (
                 <div key={entry.id} className="group flex flex-col select-none">
                   {/* Poster Art */}
-                  <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-zinc-900 shadow-md">
+                  <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-card border border-border/50 shadow-xs">
                     <Link
                       href={getMediaHref(entry.media)}
                       className="absolute inset-0 z-0 cursor-pointer"
@@ -274,8 +281,8 @@ export function DashboardClient({
                     />
 
                     {/* Gradient on hover with quick action */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3 pointer-events-none">
-                      <span className="text-[10px] font-mono text-zinc-300 uppercase">
+                    <div className="absolute inset-0 bg-linear-to-t from-background/90 via-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3 pointer-events-none">
+                      <span className="text-[10px] font-mono text-foreground uppercase">
                         {entry.media.mediaType}
                       </span>
                       <button
@@ -285,7 +292,7 @@ export function DashboardClient({
                           setQuickStatus({ media: entry.media, status: "done" });
                         }}
                         title="Mark Completed"
-                        className="pointer-events-auto p-1.5 rounded-full bg-amber-400 text-black hover:bg-amber-300 transition shadow-md cursor-pointer"
+                        className="pointer-events-auto p-1.5 rounded-full bg-status-done/20 text-status-done hover:bg-status-done hover:text-background border border-status-done/30 transition shadow-xs cursor-pointer"
                       >
                         <Check className="w-3.5 h-3.5 stroke-3" />
                       </button>
@@ -296,11 +303,11 @@ export function DashboardClient({
                   <div className="mt-2.5 space-y-0.5">
                     <Link
                       href={getMediaHref(entry.media)}
-                      className="text-sm font-bold text-zinc-100 hover:text-amber-400 transition truncate block"
+                      className="text-sm font-bold text-foreground hover:opacity-80 transition truncate block"
                     >
                       {entry.media.title}
                     </Link>
-                    <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                       <span className="capitalize">{entry.media.mediaType}</span>
                       {entry.media.releaseYear && (
                         <>
@@ -312,34 +319,34 @@ export function DashboardClient({
                   </div>
                 </div>
               ))}
-            </div>
+            </MediaGrid>
           </section>
         )}
 
         {/* 3. Up Next in Queue Poster Row */}
         {myQueue.length > 0 && (
           <section className="space-y-4">
-            <div className="flex items-baseline justify-between border-b border-zinc-900 pb-3">
+            <div className="flex items-baseline justify-between border-b border-border pb-3">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+                <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
                   Up Next in Queue
                 </h2>
-                <span className="text-xs font-mono text-zinc-400">({myQueue.length})</span>
+                <span className="text-xs font-mono text-muted-foreground">({myQueue.length})</span>
               </div>
               <Link
                 href="/library"
-                className="text-xs font-semibold text-zinc-400 hover:text-white transition flex items-center gap-1"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center gap-1"
               >
                 <span>View All</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+            <MediaGrid>
               {myQueue.slice(0, 6).map((entry) => (
                 <div key={entry.id} className="group flex flex-col select-none">
                   {/* Poster Art */}
-                  <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-zinc-900 shadow-md">
+                  <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-card border border-border/50 shadow-xs">
                     <Link
                       href={getMediaHref(entry.media)}
                       className="absolute inset-0 z-0 cursor-pointer"
@@ -355,8 +362,8 @@ export function DashboardClient({
                     />
 
                     {/* Gradient on hover with quick start action */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3 pointer-events-none">
-                      <span className="text-[10px] font-mono text-zinc-300 uppercase">
+                    <div className="absolute inset-0 bg-linear-to-t from-background/90 via-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-3 pointer-events-none">
+                      <span className="text-[10px] font-mono text-foreground uppercase">
                         {entry.media.mediaType}
                       </span>
                       <button
@@ -366,7 +373,7 @@ export function DashboardClient({
                           setQuickStatus({ media: entry.media, status: "doing" });
                         }}
                         title="Start Watching/Playing"
-                        className="pointer-events-auto p-1.5 rounded-full bg-amber-400 text-black hover:bg-amber-300 transition shadow-md cursor-pointer"
+                        className="pointer-events-auto p-1.5 rounded-full bg-status-doing/20 text-status-doing hover:bg-status-doing hover:text-background border border-status-doing/30 transition shadow-xs cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5 fill-current stroke-0" />
                       </button>
@@ -377,11 +384,11 @@ export function DashboardClient({
                   <div className="mt-2.5 space-y-0.5">
                     <Link
                       href={getMediaHref(entry.media)}
-                      className="text-sm font-bold text-zinc-100 hover:text-amber-400 transition truncate block"
+                      className="text-sm font-bold text-foreground hover:opacity-80 transition truncate block"
                     >
                       {entry.media.title}
                     </Link>
-                    <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                       <span className="capitalize">{entry.media.mediaType}</span>
                       {entry.media.releaseYear && (
                         <>
@@ -393,35 +400,35 @@ export function DashboardClient({
                   </div>
                 </div>
               ))}
-            </div>
+            </MediaGrid>
           </section>
         )}
 
         {/* 4. Trending This Week Poster Row */}
         <section className="space-y-4">
-          <div className="flex items-baseline justify-between border-b border-zinc-900 pb-3">
+          <div className="flex items-baseline justify-between border-b border-border pb-3">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+              <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
                 Trending This Week
               </h2>
-              <span className="text-xs text-zinc-500 hidden sm:inline">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
                 Popular movies and blockbusters
               </span>
             </div>
             <Link
               href="/explore"
-              className="text-xs font-semibold text-zinc-400 hover:text-white transition flex items-center gap-1"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center gap-1"
             >
               <span>Explore Catalog</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+          <MediaGrid>
             {trendingResults.slice(0, 12).map((item) => (
               <div key={item.externalId} className="group flex flex-col select-none">
                 {/* Poster Art */}
-                <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-zinc-900 shadow-md">
+                <div className="relative aspect-2/3 w-full rounded-xl overflow-hidden bg-card border border-border/50 shadow-xs">
                   <Link
                     href={getMediaHref(item)}
                     className="absolute inset-0 z-0 cursor-pointer"
@@ -445,7 +452,7 @@ export function DashboardClient({
                         setQuickStatus({ media: item, status: "want_to" });
                       }}
                       title="Add to Queue"
-                      className="p-1.5 rounded-full bg-zinc-900/90 text-zinc-200 hover:bg-amber-400 hover:text-black border border-zinc-700/60 transition shadow-lg cursor-pointer backdrop-blur-md"
+                      className="p-1.5 rounded-full bg-card/90 text-foreground hover:bg-status-queue/20 hover:text-status-queue border border-border transition shadow-xs cursor-pointer backdrop-blur-md"
                     >
                       <Bookmark className="w-3.5 h-3.5" />
                     </button>
@@ -456,11 +463,11 @@ export function DashboardClient({
                 <div className="mt-2.5 space-y-0.5">
                   <Link
                     href={getMediaHref(item)}
-                    className="text-sm font-bold text-zinc-100 hover:text-amber-400 transition truncate block"
+                    className="text-sm font-bold text-foreground hover:opacity-80 transition truncate block"
                   >
                     {item.title}
                   </Link>
-                  <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                     <span className="capitalize">{item.mediaType}</span>
                     {item.releaseYear && (
                       <>
@@ -472,16 +479,16 @@ export function DashboardClient({
                 </div>
               </div>
             ))}
-          </div>
+          </MediaGrid>
         </section>
 
         {/* 5. The Squad (Small, Refined Avatar Row) */}
-        <section className="pt-4 border-t border-zinc-900 space-y-3">
+        <section className="pt-4 border-t border-border space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-zinc-500 font-bold">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-bold">
               The Squad
             </h3>
-            <span className="text-xs text-zinc-500 font-mono">{users.length} members</span>
+            <span className="text-xs text-muted-foreground font-mono">{users.length} members</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -489,16 +496,16 @@ export function DashboardClient({
               <Link
                 key={friend.id}
                 href={`/squad/${friend.username}`}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 transition-all group"
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-card/60 hover:bg-accent border border-border transition-all group"
               >
-                <div className="w-6 h-6 rounded-full bg-amber-400 text-black flex items-center justify-center font-black text-xs shrink-0 group-hover:scale-105 transition">
+                <div className="w-6 h-6 rounded-full bg-muted text-foreground border border-border flex items-center justify-center font-semibold text-xs shrink-0 group-hover:scale-105 transition">
                   {friend.displayName[0]?.toUpperCase()}
                 </div>
                 <div className="flex items-baseline gap-1.5 min-w-0">
-                  <span className="text-xs font-semibold text-zinc-200 group-hover:text-amber-400 transition truncate max-w-28">
+                  <span className="text-xs font-semibold text-foreground group-hover:opacity-80 transition truncate max-w-28">
                     {friend.displayName}
                   </span>
-                  <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">
+                  <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline">
                     @{friend.username}
                   </span>
                 </div>

@@ -12,7 +12,7 @@ export default function NotFound() {
         404 — Not Found
       </span>
 
-      <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground mb-3">
+      <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-3">
         Lost in the archives?
       </h1>
 

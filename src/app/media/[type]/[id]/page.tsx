@@ -183,9 +183,9 @@ export default async function MediaDetailPage({
 
       {/* 2. Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-8 -mt-28 sm:-mt-36 relative z-10">
-        <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Left: Poster & Interactive Log Card */}
-          <div className="w-56 sm:w-64 shrink-0 mx-auto md:mx-0 space-y-4">
+          <div className="w-56 sm:w-64 shrink-0 mx-auto lg:mx-0 space-y-4">
             <div className="relative aspect-2/3 w-full rounded-3xl overflow-hidden bg-muted border border-border shadow-2xl">
               <PosterImage
                 src={posterUrl}
@@ -216,7 +216,7 @@ export default async function MediaDetailPage({
                 )}
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
                 {title}
               </h1>
 
@@ -245,7 +245,7 @@ export default async function MediaDetailPage({
             <div className="space-y-4 bg-card border border-border rounded-3xl p-6 shadow-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-500" />
+                  <Users className="w-4 h-4 text-muted-foreground" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-foreground font-mono">
                     Squad Activity
                   </h3>
@@ -271,14 +271,22 @@ export default async function MediaDetailPage({
                           href={`/squad/${entry.user.username}`}
                           className="flex items-center gap-2 hover:opacity-80 transition"
                         >
-                          <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center font-black text-xs">
+                          <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center font-semibold text-xs">
                             {entry.user.displayName[0]}
                           </div>
                           <div>
                             <span className="text-xs font-bold text-foreground block">
                               {entry.user.displayName}
                             </span>
-                            <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                            <span
+                              className={`text-[10px] font-mono uppercase font-semibold ${
+                                entry.status === "want_to"
+                                  ? "text-status-queue"
+                                  : entry.status === "doing"
+                                    ? "text-status-doing"
+                                    : "text-status-done"
+                              }`}
+                            >
                               {entry.status === "want_to"
                                 ? "In Queue"
                                 : entry.status === "doing"
@@ -289,7 +297,7 @@ export default async function MediaDetailPage({
                         </Link>
 
                         {entry.rating && (
-                          <span className="text-xs font-black text-amber-500 font-mono bg-background px-2 py-0.5 rounded-full border border-border shadow-xs">
+                          <span className="text-xs font-semibold text-rating font-mono bg-background px-2 py-0.5 rounded-full border border-border shadow-xs">
                             ★ {entry.rating} / 5
                           </span>
                         )}

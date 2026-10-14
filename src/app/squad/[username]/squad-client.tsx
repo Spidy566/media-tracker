@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { MediaGrid } from "@/components/media-grid";
 import { logEntryApi } from "@/lib/api-entries";
 import type { Entry } from "@/types/entry";
 
@@ -128,7 +129,7 @@ export function SquadClient({ entries }: SquadClientProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MediaGrid>
           {filteredEntries.map((entry) => (
             <div key={entry.id} className="flex flex-col gap-2">
               <MediaCard
@@ -149,7 +150,7 @@ export function SquadClient({ entries }: SquadClientProps) {
               )}
             </div>
           ))}
-        </div>
+        </MediaGrid>
       )}
     </div>
   );

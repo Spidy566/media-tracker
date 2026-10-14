@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { MediaGrid } from "@/components/media-grid";
 import { logEntryApi } from "@/lib/api-entries";
 import type { Entry } from "@/types/entry";
 
@@ -111,7 +112,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
               onClick={() => setMediaFilter(t)}
               className={`px-3 py-1 rounded-full capitalize font-medium transition cursor-pointer ${
                 mediaFilter === t
-                  ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                  ? "bg-muted text-foreground border border-border"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -126,11 +127,11 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
         <div className="text-center py-24 border border-dashed border-border rounded-3xl">
           <p className="text-sm font-semibold text-foreground">No titles in this section</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Press ⌘K to search and start building your collection.
+            Search to start building your collection.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MediaGrid>
           {filteredEntries.map((entry) => {
             const parts = entry.media.externalId.split(":");
             const rawId = parts[parts.length - 1];
@@ -149,7 +150,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
               />
             );
           })}
-        </div>
+        </MediaGrid>
       )}
     </div>
   );

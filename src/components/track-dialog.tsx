@@ -68,11 +68,11 @@ export function TrackDialog({
         aria-label="Close dialog"
         onClick={onClose}
         tabIndex={-1}
-        className="fixed inset-0 bg-black/70 cursor-default border-0"
+        className="fixed inset-0 bg-background/80 backdrop-blur-xs cursor-default border-0"
       />
 
       {/* Dialog Content */}
-      <div className="relative z-10 bg-card text-card-foreground w-full max-w-md rounded-xl p-6 shadow-2xl border flex flex-col gap-4">
+      <div className="relative z-10 bg-card text-card-foreground w-full max-w-md rounded-xl p-6 shadow-2xl border border-border flex flex-col gap-4">
         <div className="flex gap-4 items-start">
           <div className="relative w-20 aspect-2/3 shrink-0 overflow-hidden rounded-md border border-border">
             <PosterImage
@@ -151,11 +151,15 @@ export function TrackDialog({
           />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t">
+        <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <Button variant="ghost" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={() => saveEntry()} disabled={isPending}>
+          <Button
+            onClick={() => saveEntry()}
+            disabled={isPending}
+            className="bg-brand text-brand-foreground hover:opacity-90"
+          >
             {isPending ? "Saving..." : "Save to Stash"}
           </Button>
         </div>
