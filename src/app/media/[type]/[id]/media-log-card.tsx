@@ -72,9 +72,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
 
   return (
     <div className="bg-card border border-border rounded-3xl p-5 shadow-lg space-y-4">
-      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-mono block">
-        Your Log
-      </span>
+      <span className="text-xs font-semibold text-muted-foreground block">Your log</span>
 
       {/* Status Switcher (3 Buttons) */}
       <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border">
@@ -125,9 +123,13 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
       <div className="pt-3 border-t border-border">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-muted-foreground">Your Rating</span>
-          <span className="text-xs font-semibold text-rating font-mono">
-            {rating ? `★ ${rating} / 5` : "Not rated"}
-          </span>
+          {rating ? (
+            <span className="text-xs font-semibold text-rating">
+              ★ <span className="font-mono">{rating} / 5</span>
+            </span>
+          ) : (
+            <span className="text-xs font-medium text-muted-foreground">Not rated</span>
+          )}
         </div>
         <div className="flex items-center justify-between gap-1 bg-muted/40 p-2 rounded-2xl border border-border">
           {STAR_VALUES.map((star) => (

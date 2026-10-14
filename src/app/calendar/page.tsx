@@ -216,7 +216,7 @@ export default function CalendarPage() {
                 <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
                   {monthLabel}
                 </h2>
-                <span className="text-[11px] text-muted-foreground font-mono">
+                <span className="text-[11px] text-muted-foreground">
                   ({items.length} {items.length === 1 ? "release" : "releases"})
                 </span>
               </div>

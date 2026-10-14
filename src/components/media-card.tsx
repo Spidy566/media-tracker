@@ -67,7 +67,7 @@ export function MediaCard({
 
         {/* Quick Status Buttons */}
         {onQuickStatus && (
-          <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150">
             <div className="flex items-center gap-0.5 bg-background/95 backdrop-blur-md p-1 rounded-full border border-border shadow-lg">
               <button
                 type="button"
@@ -123,15 +123,13 @@ export function MediaCard({
 
       {/* Title & Metadata */}
       <div className="flex flex-col min-w-0">
-        <h4 className="text-xs font-bold text-foreground truncate group-hover:opacity-80 transition">
+        <h4 className="text-xs font-semibold text-foreground truncate group-hover:opacity-80 transition">
           {title}
         </h4>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
           <span>{releaseYear || "TBA"}</span>
           <span>•</span>
-          <span className="uppercase text-[10px] font-mono tracking-wider font-semibold">
-            {mediaType === "tv" ? "TV" : mediaType}
-          </span>
+          <span className="capitalize">{mediaType === "tv" ? "TV series" : mediaType}</span>
           {subtitle && (
             <>
               <span>•</span>

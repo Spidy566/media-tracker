@@ -21,7 +21,7 @@ export default function GlobalError({
         <AlertTriangle className="w-8 h-8 stroke-[1.5]" />
       </div>
 
-      <span className="text-xs font-mono font-bold uppercase tracking-wider text-destructive mb-2">
+      <span className="text-xs font-semibold uppercase tracking-wider text-destructive mb-2">
         Application Error
       </span>
 

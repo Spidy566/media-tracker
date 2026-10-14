@@ -101,9 +101,9 @@ export function SettingsClient({ initialUser }: SettingsClientProps) {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-foreground">
               {isDark ? (
-                <Moon className="w-4 h-4 text-primary" />
+                <Moon className="w-4 h-4 text-brand-text" />
               ) : (
-                <Sun className="w-4 h-4 text-primary" />
+                <Sun className="w-4 h-4 text-brand-text" />
               )}
             </div>
             <div>

@@ -45,7 +45,10 @@ export function MenuCard({ isOpen, onClose }: MenuCardProps) {
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200" />
 
         {/* Floating Menu Card */}
-        <Dialog.Content className="fixed top-3 left-3 bottom-3 z-50 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl bg-popover border border-border p-6 shadow-2xl flex flex-col justify-between overflow-y-auto no-scrollbar outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-300">
+        <Dialog.Content
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="fixed top-3 left-3 bottom-3 z-50 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl bg-popover border border-border p-6 shadow-2xl flex flex-col justify-between overflow-y-auto no-scrollbar outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-300"
+        >
           <Dialog.Title className="sr-only">Menu</Dialog.Title>
           <Dialog.Description className="sr-only">Navigation and user settings</Dialog.Description>
 
@@ -55,7 +58,8 @@ export function MenuCard({ isOpen, onClose }: MenuCardProps) {
               <button
                 type="button"
                 aria-label="Close menu"
-                className="size-10 rounded-xl border border-border bg-card/80 hover:bg-card text-foreground transition cursor-pointer shadow-xs flex items-center justify-center focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onMouseDown={(e) => e.preventDefault()}
+                className="size-10 rounded-xl border border-border bg-card/80 hover:bg-card text-foreground transition cursor-pointer shadow-xs flex items-center justify-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <X className="size-5" />
               </button>

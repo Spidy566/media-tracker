@@ -157,6 +157,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       title={item.title}
                       mediaType={item.mediaType}
                       sizes="44px"
+                      compact
                       className="object-cover"
                     />
                   </div>
@@ -164,7 +165,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-sm text-foreground truncate">{item.title}</h3>
-                      <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-foreground/10 text-foreground shrink-0">
+                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-foreground/10 text-foreground shrink-0">
                         {item.mediaType}
                       </span>
                     </div>
