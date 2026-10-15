@@ -28,16 +28,18 @@ async function getAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
-export async function igdbFetch(endpoint: string, body: string) {
+export async function igdbFetch(endpoint: string, body: string, init?: RequestInit) {
   const clientId = env.TWITCH_CLIENT_ID;
   const token = await getAccessToken();
 
   const res = await fetch(`https://api.igdb.com/v4${endpoint}`, {
+    ...init,
     method: "POST",
     headers: {
       "Client-ID": clientId,
       Authorization: `Bearer ${token}`,
       "Content-Type": "text/plain",
+      ...init?.headers,
     },
     body,
   });

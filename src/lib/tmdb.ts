@@ -2,15 +2,19 @@ import { env } from "@/lib/env";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
-export async function tmdbFetch(endpoint: string, retries = 2) {
+export async function tmdbFetch(endpoint: string, options?: RequestInit | number, retries = 2) {
+  const init: RequestInit = typeof options === "object" && options !== null ? options : {};
+  const retryCount = typeof options === "number" ? options : retries;
   const apiKey = env.TMDB_API_KEY;
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
+  for (let attempt = 1; attempt <= retryCount; attempt++) {
     try {
       const res = await fetch(`${TMDB_BASE_URL}${endpoint}`, {
+        ...init,
         headers: {
           Authorization: `Bearer ${apiKey}`,
           Accept: "application/json",
+          ...init.headers,
         },
       });
 
@@ -20,7 +24,7 @@ export async function tmdbFetch(endpoint: string, retries = 2) {
 
       return await res.json();
     } catch (err) {
-      if (attempt === retries) {
+      if (attempt === retryCount) {
         throw err;
       }
       await new Promise((resolve) => setTimeout(resolve, 300));
