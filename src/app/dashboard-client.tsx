@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   ArrowRight,
   Bookmark,
@@ -150,7 +150,6 @@ export function DashboardClient({
   trendingGames,
 }: DashboardClientProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const [activeTrendingTab, setActiveTrendingTab] = useState<"movies" | "tv" | "games">("movies");
 
@@ -169,18 +168,21 @@ export function DashboardClient({
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh();
       const statusLabel =
         variables.status === "done"
           ? "Marked as completed"
           : variables.status === "doing"
             ? "Moved to In Progress"
-            : "Added to Queue";
+            : variables.status === "dropped"
+              ? "Marked as Dropped"
+              : "Added to Queue";
       toast.success(statusLabel, { description: variables.media.title });
     },
-    onError: () => {
-      toast.error("Failed to update status");
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to update status");
+      }
     },
   });
 

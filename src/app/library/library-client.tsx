@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Check, Play, Trash2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Ban, Bookmark, Check, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -16,7 +16,6 @@ interface LibraryClientProps {
 
 export function LibraryClient({ initialEntries }: LibraryClientProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<MediaStatus>("want_to");
   const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv" | "game">("all");
@@ -29,9 +28,13 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh(); // Refresh server component data
       toast.success("Status updated");
+    },
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to update status");
+      }
     },
   });
 
@@ -98,7 +101,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Ban className="w-3.5 h-3.5" />
             <span>Dropped ({counts.dropped})</span>
           </button>
         </div>

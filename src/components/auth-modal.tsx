@@ -60,7 +60,6 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["session-user"] });
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh();
       toast.success(`Welcome back, ${data.user.displayName}!`);
       onClose();
@@ -84,7 +83,6 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["session-user"] });
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh();
       toast.success(`Account created! Welcome, ${data.user.displayName}!`);
       onClose();

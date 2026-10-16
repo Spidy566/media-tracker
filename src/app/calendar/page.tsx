@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Calendar as CalendarIcon, Film, Gamepad2, Layers } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { CalendarItem } from "@/app/api/calendar/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
+import { Button } from "@/components/ui/button";
 import { logEntryApi } from "@/lib/api-entries";
 
 const CALENDAR_SKELETON_KEYS = [
@@ -55,14 +56,16 @@ function getMonthGroup(dateStr: string | null) {
 
 export default function CalendarPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [mediaFilter, setMediaFilter] = useState<"all" | "movie_tv" | "game">("all");
   const [langFilter, setLangFilter] = useState<string>("all");
 
-  const { data, isLoading } = useQuery<{ releases: CalendarItem[] }>({
+  const { data, isLoading, isError, refetch } = useQuery<{ releases: CalendarItem[] }>({
     queryKey: ["calendar-releases", mediaFilter, langFilter],
     queryFn: async () => {
       const res = await fetch(`/api/calendar?type=${mediaFilter}&lang=${langFilter}`);
+      if (!res.ok) {
+        throw new Error("Failed to load upcoming releases");
+      }
       return res.json();
     },
     staleTime: 1000 * 60 * 30,
@@ -76,10 +79,21 @@ export default function CalendarPage() {
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
-      toast.success("Added to Queue", {
+      router.refresh();
+      const messages: Record<string, string> = {
+        want_to: "Added to Queue",
+        doing: "Marked as In Progress",
+        done: "Logged as Completed",
+        dropped: "Marked as Dropped",
+      };
+      toast.success(messages[variables.status] || "Status updated", {
         description: variables.media.title,
       });
+    },
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to add to queue");
+      }
     },
   });
 
@@ -196,8 +210,27 @@ export default function CalendarPage() {
         </div>
       )}
 
+      {/* Error State */}
+      {isError && (
+        <div className="text-center py-20 border border-border/80 bg-muted/20 rounded-2xl space-y-3">
+          <p className="text-sm font-semibold text-foreground">Failed to load upcoming releases</p>
+          <p className="text-xs text-muted-foreground">
+            Something went wrong while fetching the calendar releases.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="rounded-xl text-xs font-semibold cursor-pointer"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!isLoading && releases.length === 0 && (
+      {!isLoading && !isError && releases.length === 0 && (
         <div className="text-center py-24 border border-dashed border-border rounded-xl">
           <p className="text-sm font-semibold text-foreground">No upcoming releases found</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -207,7 +240,7 @@ export default function CalendarPage() {
       )}
 
       {/* Grouped Month Sections */}
-      {!isLoading && (
+      {!isLoading && !isError && (
         <div className="space-y-10">
           {Object.entries(groupedReleases).map(([monthLabel, items]) => (
             <section key={monthLabel} className="space-y-3">
@@ -230,6 +263,7 @@ export default function CalendarPage() {
                       posterUrl={item.posterUrl}
                       releaseYear={item.releaseYear}
                       subtitle={formatReleaseDate(item.releaseDate)}
+                      allowedStatuses={["want_to"]}
                       onQuickStatus={(status) => setQuickStatus({ media: item, status })}
                       onClick={() => navigateToMedia(item)}
                     />

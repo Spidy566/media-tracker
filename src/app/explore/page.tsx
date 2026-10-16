@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertCircle, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { MediaCard } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
-import { TrackDialog } from "@/components/track-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,18 +18,11 @@ import {
 } from "@/components/ui/select";
 import { logEntryApi } from "@/lib/api-entries";
 
-const GENRES = [
-  "Action",
-  "Adventure",
-  "Animation",
-  "Comedy",
-  "Crime",
-  "Horror",
-  "Sci-Fi",
-  "RPG",
-  "Shooter",
-  "Strategy",
-];
+const GENRES_BY_TYPE: Record<"movie" | "tv" | "game", string[]> = {
+  movie: ["Action", "Adventure", "Animation", "Comedy", "Crime", "Horror", "Sci-Fi"],
+  tv: ["Action & Adventure", "Animation", "Comedy", "Crime", "Sci-Fi"],
+  game: ["Action", "Adventure", "Horror", "Sci-Fi", "RPG", "Shooter", "Strategy"],
+};
 
 const EXPLORE_SKELETON_IDS = Array.from({ length: 18 }, (_, i) => `explore-skel-${i + 1}`);
 
@@ -43,8 +35,6 @@ export default function ExplorePage() {
   const [year, setYear] = useState<string>("");
   const [page, setPage] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const [selectedMedia, setSelectedMedia] = useState<UnifiedSearchResult | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery<{
     results: UnifiedSearchResult[];
@@ -76,6 +66,7 @@ export default function ExplorePage() {
 
   const handleMediaTypeChange = (newType: "game" | "movie" | "tv") => {
     setMediaType(newType);
+    setGenre("");
     setPage(1);
   };
 
@@ -93,8 +84,6 @@ export default function ExplorePage() {
 
   const hasActiveFilters = Boolean(genre || year || sort !== "popular");
 
-  const queryClient = useQueryClient();
-
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({
       media,
@@ -109,7 +98,7 @@ export default function ExplorePage() {
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
+      router.refresh();
 
       const statusLabels = {
         want_to: "Added to Queue",
@@ -120,6 +109,11 @@ export default function ExplorePage() {
       toast.success(statusLabels[variables.status], {
         description: variables.media.title,
       });
+    },
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to update status");
+      }
     },
   });
 
@@ -237,7 +231,7 @@ export default function ExplorePage() {
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border text-popover-foreground max-h-56">
                   <SelectItem value="all">All Genres</SelectItem>
-                  {GENRES.map((g) => (
+                  {GENRES_BY_TYPE[mediaType].map((g) => (
                     <SelectItem key={g} value={g}>
                       {g}
                     </SelectItem>
@@ -395,11 +389,6 @@ export default function ExplorePage() {
           )}
         </main>
       </div>
-
-      {/* Quick-Log Modal */}
-      {selectedMedia && (
-        <TrackDialog media={selectedMedia} onClose={() => setSelectedMedia(null)} />
-      )}
     </div>
   );
 }

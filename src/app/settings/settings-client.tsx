@@ -61,7 +61,6 @@ export function SettingsClient({ initialUser }: SettingsClientProps) {
     onSuccess: (updated) => {
       queryClient.setQueryData(["session-user"], { user: updated });
       queryClient.invalidateQueries({ queryKey: ["session-user"] });
-      queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("Display name updated");
       router.refresh();
     },
@@ -225,7 +224,7 @@ export function SettingsClient({ initialUser }: SettingsClientProps) {
                   )}
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground font-mono">@{user.username}</p>
+              <p className="text-[11px] text-muted-foreground">@{user.username}</p>
             </div>
           </form>
         ) : (

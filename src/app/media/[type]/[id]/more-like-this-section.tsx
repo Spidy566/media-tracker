@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -29,7 +29,6 @@ function getStatusVerb(status: string) {
 
 export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const rowRef = useRef<HTMLDivElement>(null);
 
   // Local state for tracking quick statuses added during session
@@ -61,7 +60,6 @@ export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProp
         [variables.item.externalId]: variables.status,
       }));
       toast.success(`Updated "${variables.item.title}" to ${getStatusVerb(variables.status)}`);
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
       router.refresh();
     },
     onError: (err) => {

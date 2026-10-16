@@ -184,7 +184,7 @@ export default async function HomePage() {
         mediaType: "game",
         title: g.name || "Untitled Game",
         releaseYear: g.first_release_date
-          ? new Date(g.first_release_date * 1000).getFullYear()
+          ? new Date(g.first_release_date * 1000).getUTCFullYear()
           : null,
         posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
         creator: null,

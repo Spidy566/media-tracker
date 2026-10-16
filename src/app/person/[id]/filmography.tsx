@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -86,7 +86,6 @@ export function Filmography({
   knownForDepartment,
 }: FilmographyProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   // Determine available tabs: primary department first, others sorted by credit count
   const availableTabs = useMemo(() => {
@@ -149,7 +148,6 @@ export function Filmography({
         [variables.credit.externalId]: variables.status,
       }));
       toast.success(`Updated "${variables.credit.title}" to ${getStatusVerb(variables.status)}`);
-      queryClient.invalidateQueries({ queryKey: ["entries"] });
       router.refresh();
     },
     onError: (err) => {

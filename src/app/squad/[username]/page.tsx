@@ -83,7 +83,7 @@ export default async function SquadMemberPage({
             <h1 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
               {member.displayName}
             </h1>
-            <p className="text-xs font-mono text-muted-foreground mt-0.5">@{username}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">@{username}</p>
           </div>
         </div>
 

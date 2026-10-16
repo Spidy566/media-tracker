@@ -75,7 +75,11 @@ export default async function MediaDetailPage({
               />
             </div>
 
-            <MediaLogCard media={mediaData} initialEntry={myEntry} />
+            <MediaLogCard
+              key={myEntry ? `${myEntry.id}-${myEntry.updatedAt}` : "new"}
+              media={mediaData}
+              initialEntry={myEntry}
+            />
           </div>
 
           {/* Right: Details & Rich Sections */}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Check, Play, Star, Trash2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Ban, Bookmark, Check, Play, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,7 +18,6 @@ interface MediaLogCardProps {
 
 export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const [rating, setRating] = useState<number | null>(initialEntry?.rating ?? null);
   const [note, setNote] = useState<string>(initialEntry?.reviewNote ?? "");
@@ -39,16 +38,20 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
     }) => {
       return logEntryApi({
         media,
-        status: status || activeStatus || "want_to",
+        status: status || activeStatus || (newRating !== undefined ? "done" : "want_to"),
         rating: newRating !== undefined ? newRating : rating,
         reviewNote: newNote !== undefined ? newNote : note || null,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh();
       setIsEditingNote(false);
       toast.success("Updated your log", { description: media.title });
+    },
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to update log");
+      }
     },
   });
 
@@ -59,14 +62,20 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
       const res = await fetch(`/api/entries?id=${initialEntry.id}`, {
         method: "DELETE",
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to remove entry");
+      }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh();
       setRating(null);
       setNote("");
       toast.info("Removed from your library", { description: media.title });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to remove entry");
     },
   });
 
@@ -74,8 +83,8 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
     <div className="bg-card border border-border rounded-3xl p-5 shadow-lg space-y-4">
       <span className="text-xs font-semibold text-muted-foreground block">Your log</span>
 
-      {/* Status Switcher (3 Buttons) */}
-      <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-2xl border border-border">
+      {/* Status Switcher (4 Buttons) */}
+      <div className="grid grid-cols-4 gap-1 bg-muted/60 p-1 rounded-2xl border border-border">
         <button
           type="button"
           title="Add to Queue"
@@ -116,6 +125,20 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
         >
           <Check className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
           <span>Done</span>
+        </button>
+
+        <button
+          type="button"
+          title="Mark as Dropped"
+          onClick={() => updateEntry({ status: "dropped" })}
+          className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeStatus === "dropped"
+              ? "bg-status-dropped/20 text-status-dropped border border-status-dropped/40 shadow-xs"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Ban className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
+          <span>Dropped</span>
         </button>
       </div>
 

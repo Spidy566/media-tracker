@@ -15,22 +15,12 @@ export function useActiveUser() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Fetch squad users
-  const { data: usersData } = useQuery<{ users: User[] }>({
-    queryKey: ["users"],
-    queryFn: async () => {
-      const res = await fetch("/api/users");
-      return res.json();
-    },
-  });
-
-  const usersList = usersData?.users || [];
-
   // Fetch session user
   const { data: sessionData, isLoading } = useQuery<{ user: User | null }>({
     queryKey: ["session-user"],
     queryFn: async () => {
       const res = await fetch("/api/auth/session");
+      if (!res.ok) return { user: null };
       return res.json();
     },
   });
@@ -45,14 +35,12 @@ export function useActiveUser() {
     onSuccess: () => {
       queryClient.setQueryData(["session-user"], { user: null });
       queryClient.invalidateQueries({ queryKey: ["session-user"] });
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
       router.refresh();
       toast.success("Logged out successfully");
     },
   });
 
   return {
-    users: usersList,
     currentUser: sessionData?.user ?? null,
     isLoading,
     logout,

@@ -199,7 +199,7 @@ export function MenuCard({ isOpen, onClose }: MenuCardProps) {
                     <span className="text-sm font-semibold text-foreground truncate">
                       {currentUser.displayName}
                     </span>
-                    <span className="text-xs text-muted-foreground font-mono truncate">
+                    <span className="text-xs text-muted-foreground truncate">
                       @{currentUser.username}
                     </span>
                   </div>

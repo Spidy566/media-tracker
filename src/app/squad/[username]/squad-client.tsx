@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ interface SquadClientProps {
 
 export function SquadClient({ entries }: SquadClientProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<"all" | MediaStatus>("done");
   const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv" | "game">("all");
@@ -28,10 +27,15 @@ export function SquadClient({ entries }: SquadClientProps) {
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["my-entries"] });
+      router.refresh();
       toast.success("Saved to your stash", {
         description: variables.media.title,
       });
+    },
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to save to your stash");
+      }
     },
   });
 

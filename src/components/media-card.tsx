@@ -15,6 +15,7 @@ interface MediaCardProps {
   rating?: number | null;
   subtitle?: string | null;
   currentStatus?: MediaStatus | null;
+  allowedStatuses?: ("want_to" | "doing" | "done")[];
   onQuickStatus?: (status: "want_to" | "doing" | "done") => void;
   onClick?: () => void;
   priority?: boolean;
@@ -29,6 +30,7 @@ export function MediaCard({
   rating,
   subtitle,
   currentStatus,
+  allowedStatuses = ["want_to", "doing", "done"],
   onQuickStatus,
   onClick,
   priority = false,
@@ -69,53 +71,59 @@ export function MediaCard({
         {onQuickStatus && (
           <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity duration-150">
             <div className="flex items-center gap-0.5 bg-background/95 backdrop-blur-md p-1 rounded-full border border-border shadow-lg">
-              <button
-                type="button"
-                title="Add to Queue"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickStatus("want_to");
-                }}
-                className={`p-1.5 rounded-full transition cursor-pointer ${
-                  currentStatus === "want_to"
-                    ? "bg-status-queue/20 text-status-queue border border-status-queue/40 font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-              </button>
+              {allowedStatuses.includes("want_to") && (
+                <button
+                  type="button"
+                  title="Add to Queue"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickStatus("want_to");
+                  }}
+                  className={`p-1.5 rounded-full transition cursor-pointer ${
+                    currentStatus === "want_to"
+                      ? "bg-status-queue/20 text-status-queue border border-status-queue/40 font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                </button>
+              )}
 
-              <button
-                type="button"
-                title="Currently In Progress"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickStatus("doing");
-                }}
-                className={`p-1.5 rounded-full transition cursor-pointer ${
-                  currentStatus === "doing"
-                    ? "bg-status-doing/20 text-status-doing border border-status-doing/40 font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <Play className="w-3.5 h-3.5" />
-              </button>
+              {allowedStatuses.includes("doing") && (
+                <button
+                  type="button"
+                  title="Currently In Progress"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickStatus("doing");
+                  }}
+                  className={`p-1.5 rounded-full transition cursor-pointer ${
+                    currentStatus === "doing"
+                      ? "bg-status-doing/20 text-status-doing border border-status-doing/40 font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Play className="w-3.5 h-3.5" />
+                </button>
+              )}
 
-              <button
-                type="button"
-                title="Completed"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickStatus("done");
-                }}
-                className={`p-1.5 rounded-full transition cursor-pointer ${
-                  currentStatus === "done"
-                    ? "bg-status-done/20 text-status-done border border-status-done/40 font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
+              {allowedStatuses.includes("done") && (
+                <button
+                  type="button"
+                  title="Completed"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickStatus("done");
+                  }}
+                  className={`p-1.5 rounded-full transition cursor-pointer ${
+                    currentStatus === "done"
+                      ? "bg-status-done/20 text-status-done border border-status-done/40 font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
         )}
