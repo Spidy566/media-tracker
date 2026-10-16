@@ -7,12 +7,13 @@ import type { IGDBGameItem } from "@/types/igdb";
 import type { TMDBResponse } from "@/types/tmdb";
 
 export const GENRE_MAP: Record<string, { tmdbMovie?: number; tmdbTv?: number; igdb?: number }> = {
-  Action: { tmdbMovie: 28, tmdbTv: 10759, igdb: 4 },
-  Adventure: { tmdbMovie: 12, tmdbTv: 10759, igdb: 31 },
-  Animation: { tmdbMovie: 16, tmdbTv: 16, igdb: 32 },
-  Comedy: { tmdbMovie: 35, tmdbTv: 35, igdb: 9 },
-  Crime: { tmdbMovie: 80, tmdbTv: 80, igdb: 10 },
-  Horror: { tmdbMovie: 27, tmdbTv: 9648, igdb: 19 },
+  Action: { tmdbMovie: 28, igdb: 4 },
+  Adventure: { tmdbMovie: 12, igdb: 31 },
+  "Action & Adventure": { tmdbTv: 10759 },
+  Animation: { tmdbMovie: 16, tmdbTv: 16 },
+  Comedy: { tmdbMovie: 35, tmdbTv: 35 },
+  Crime: { tmdbMovie: 80, tmdbTv: 80 },
+  Horror: { tmdbMovie: 27, igdb: 19 },
   "Sci-Fi": { tmdbMovie: 878, tmdbTv: 10765, igdb: 18 },
   RPG: { igdb: 12 },
   Shooter: { igdb: 5 },
@@ -32,6 +33,19 @@ export async function GET(request: NextRequest) {
   const genre = searchParams.get("genre");
   const year = searchParams.get("year");
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+
+  if (genre) {
+    const isMismatch =
+      (type === "movie" && !GENRE_MAP[genre]?.tmdbMovie) ||
+      (type === "tv" && !GENRE_MAP[genre]?.tmdbTv) ||
+      (type === "game" && !GENRE_MAP[genre]?.igdb);
+    if (isMismatch) {
+      return NextResponse.json(
+        { error: `Invalid genre "${genre}" for type "${type}"` },
+        { status: 400 },
+      );
+    }
+  }
 
   try {
     if (type === "movie" || type === "tv") {
@@ -137,14 +151,22 @@ async function fetchIgdbDiscover(
   const whereClause = `where ${conditions.join(" & ")};`;
   const apicalypse = `fields name,cover.url,first_release_date,summary,genres.name,rating; ${whereClause} ${sortClause} limit ${limit}; offset ${offset};`;
 
-  const games: IGDBGameItem[] = await igdbFetch("/games", apicalypse);
-  const rawGames = Array.isArray(games) ? games : [];
+  const [games, countRes] = await Promise.all([
+    igdbFetch("/games", apicalypse) as Promise<IGDBGameItem[]>,
+    igdbFetch("/games/count", whereClause) as Promise<{ count: number }>,
+  ]);
+  const rawGames: IGDBGameItem[] = Array.isArray(games) ? games : [];
+  const totalCount =
+    countRes?.count && typeof countRes.count === "number" ? countRes.count : rawGames.length;
+  const totalPages = Math.min(50, Math.max(1, Math.ceil(totalCount / limit)));
 
   const results: UnifiedSearchResult[] = rawGames.map((g) => ({
     externalId: `igdb:${g.id}`,
     mediaType: "game",
     title: g.name || "Untitled Game",
-    releaseYear: g.first_release_date ? new Date(g.first_release_date * 1000).getFullYear() : null,
+    releaseYear: g.first_release_date
+      ? new Date(g.first_release_date * 1000).getUTCFullYear()
+      : null,
     posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
     creator: null,
     summary: g.summary || null,
@@ -154,7 +176,7 @@ async function fetchIgdbDiscover(
   return NextResponse.json({
     results,
     page,
-    totalPages: 50,
-    totalResults: 1200,
+    totalPages,
+    totalResults: totalCount,
   });
 }

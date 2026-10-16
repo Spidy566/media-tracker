@@ -3,21 +3,33 @@ interface RateLimitRecord {
   resetAt: number;
 }
 
+const globalForRateLimit = globalThis as unknown as {
+  rateLimitTracker?: Map<string, RateLimitRecord>;
+  rateLimitInterval?: ReturnType<typeof setInterval>;
+};
+
 // In-memory tracker storing IP addresses and their attempt counts
-const tracker = new Map<string, RateLimitRecord>();
+const tracker = globalForRateLimit.rateLimitTracker ?? new Map<string, RateLimitRecord>();
+if (!globalForRateLimit.rateLimitTracker) {
+  globalForRateLimit.rateLimitTracker = tracker;
+}
 
 // Clean up expired IP records every 5 minutes to prevent memory leaks
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, record] of tracker.entries()) {
-      if (now > record.resetAt) {
-        tracker.delete(key);
+if (!globalForRateLimit.rateLimitInterval) {
+  const interval = setInterval(
+    () => {
+      const now = Date.now();
+      for (const [key, record] of tracker.entries()) {
+        if (now > record.resetAt) {
+          tracker.delete(key);
+        }
       }
-    }
-  },
-  1000 * 60 * 5,
-);
+    },
+    1000 * 60 * 5,
+  );
+  interval.unref();
+  globalForRateLimit.rateLimitInterval = interval;
+}
 
 export function rateLimit({
   key,

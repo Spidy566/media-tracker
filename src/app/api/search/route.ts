@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         externalId: `tmdb:movie:${m.id}`,
         mediaType: "movie",
         title: m.title || "Untitled",
-        releaseYear: m.release_date ? new Date(m.release_date).getFullYear() : null,
+        releaseYear: m.release_date ? parseInt(m.release_date.slice(0, 4), 10) || null : null,
         posterUrl: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
         creator: null,
         summary: m.overview || null,
@@ -63,7 +63,9 @@ export async function GET(request: NextRequest) {
         externalId: `tmdb:tv:${show.id}`,
         mediaType: "tv",
         title: show.name || "Untitled",
-        releaseYear: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
+        releaseYear: show.first_air_date
+          ? parseInt(show.first_air_date.slice(0, 4), 10) || null
+          : null,
         posterUrl: show.poster_path ? `https://image.tmdb.org/t/p/w500${show.poster_path}` : null,
         creator: null,
         summary: show.overview || null,
@@ -81,7 +83,7 @@ export async function GET(request: NextRequest) {
         mediaType: "game",
         title: g.name || "Untitled Game",
         releaseYear: g.first_release_date
-          ? new Date(g.first_release_date * 1000).getFullYear()
+          ? new Date(g.first_release_date * 1000).getUTCFullYear()
           : null,
         posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
         creator: g.involved_companies?.[0]?.company?.name || null,

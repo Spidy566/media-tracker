@@ -165,7 +165,7 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
 
     const title = tmdbData.title || tmdbData.name || "Untitled";
     const dateStr = tmdbData.release_date || tmdbData.first_air_date;
-    const releaseYear = dateStr ? new Date(dateStr).getFullYear() : null;
+    const releaseYear = dateStr ? parseInt(dateStr.slice(0, 4), 10) || null : null;
     const posterUrl = tmdbData.poster_path
       ? `https://image.tmdb.org/t/p/w780${tmdbData.poster_path}`
       : null;
@@ -417,7 +417,7 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
             title: r.title || r.name || "Untitled",
             mediaType: type,
             posterUrl: r.poster_path ? `https://image.tmdb.org/t/p/w780${r.poster_path}` : null,
-            releaseYear: recDate ? new Date(recDate).getFullYear() : null,
+            releaseYear: recDate ? parseInt(recDate.slice(0, 4), 10) || null : null,
             rating: r.vote_average ? Math.round(r.vote_average * 10) / 10 : null,
           };
         },
@@ -442,7 +442,7 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
               id: p.id,
               title: p.title,
               posterUrl: p.poster_path ? `https://image.tmdb.org/t/p/w780${p.poster_path}` : null,
-              releaseYear: p.release_date ? new Date(p.release_date).getFullYear() : null,
+              releaseYear: p.release_date ? parseInt(p.release_date.slice(0, 4), 10) || null : null,
               rating: p.vote_average ? Math.round(p.vote_average * 10) / 10 : null,
               isCurrent: p.id === Number(id),
             }),
@@ -575,7 +575,7 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
 
   const title = game.name || "Untitled";
   const releaseYear = game.first_release_date
-    ? new Date(game.first_release_date * 1000).getFullYear()
+    ? new Date(game.first_release_date * 1000).getUTCFullYear()
     : null;
   const posterUrl = getIgdbCoverUrl(game.cover?.url, "cover_big");
 
@@ -693,7 +693,7 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
         mediaType: "game",
         posterUrl: getIgdbCoverUrl(sim.cover?.url, "cover_big"),
         releaseYear: sim.first_release_date
-          ? new Date(sim.first_release_date * 1000).getFullYear()
+          ? new Date(sim.first_release_date * 1000).getUTCFullYear()
           : null,
         rating:
           typeof sim.rating === "number" && sim.rating > 0

@@ -32,16 +32,19 @@ export async function GET(request: NextRequest) {
     // ─────────────────────────────────────────────────────────────
     if (type === "all" || type === "movie_tv") {
       const langFilter = lang !== "all" ? `&with_original_language=${lang}` : "";
+      const oneYearLater = new Date();
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+      const maxDate = oneYearLater.toISOString().split("T")[0];
 
       const endpoints = [
         // Confirmed future dates (Pages 1 & 2)
-        `/discover/movie?primary_release_date.gte=${today}&sort_by=primary_release_date.asc&page=1&include_adult=false${langFilter}`,
-        `/discover/movie?primary_release_date.gte=${today}&sort_by=primary_release_date.asc&page=2&include_adult=false${langFilter}`,
-        // High-anticipation in-production & announced titles (Pages 1 & 2)
-        `/discover/movie?sort_by=popularity.desc&page=1&include_adult=false${langFilter}`,
-        `/discover/movie?sort_by=popularity.desc&page=2&include_adult=false${langFilter}`,
+        `/discover/movie?primary_release_date.gte=${today}&primary_release_date.lte=${maxDate}&sort_by=primary_release_date.asc&page=1&include_adult=false${langFilter}`,
+        `/discover/movie?primary_release_date.gte=${today}&primary_release_date.lte=${maxDate}&sort_by=primary_release_date.asc&page=2&include_adult=false${langFilter}`,
+        // High-anticipation upcoming titles (Pages 1 & 2)
+        `/discover/movie?primary_release_date.gte=${today}&primary_release_date.lte=${maxDate}&sort_by=popularity.desc&page=1&include_adult=false${langFilter}`,
+        `/discover/movie?primary_release_date.gte=${today}&primary_release_date.lte=${maxDate}&sort_by=popularity.desc&page=2&include_adult=false${langFilter}`,
         // Upcoming TV & Series
-        `/discover/tv?first_air_date.gte=${today}&sort_by=popularity.desc&page=1&include_adult=false${langFilter}`,
+        `/discover/tv?first_air_date.gte=${today}&first_air_date.lte=${maxDate}&sort_by=popularity.desc&page=1&include_adult=false${langFilter}`,
       ];
 
       const responses = await Promise.allSettled(endpoints.map((ep) => tmdbFetch(ep)));
@@ -104,7 +107,7 @@ export async function GET(request: NextRequest) {
             mediaType: "game",
             title: g.name,
             releaseDate: date.toISOString().split("T")[0],
-            releaseYear: date.getFullYear(),
+            releaseYear: date.getUTCFullYear(),
             posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
             summary: g.summary || null,
             genres: g.genres?.map((gen) => gen.name) || [],
