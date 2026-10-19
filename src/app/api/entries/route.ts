@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 const createEntrySchema = z.object({
@@ -25,10 +25,11 @@ const createEntrySchema = z.object({
 // POST /api/entries — Track or update an item
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please log in." }, { status: 401 });
+    const authResult = await requireUser(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
+    const user = authResult;
 
     const body = await request.json();
     const parsed = createEntrySchema.safeParse(body);
@@ -103,6 +104,11 @@ export async function POST(request: NextRequest) {
 // GET /api/entries — Get entries (feed or profile)
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireUser(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
     const { searchParams } = request.nextUrl;
     const userId = searchParams.get("userId");
     const username = searchParams.get("username");
@@ -160,11 +166,11 @@ export async function GET(request: NextRequest) {
 // DELETE /api/entries?id=... — Remove an entry from stash
 export async function DELETE(request: NextRequest) {
   try {
-    // 1. Get user identity from cookie
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authResult = await requireUser(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
+    const user = authResult;
 
     const { searchParams } = request.nextUrl;
     const id = searchParams.get("id");

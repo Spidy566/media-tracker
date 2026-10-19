@@ -3,23 +3,23 @@
 import {
   ArrowUpRight,
   Film,
-  LogIn,
   LogOut,
   Moon,
   Search,
   Settings,
+  ShieldCheck,
   Sun,
-  UserPlus,
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Dialog } from "radix-ui";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PosterToggle } from "@/components/poster-toggle";
-import { useActiveUser } from "@/hooks/use-active-user";
-import { AUTH_MODAL_EVENT, openSearchModal } from "@/lib/auth-events";
+import type { CurrentUser } from "@/lib/auth";
+import { authClient } from "@/lib/auth-client";
+import { openSearchModal } from "@/lib/auth-events";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -32,15 +32,32 @@ const NAV_ITEMS = [
 interface MenuCardProps {
   isOpen: boolean;
   onClose: () => void;
+  user: CurrentUser;
+  isAdmin?: boolean;
 }
 
-export function MenuCard({ isOpen, onClose }: MenuCardProps) {
+export function MenuCard({ isOpen, onClose, user, isAdmin = false }: MenuCardProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const { currentUser, logout, isLoggingOut } = useActiveUser();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isDark = resolvedTheme === "dark";
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await authClient.signOut();
+      onClose();
+      router.replace("/login");
+      router.refresh();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Close card automatically on route change
   useEffect(() => {
@@ -122,6 +139,35 @@ export function MenuCard({ isOpen, onClose }: MenuCardProps) {
               );
             })}
 
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={onClose}
+                className="flex items-center justify-between py-3 group transition-colors"
+              >
+                <span
+                  className={cn(
+                    "text-2xl font-medium tracking-tight transition-colors",
+                    pathname.startsWith("/admin")
+                      ? "text-brand font-semibold"
+                      : "text-muted-foreground group-hover:text-brand",
+                  )}
+                >
+                  Admin
+                </span>
+                <div
+                  className={cn(
+                    "size-8 rounded-full flex items-center justify-center transition-all shrink-0",
+                    pathname.startsWith("/admin")
+                      ? "bg-brand text-brand-foreground shadow-xs"
+                      : "bg-muted text-muted-foreground group-hover:bg-brand/10 group-hover:text-brand",
+                  )}
+                >
+                  <ShieldCheck className="size-4 stroke-[2.5]" />
+                </div>
+              </Link>
+            )}
+
             <button
               type="button"
               onClick={() => {
@@ -168,93 +214,40 @@ export function MenuCard({ isOpen, onClose }: MenuCardProps) {
                 <span>{isDark ? "Light theme" : "Dark theme"}</span>
               </button>
 
-              {currentUser ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout();
-                    onClose();
-                  }}
-                  disabled={isLoggingOut}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive font-medium transition cursor-pointer text-left col-span-2"
-                >
-                  <LogOut className="size-4 shrink-0" />
-                  <span>Log out</span>
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      window.dispatchEvent(new CustomEvent(AUTH_MODAL_EVENT));
-                    }}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-muted/60 text-muted-foreground hover:text-foreground font-medium transition cursor-pointer text-left"
-                  >
-                    <LogIn className="size-4 shrink-0" />
-                    <span>Log in</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      window.dispatchEvent(new CustomEvent(AUTH_MODAL_EVENT));
-                    }}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-muted/60 text-muted-foreground hover:text-foreground font-medium transition cursor-pointer text-left"
-                  >
-                    <UserPlus className="size-4 shrink-0" />
-                    <span>Create account</span>
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive font-medium transition cursor-pointer text-left col-span-2 disabled:opacity-50"
+              >
+                <LogOut className="size-4 shrink-0" />
+                <span>{isLoggingOut ? "Signing out..." : "Log out"}</span>
+              </button>
             </div>
 
-            {/* Bottom Card (Zoox Socials/Profile Box) */}
-            {currentUser ? (
-              <div className="rounded-2xl border border-border bg-card/60 p-4 mt-4 flex items-center justify-between gap-3 shadow-xs">
-                <Link
-                  href={`/squad/${currentUser.username}`}
-                  onClick={onClose}
-                  className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-85 transition rounded-xl"
-                  title="View profile"
-                >
-                  <div className="size-10 rounded-full bg-muted border border-border flex items-center justify-center text-sm font-semibold text-foreground shrink-0 shadow-xs">
-                    {currentUser.displayName[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex flex-col min-w-0 leading-tight">
-                    <span className="text-sm font-semibold text-foreground truncate">
-                      {currentUser.displayName}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      @{currentUser.username}
-                    </span>
-                  </div>
-                </Link>
-
-                <div className="shrink-0">
-                  <PosterToggle />
+            {/* Bottom Card (Profile Box) */}
+            <div className="rounded-2xl border border-border bg-card/60 p-4 mt-4 flex items-center justify-between gap-3 shadow-xs">
+              <Link
+                href={`/squad/${user.username}`}
+                onClick={onClose}
+                className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-85 transition rounded-xl"
+                title="View profile"
+              >
+                <div className="size-10 rounded-full bg-muted border border-border flex items-center justify-center text-sm font-semibold text-foreground shrink-0 shadow-xs">
+                  {user.displayName[0]?.toUpperCase()}
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-border bg-card/60 p-4 mt-4 flex items-center justify-between gap-3 shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    window.dispatchEvent(new CustomEvent(AUTH_MODAL_EVENT));
-                  }}
-                  className="flex-1 h-10 rounded-xl bg-brand text-brand-foreground hover:opacity-90 font-medium text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <LogIn className="size-4" />
-                  <span>Log in</span>
-                </button>
-
-                <div className="shrink-0">
-                  <PosterToggle />
+                <div className="flex flex-col min-w-0 leading-tight">
+                  <span className="text-sm font-semibold text-foreground truncate">
+                    {user.displayName}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">@{user.username}</span>
                 </div>
+              </Link>
+
+              <div className="shrink-0">
+                <PosterToggle />
               </div>
-            )}
+            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

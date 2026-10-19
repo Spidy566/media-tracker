@@ -131,7 +131,7 @@ export function CalendarRow({
           {genresStr && (
             <>
               <span>•</span>
-              <span className="truncate max-w-[14rem]">{genresStr}</span>
+              <span className="truncate max-w-56">{genresStr}</span>
             </>
           )}
         </div>

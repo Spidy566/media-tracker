@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { SettingsClient } from "@/app/settings/settings-client";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { HOME_HIDDEN_COOKIE, parseHiddenSections } from "@/lib/home-prefs";
+import { SettingsClient } from "./settings-client";
 
 export const metadata: Metadata = {
   title: "Settings - Tracklist",
@@ -11,6 +12,10 @@ export const metadata: Metadata = {
 
 export default async function SettingsPage() {
   const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect("/login");
+  }
+
   const cookieStore = await cookies();
   const hiddenCookie = cookieStore.get(HOME_HIDDEN_COOKIE)?.value;
   const initialHiddenSections = parseHiddenSections(hiddenCookie);

@@ -4,29 +4,27 @@ import { Bookmark, Calendar, Compass, Film, Home, Menu, Search } from "lucide-re
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AuthModal } from "@/components/auth-modal";
 import { MenuCard } from "@/components/menu-card";
 import { PosterToggle } from "@/components/poster-toggle";
 import { SearchModal } from "@/components/search-modal";
-import { AUTH_MODAL_EVENT, SEARCH_MODAL_EVENT } from "@/lib/auth-events";
+import type { CurrentUser } from "@/lib/auth";
+import { SEARCH_MODAL_EVENT } from "@/lib/auth-events";
 import { cn } from "@/lib/utils";
 
-export function NavBar() {
+interface NavBarProps {
+  user: CurrentUser;
+  isAdmin?: boolean;
+}
+
+export function NavBar({ user, isAdmin = false }: NavBarProps) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const isHome = pathname === "/";
   const isExplore = pathname.startsWith("/explore");
   const isLibrary = pathname.startsWith("/library");
   const isCalendar = pathname.startsWith("/calendar");
-
-  useEffect(() => {
-    const handleOpenAuth = () => setIsAuthOpen(true);
-    window.addEventListener(AUTH_MODAL_EVENT, handleOpenAuth);
-    return () => window.removeEventListener(AUTH_MODAL_EVENT, handleOpenAuth);
-  }, []);
 
   useEffect(() => {
     const handleOpenSearch = () => setIsSearchOpen(true);
@@ -206,9 +204,13 @@ export function NavBar() {
         </Link>
       </nav>
 
-      <MenuCard isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <MenuCard
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        user={user}
+        isAdmin={isAdmin}
+      />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </>
   );
 }

@@ -1,10 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth";
 import { getMediaDetails } from "@/lib/media-details";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ type: string; id: string }> },
 ) {
+  const authResult = await requireUser(_request);
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   const { type, id } = await params;
 
   if (type !== "movie" && type !== "tv" && type !== "game") {

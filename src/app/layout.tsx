@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Barlow_Condensed, Geist_Mono, Host_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
-import { Suspense } from "react";
-import { NavBar } from "@/components/nav-bar";
 import { PosterProvider } from "@/components/providers/poster-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -60,9 +58,6 @@ export default async function RootLayout({
           <QueryProvider>
             <PosterProvider initialHidden={hidePosters}>
               <TooltipProvider>
-                <Suspense fallback={<div className="h-16 bg-background/80" />}>
-                  <NavBar />
-                </Suspense>
                 <main className="flex-1 pb-16 md:pb-0">{children}</main>
               </TooltipProvider>
             </PosterProvider>

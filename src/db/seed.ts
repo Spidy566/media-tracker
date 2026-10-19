@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { sql } from "drizzle-orm";
-import { mediaItems, userMediaEntries, users } from "@/db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import { account, mediaItems, userMediaEntries, users } from "@/db/schema";
 import { db } from "@/lib/db";
 import { ensureMediaBackdrop } from "@/lib/media-backdrop";
 
@@ -30,6 +30,8 @@ const SQUAD = [
   { username: "alex", displayName: "Alex" },
 ].map((u) => ({
   ...u,
+  email: `${u.username}@tracklist.invalid`,
+  emailVerified: true,
   passwordHash: DEFAULT_PASSWORD_HASH,
   avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${u.username}`,
 }));
@@ -249,10 +251,31 @@ async function seed() {
           displayName: sql`excluded.display_name`,
           avatarUrl: sql`excluded.avatar_url`,
           passwordHash: sql`excluded.password_hash`,
+          email: sql`excluded.email`,
+          emailVerified: sql`excluded.email_verified`,
         },
       })
       .returning({ id: users.id, username: users.username });
     const userIds = new Map(insertedUsers.map((u) => [u.username, u.id]));
+
+    console.log("🔐 Seeding credential accounts for Better Auth...");
+    for (const user of insertedUsers) {
+      const existingAccount = await tx
+        .select({ id: account.id })
+        .from(account)
+        .where(and(eq(account.userId, user.id), eq(account.providerId, "credential")))
+        .limit(1);
+
+      if (existingAccount.length === 0) {
+        await tx.insert(account).values({
+          id: crypto.randomUUID(),
+          accountId: user.id,
+          providerId: "credential",
+          userId: user.id,
+          password: DEFAULT_PASSWORD_HASH,
+        });
+      }
+    }
 
     console.log("🎬 Seeding movie, series & game catalog...");
     const insertedItems = await tx

@@ -11,6 +11,7 @@
     "check": "biome check --write .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun run src/db/migrate.ts",
+    "db:verify-auth": "bun run src/db/verify-auth.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run src/db/seed.ts"
@@ -18,6 +19,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.101.1",
     "bcrypt-ts": "^9.0.2",
+    "better-auth": "^1.7.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
@@ -35,6 +37,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.4.21",
     "@biomejs/biome": "2.5.12",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

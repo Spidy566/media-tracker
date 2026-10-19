@@ -81,7 +81,7 @@ export function DayPanel({
             max-md:data-[state=open]:animate-in max-md:data-[state=closed]:animate-out
             max-md:data-[state=closed]:fade-out-0 max-md:data-[state=open]:fade-in-0
             max-md:data-[state=closed]:slide-out-to-bottom max-md:data-[state=open]:slide-in-from-bottom
-            md:top-3 md:right-3 md:bottom-3 md:w-[26rem] md:rounded-3xl md:p-6
+            md:top-3 md:right-3 md:bottom-3 md:w-104 md:rounded-3xl md:p-6
             md:data-[state=open]:animate-in md:data-[state=closed]:animate-out
             md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0
             md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right"

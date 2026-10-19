@@ -1,5 +1,3 @@
-import { promptSignIn } from "@/lib/auth-events";
-
 export interface LogEntryPayload {
   media: {
     externalId: string;
@@ -25,7 +23,9 @@ export async function logEntryApi(payload: LogEntryPayload) {
   });
 
   if (res.status === 401) {
-    promptSignIn("Sign in to bookmark titles");
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
     throw new Error("Unauthorized");
   }
 

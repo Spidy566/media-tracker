@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireUser } from "@/lib/auth";
 import { monthRange } from "@/lib/calendar-dates";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
@@ -122,6 +123,11 @@ const querySchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   const { searchParams } = request.nextUrl;
 
   const rawParams = {

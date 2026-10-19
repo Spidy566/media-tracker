@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
 import { tmdbFetch } from "@/lib/tmdb";
@@ -17,6 +18,11 @@ export interface UnifiedSearchResult {
 }
 
 export async function GET(request: NextRequest) {
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   const query = request.nextUrl.searchParams.get("q");
 
   if (!query?.trim()) {

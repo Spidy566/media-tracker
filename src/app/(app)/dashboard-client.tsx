@@ -9,7 +9,6 @@ import {
   Film,
   Gamepad2,
   Info,
-  LogIn,
   Pause,
   Play,
   Star,
@@ -26,7 +25,6 @@ import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
 import { ScrollRow } from "@/components/scroll-row";
 import { logEntryApi } from "@/lib/api-entries";
-import { openAuthModal } from "@/lib/auth-events";
 import type { HomeSection } from "@/lib/home-prefs";
 import { getHeroTitleSizeClass } from "@/lib/typography";
 import { cn } from "@/lib/utils";
@@ -92,7 +90,7 @@ function getStatusDotColor(status: string) {
 }
 
 export function DashboardClient({
-  currentUser,
+  currentUser: _currentUser,
   initialEntries,
   heroEntries,
   squadActivity,
@@ -505,7 +503,7 @@ export function DashboardClient({
       )}
 
       {/* Logged-in Empty Hero fallback (no bottom border) */}
-      {!heroEntry && currentUser && (
+      {!heroEntry && (
         <section
           className={cn(
             "relative w-full px-4 sm:px-8 bg-background flex items-center",
@@ -530,37 +528,6 @@ export function DashboardClient({
                 <Compass className="w-4 h-4" />
                 <span>Explore Catalog</span>
               </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Logged-out Hero fallback (no bottom border) */}
-      {!currentUser && (
-        <section
-          className={cn(
-            "relative w-full px-4 sm:px-8 bg-background flex items-center",
-            BANNER_HEIGHT,
-          )}
-        >
-          <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">
-                Sign in to start tracking
-              </h1>
-              <p className="text-sm text-muted-foreground mt-3 max-w-xl">
-                Keep track of movies, TV shows, and video games in one shared space with your squad.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={openAuthModal}
-                className="h-10 px-6 rounded-md bg-brand hover:opacity-90 text-brand-foreground font-semibold text-sm flex items-center gap-2 transition cursor-pointer"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Sign in</span>
-              </button>
             </div>
           </div>
         </section>

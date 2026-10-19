@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { users } from "@/db/schema";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 const profileSchema = z.object({
@@ -14,10 +14,11 @@ const profileSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authResult = await requireUser(request);
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
+  const currentUser = authResult;
 
   try {
     const json = await request.json();

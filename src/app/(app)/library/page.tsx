@@ -1,27 +1,15 @@
 import { desc, eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { LibraryClient } from "./library-client";
-import { LibraryLoggedOutPrompt } from "./logged-out-prompt";
 
 export default async function LibraryPage() {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    return (
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-            Your Library
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Everything you have logged, bookmarked, or completed.
-          </p>
-        </div>
-        <LibraryLoggedOutPrompt />
-      </main>
-    );
+    redirect("/login");
   }
 
   const rawEntries = await db
