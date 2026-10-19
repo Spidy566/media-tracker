@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Dialog } from "radix-ui";
 import { useState } from "react";
 import { usePosters } from "@/components/providers/poster-provider";
+import { ScrollRow } from "@/components/scroll-row";
 import type { GameScreenshot, GameTimeToBeat } from "@/types/media-details";
 
 interface GameDetailsSectionProps {
@@ -135,28 +136,32 @@ export function GameDetailsSection({
 
       {/* 4. Screenshot Gallery & Lightbox */}
       {hasScreenshots && (
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-foreground">Screenshots</h3>
-
+        <div>
           {hidePosters ? (
-            <div className="flex flex-wrap gap-2">
-              {screenshots.map((s, idx) => (
-                <span
-                  key={s.id || s.url}
-                  className="px-3 py-1.5 rounded-lg bg-card border border-border text-xs text-muted-foreground font-medium"
-                >
-                  Screenshot {idx + 1}
-                </span>
-              ))}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-foreground">Screenshots</h3>
+              <div className="flex flex-wrap gap-2">
+                {screenshots.map((s, idx) => (
+                  <span
+                    key={s.id || s.url}
+                    className="px-3 py-1.5 rounded-lg bg-card border border-border text-xs text-muted-foreground font-medium"
+                  >
+                    Screenshot {idx + 1}
+                  </span>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="overflow-x-auto flex gap-3 scroll-smooth no-scrollbar pb-2">
+            <ScrollRow
+              title={<h3 className="text-xs font-semibold text-foreground">Screenshots</h3>}
+              contentClassName="gap-3"
+            >
               {screenshots.map((s, idx) => (
                 <button
                   type="button"
                   key={s.id || s.url}
                   onClick={() => setActiveScreenshot(s)}
-                  className="relative aspect-video w-56 shrink-0 rounded-xl overflow-hidden bg-muted border border-border shadow-2xs hover:border-foreground/40 transition cursor-pointer group"
+                  className="relative aspect-video w-56 shrink-0 snap-start rounded-xl overflow-hidden bg-muted border border-border shadow-2xs hover:border-foreground/40 transition cursor-pointer group"
                 >
                   <Image
                     src={s.thumbnailUrl}
@@ -167,7 +172,7 @@ export function GameDetailsSection({
                   />
                 </button>
               ))}
-            </div>
+            </ScrollRow>
           )}
 
           {/* Radix Dialog Lightbox */}

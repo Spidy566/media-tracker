@@ -11,6 +11,7 @@ interface PosterImageProps {
   releaseYear?: number | null | string;
   sizes?: string;
   priority?: boolean;
+  loading?: "lazy" | "eager";
   className?: string;
   style?: React.CSSProperties;
   /** "none" renders nothing when hidden (use for backdrops) */
@@ -38,6 +39,7 @@ export function PosterImage({
   releaseYear: _releaseYear,
   sizes,
   priority,
+  loading,
   className,
   style,
   fallback = "title",
@@ -77,6 +79,7 @@ export function PosterImage({
       fill
       sizes={sizes}
       priority={priority}
+      loading={loading}
       className={className}
       style={style}
       onError={onError}

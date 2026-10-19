@@ -1,6 +1,17 @@
 "use client";
 
-import { ArrowUpRight, Film, LogIn, LogOut, Moon, Settings, Sun, UserPlus, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  Film,
+  LogIn,
+  LogOut,
+  Moon,
+  Search,
+  Settings,
+  Sun,
+  UserPlus,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -8,7 +19,7 @@ import { Dialog } from "radix-ui";
 import { useEffect } from "react";
 import { PosterToggle } from "@/components/poster-toggle";
 import { useActiveUser } from "@/hooks/use-active-user";
-import { AUTH_MODAL_EVENT } from "@/lib/auth-events";
+import { AUTH_MODAL_EVENT, openSearchModal } from "@/lib/auth-events";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -110,6 +121,22 @@ export function MenuCard({ isOpen, onClose }: MenuCardProps) {
                 </Link>
               );
             })}
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                openSearchModal();
+              }}
+              className="flex items-center justify-between py-3 group transition-colors w-full text-left cursor-pointer"
+            >
+              <span className="text-2xl font-medium tracking-tight text-muted-foreground group-hover:text-foreground transition-colors">
+                Search
+              </span>
+              <div className="size-8 rounded-full flex items-center justify-center transition-all shrink-0 bg-muted text-muted-foreground group-hover:bg-foreground/10 group-hover:text-foreground">
+                <Search className="size-4 stroke-[2.5]" />
+              </div>
+            </button>
           </nav>
 
           {/* Secondary Actions & Bottom Card */}

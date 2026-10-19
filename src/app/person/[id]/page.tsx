@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackButton } from "@/app/media/[type]/[id]/back-button";
 import { MediaCard } from "@/components/media-card";
+import { ScrollRow } from "@/components/scroll-row";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -223,32 +224,29 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
 
         {/* Known for */}
         {person.knownFor.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-xs font-semibold text-foreground">Known for</h2>
-            <div className="overflow-x-auto flex gap-4 scroll-smooth no-scrollbar pb-2">
-              {person.knownFor.map((credit) => {
-                const parts = credit.externalId.split(":");
-                const tmdbId = parts[parts.length - 1];
-                return (
-                  <div key={credit.externalId} className="w-36 sm:w-44 shrink-0">
-                    <Link href={`/media/${credit.mediaType}/${tmdbId}`} className="block group">
-                      <MediaCard
-                        title={credit.title}
-                        mediaType={credit.mediaType}
-                        posterUrl={
-                          credit.posterPath
-                            ? `https://image.tmdb.org/t/p/w780${credit.posterPath}`
-                            : null
-                        }
-                        releaseYear={credit.year}
-                        subtitle={credit.character || credit.job || undefined}
-                      />
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <ScrollRow title={<h2 className="text-xs font-semibold text-foreground">Known for</h2>}>
+            {person.knownFor.map((credit) => {
+              const parts = credit.externalId.split(":");
+              const tmdbId = parts[parts.length - 1];
+              return (
+                <div key={credit.externalId} className="w-36 sm:w-44 shrink-0 snap-start">
+                  <Link href={`/media/${credit.mediaType}/${tmdbId}`} className="block group">
+                    <MediaCard
+                      title={credit.title}
+                      mediaType={credit.mediaType}
+                      posterUrl={
+                        credit.posterPath
+                          ? `https://image.tmdb.org/t/p/w780${credit.posterPath}`
+                          : null
+                      }
+                      releaseYear={credit.year}
+                      subtitle={credit.character || credit.job || undefined}
+                    />
+                  </Link>
+                </div>
+              );
+            })}
+          </ScrollRow>
         )}
 
         {/* Squad overlap summary */}

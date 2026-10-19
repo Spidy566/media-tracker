@@ -8,7 +8,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { MenuCard } from "@/components/menu-card";
 import { PosterToggle } from "@/components/poster-toggle";
 import { SearchModal } from "@/components/search-modal";
-import { AUTH_MODAL_EVENT } from "@/lib/auth-events";
+import { AUTH_MODAL_EVENT, SEARCH_MODAL_EVENT } from "@/lib/auth-events";
 import { cn } from "@/lib/utils";
 
 export function NavBar() {
@@ -26,6 +26,12 @@ export function NavBar() {
     const handleOpenAuth = () => setIsAuthOpen(true);
     window.addEventListener(AUTH_MODAL_EVENT, handleOpenAuth);
     return () => window.removeEventListener(AUTH_MODAL_EVENT, handleOpenAuth);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenSearch = () => setIsSearchOpen(true);
+    window.addEventListener(SEARCH_MODAL_EVENT, handleOpenSearch);
+    return () => window.removeEventListener(SEARCH_MODAL_EVENT, handleOpenSearch);
   }, []);
 
   useEffect(() => {
@@ -146,16 +152,18 @@ export function NavBar() {
             </div>
           </nav>
 
-          {/* Right Zone: Search button (no ⌘K badge) & Poster Toggle */}
+          {/* Right Zone: Search button (hidden on Home) & Poster Toggle */}
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2 h-9 px-3.5 rounded-full bg-muted/50 hover:bg-muted border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition cursor-pointer focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <Search className="size-3.5" />
-              <span className="hidden sm:inline">Search titles...</span>
-            </button>
+            {!isHome && (
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className="flex items-center gap-2 h-9 px-3.5 rounded-full bg-muted/50 hover:bg-muted border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition cursor-pointer focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <Search className="size-3.5" />
+                <span className="hidden sm:inline">Search titles...</span>
+              </button>
+            )}
 
             <PosterToggle />
           </div>

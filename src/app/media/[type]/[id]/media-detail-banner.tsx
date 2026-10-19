@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BANNER_HEIGHT, BannerVignette } from "@/components/backdrop-vignette";
 import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
 import { cn } from "@/lib/utils";
@@ -33,7 +34,7 @@ export function MediaDetailBanner({
           "relative w-full overflow-hidden select-none",
           isCompact
             ? "h-24 sm:h-32 bg-muted"
-            : "aspect-video sm:aspect-auto max-sm:h-auto h-80 sm:h-120 lg:h-136 bg-background",
+            : cn("aspect-video sm:aspect-auto max-sm:h-auto bg-background", BANNER_HEIGHT),
         )}
       >
         {hasBackdrop && backdropUrl ? (
@@ -55,14 +56,7 @@ export function MediaDetailBanner({
             </div>
 
             {/* Corner vignette & bottom fade */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                backgroundImage:
-                  "radial-gradient(ellipse 120% 100% at 50% 40%, transparent 55%, color-mix(in oklab, var(--background) 65%, transparent) 100%), linear-gradient(to bottom, transparent 55%, var(--background) 100%)",
-              }}
-            />
+            <BannerVignette />
           </>
         ) : !hidePosters && posterUrl ? (
           /* Gradient wash when there is no backdrop: blurred poster over bg-muted */

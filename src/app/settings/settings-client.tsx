@@ -1,7 +1,21 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, EyeOff, Loader2, LogIn, LogOut, Moon, Sun, User } from "lucide-react";
+import {
+  Bookmark,
+  Check,
+  Eye,
+  EyeOff,
+  Loader2,
+  LogIn,
+  LogOut,
+  Moon,
+  Play,
+  Sun,
+  TrendingUp,
+  User,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -11,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useActiveUser } from "@/hooks/use-active-user";
 import { AUTH_MODAL_EVENT } from "@/lib/auth-events";
+import { HOME_HIDDEN_COOKIE, type HomeSection } from "@/lib/home-prefs";
+import { cn } from "@/lib/utils";
 
 interface SettingsClientProps {
   initialUser: {
@@ -19,9 +35,10 @@ interface SettingsClientProps {
     displayName: string;
     avatarUrl: string | null;
   } | null;
+  initialHiddenSections?: HomeSection[];
 }
 
-export function SettingsClient({ initialUser }: SettingsClientProps) {
+export function SettingsClient({ initialUser, initialHiddenSections = [] }: SettingsClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -32,6 +49,17 @@ export function SettingsClient({ initialUser }: SettingsClientProps) {
 
   const [mounted, setMounted] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [hiddenSections, setHiddenSections] = useState<HomeSection[]>(initialHiddenSections);
+
+  const toggleSection = (id: HomeSection) => {
+    const next = hiddenSections.includes(id)
+      ? hiddenSections.filter((s) => s !== id)
+      : [...hiddenSections, id];
+    setHiddenSections(next);
+    // biome-ignore lint/suspicious/noDocumentCookie: client-side cookie assignment for home hidden sections
+    document.cookie = `${HOME_HIDDEN_COOKIE}=${next.join(",")}; path=/; max-age=31536000; samesite=lax`;
+    router.refresh();
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -177,6 +205,83 @@ export function SettingsClient({ initialUser }: SettingsClientProps) {
           >
             {hidePosters ? "Stealth: ON" : "Stealth: OFF"}
           </Button>
+        </div>
+      </section>
+
+      {/* 3. Home page section preferences */}
+      <section className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
+        <div>
+          <h2 className="text-base font-bold text-foreground">Home page</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Choose which sections appear on your home feed.
+          </p>
+        </div>
+
+        <div className="space-y-4 pt-2">
+          {[
+            {
+              id: "squad" as HomeSection,
+              label: "Squad activity",
+              description: "Recent milestone logs and reviews from your squad.",
+              icon: <Users className="w-4 h-4" />,
+            },
+            {
+              id: "jump" as HomeSection,
+              label: "Jump back in",
+              description: "Quick access to titles you are currently watching or playing.",
+              icon: <Play className="w-4 h-4 fill-current stroke-0" />,
+            },
+            {
+              id: "queue" as HomeSection,
+              label: "Up next in queue",
+              description: "Your prioritized personal queue of upcoming titles.",
+              icon: <Bookmark className="w-4 h-4" />,
+            },
+            {
+              id: "trending" as HomeSection,
+              label: "Trending",
+              description: "Popular movies, TV series, and games across platforms.",
+              icon: <TrendingUp className="w-4 h-4" />,
+            },
+          ].map((sec) => {
+            const isVisible = !hiddenSections.includes(sec.id);
+            return (
+              <div key={sec.id} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-foreground shrink-0">
+                    {sec.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-sm font-semibold text-foreground block">{sec.label}</span>
+                    <span className="text-xs text-muted-foreground block truncate">
+                      {sec.description}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isVisible}
+                  aria-label={`Toggle ${sec.label}`}
+                  onClick={() => toggleSection(sec.id)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isVisible ? "bg-brand" : "bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block size-5 transform rounded-full bg-card shadow-xs ring-0 transition duration-200 ease-in-out",
+                      isVisible
+                        ? "translate-x-5 bg-brand-foreground"
+                        : "translate-x-0 bg-muted-foreground",
+                    )}
+                  />
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
