@@ -246,6 +246,23 @@ export function LoginClient() {
             <LogIn className="size-4" />
             <span>{isSubmitting ? "Signing in..." : "Sign in"}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setUsername("spidy");
+              setPassword("password123");
+              setErrorMessage(null);
+            }}
+            className="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 border border-border text-xs text-muted-foreground transition cursor-pointer text-left"
+          >
+            <span>
+              Portfolio Demo: username <code className="font-mono font-semibold text-foreground">spidy</code> · password <code className="font-mono font-semibold text-foreground">password123</code>
+            </span>
+            <span className="shrink-0 font-medium text-[11px] text-foreground bg-card px-2.5 py-1 rounded-lg border border-border transition shadow-xs">
+              Fill Demo Credentials
+            </span>
+          </button>
         </form>
       ) : (
         <form onSubmit={handleSignUp} className="flex flex-col gap-4">
