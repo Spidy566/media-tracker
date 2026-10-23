@@ -6,8 +6,7 @@ const globalForDb = globalThis as unknown as {
   conn: Pool | undefined;
 };
 
-const useSsl =
-  env.DATABASE_URL.includes("sslmode=require") || env.NODE_ENV === "production";
+const useSsl = env.DATABASE_URL.includes("sslmode=require") || env.NODE_ENV === "production";
 
 const pool =
   globalForDb.conn ??

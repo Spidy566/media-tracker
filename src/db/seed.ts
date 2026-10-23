@@ -22,13 +22,9 @@ import { hashSync } from "bcrypt-ts";
 type MediaType = "movie" | "tv" | "game";
 type Status = "want_to" | "doing" | "done";
 
-const DEFAULT_PASSWORD_HASH = hashSync("password123", 10);
+const DEFAULT_PASSWORD_HASH = hashSync("demo", 10);
 
-const SQUAD = [
-  { username: "spidy", displayName: "Spidy" },
-  { username: "dave", displayName: "Dave" },
-  { username: "alex", displayName: "Alex" },
-].map((u) => ({
+const SQUAD = [{ username: "demo", displayName: "Demo User" }].map((u) => ({
   ...u,
   email: `${u.username}@tracklist.invalid`,
   emailVerified: true,
@@ -146,64 +142,44 @@ const ENTRIES: {
   rating?: number;
   reviewNote?: string;
 }[] = [
-  // Spidy
-  { username: "spidy", externalId: "tmdb:movie:693134", status: "doing" },
-  { username: "spidy", externalId: "igdb:119133", status: "doing" },
+  { username: "demo", externalId: "tmdb:movie:693134", status: "doing" },
+  { username: "demo", externalId: "igdb:119133", status: "doing" },
+  { username: "demo", externalId: "igdb:119171", status: "want_to" },
   {
-    username: "spidy",
+    username: "demo",
     externalId: "tmdb:movie:872585",
     status: "done",
-    rating: 5, // <-- Scaled to 5
+    rating: 5,
     reviewNote: "Nolan's sound design in IMAX was unreal. Cillian Murphy gave a masterclass.",
   },
   {
-    username: "spidy",
+    username: "demo",
     externalId: "tmdb:movie:569094",
     status: "done",
-    rating: 5, // <-- Scaled to 5
+    rating: 5,
     reviewNote:
       "Visual masterpiece. The soundtrack and animation transitions alone deserve every award.",
   },
-
-  // Dave
-  { username: "dave", externalId: "igdb:119171", status: "doing" },
   {
-    username: "dave",
-    externalId: "igdb:119133",
-    status: "done",
-    rating: 5, // <-- Scaled to 5
-    reviewNote: "Hardest boss fights I've ever experienced, but completely worth 120 hours.",
-  },
-  {
-    username: "dave",
+    username: "demo",
     externalId: "tmdb:movie:414906",
     status: "done",
-    rating: 4, // <-- Scaled to 4
+    rating: 4,
     reviewNote: "Genuinely gritty detective noir take that worked really well.",
   },
-
-  // Alex
   {
-    username: "alex",
-    externalId: "igdb:1877",
-    status: "done",
-    rating: 4, // <-- Scaled to 4
-    reviewNote: "Phantom Liberty fixed everything. Night City looks unbelievable on max settings.",
-  },
-  {
-    username: "alex",
-    externalId: "tmdb:movie:693134",
-    status: "done",
-    rating: 5, // <-- Scaled to 5
-    reviewNote:
-      "Denis Villeneuve does not miss. The cinematography during the desert battle was breathtaking.",
-  },
-  {
-    username: "alex",
+    username: "demo",
     externalId: "tmdb:tv:95396",
     status: "done",
-    rating: 5, // <-- Scaled to 5
+    rating: 5,
     reviewNote: "The season finale was one of the most tense hours of television ever made.",
+  },
+  {
+    username: "demo",
+    externalId: "igdb:1877",
+    status: "done",
+    rating: 4,
+    reviewNote: "Phantom Liberty fixed everything. Night City looks unbelievable on max settings.",
   },
 ];
 

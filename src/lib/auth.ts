@@ -65,4 +65,3 @@ export function isAdmin(user: { username: string } | null | undefined): boolean 
   const adminList = env.ADMIN_USERNAMES.split(",").map((u) => u.trim().toLowerCase());
   return adminList.includes(user.username.toLowerCase());
 }
-

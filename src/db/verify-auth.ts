@@ -52,9 +52,17 @@ async function verifyAuth() {
         );
       }
 
-      // 3. Verify seeded users' bcrypt hashes against 'password123'
-      const seededUsernames = ["spidy", "dave", "alex"];
-      console.log(`🔐 Verifying bcrypt hashes for seeded users (${seededUsernames.join(", ")})...`);
+      if (userRow.total === 0) {
+        console.log(
+          "ℹ️ Database tables verified, but contains 0 users. Run 'bun run db:seed' if you want the demo user.",
+        );
+        console.log("🎉 All auth verification checks passed successfully!");
+        return;
+      }
+
+      // 3. Verify seeded demo user's bcrypt hash against 'demo'
+      const seededUsernames = ["demo"];
+      console.log(`🔐 Verifying bcrypt hash for seeded user (${seededUsernames.join(", ")})...`);
 
       for (const username of seededUsernames) {
         const checkRes = await client.query(
@@ -74,14 +82,12 @@ async function verifyAuth() {
           throw new Error(`Missing password hash in account for '${username}'`);
         }
 
-        const isValid = await compare("password123", hash);
+        const isValid = await compare("demo", hash);
         if (!isValid) {
-          throw new Error(
-            `Bcrypt verification FAILED for user '${username}' with password 'password123'`,
-          );
+          throw new Error(`Bcrypt verification FAILED for user '${username}' with password 'demo'`);
         }
 
-        console.log(`  ✅ User '${username}': bcrypt hash verified against 'password123'`);
+        console.log(`  ✅ User '${username}': bcrypt hash verified against 'demo'`);
       }
 
       console.log("🎉 All auth verification checks passed successfully!");
