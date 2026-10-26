@@ -2,8 +2,8 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { Ban, Bookmark, Check, Play } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
@@ -16,9 +16,21 @@ interface LibraryClientProps {
 
 export function LibraryClient({ initialEntries }: LibraryClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status") as MediaStatus | null;
+  const initialTab: MediaStatus =
+    statusParam && ["want_to", "doing", "done", "dropped"].includes(statusParam)
+      ? statusParam
+      : "want_to";
 
-  const [activeTab, setActiveTab] = useState<MediaStatus>("want_to");
+  const [activeTab, setActiveTab] = useState<MediaStatus>(initialTab);
   const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv" | "game">("all");
+
+  useEffect(() => {
+    if (statusParam && ["want_to", "doing", "done", "dropped"].includes(statusParam)) {
+      setActiveTab(statusParam);
+    }
+  }, [statusParam]);
 
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({ media, status }: { media: Entry["media"]; status: MediaStatus }) => {

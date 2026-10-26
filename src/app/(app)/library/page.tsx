@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -58,7 +59,9 @@ export default async function LibraryPage() {
         </p>
       </div>
 
-      <LibraryClient initialEntries={entries} />
+      <Suspense fallback={<div className="h-40 animate-pulse bg-white/5 rounded-2xl" />}>
+        <LibraryClient initialEntries={entries} />
+      </Suspense>
     </main>
   );
 }

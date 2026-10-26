@@ -1,14 +1,12 @@
 import { desc, eq } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
-import { cookies } from "next/headers";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { HOME_HIDDEN_COOKIE, parseHiddenSections } from "@/lib/home-prefs";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
-import { ensureMediaBackdrop } from "@/lib/media-backdrop";
+import { normalizeBackdropUrl, normalizePosterUrl } from "@/lib/image-url";
 import { tmdbFetch } from "@/lib/tmdb";
 import type { Entry } from "@/types/entry";
 import type { IGDBGameItem } from "@/types/igdb";
@@ -25,7 +23,9 @@ const getTrendingMovies = unstable_cache(
         mediaType: "movie",
         title: item.title || "Untitled",
         releaseYear: item.release_date ? Number.parseInt(item.release_date.slice(0, 4), 10) : null,
-        posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        posterUrl: normalizePosterUrl(
+          item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        ),
         creator: null,
         summary: item.overview || null,
         genres: [],
@@ -35,7 +35,7 @@ const getTrendingMovies = unstable_cache(
       return [];
     }
   },
-  ["trending-movies-week"],
+  ["trending-movies-week-v2"],
   { revalidate: 3600 },
 );
 
@@ -51,7 +51,9 @@ const getTrendingTv = unstable_cache(
         releaseYear: item.first_air_date
           ? Number.parseInt(item.first_air_date.slice(0, 4), 10)
           : null,
-        posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        posterUrl: normalizePosterUrl(
+          item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        ),
         creator: null,
         summary: item.overview || null,
         genres: [],
@@ -61,7 +63,7 @@ const getTrendingTv = unstable_cache(
       return [];
     }
   },
-  ["trending-tv-week"],
+  ["trending-tv-week-v2"],
   { revalidate: 3600 },
 );
 
@@ -95,23 +97,14 @@ const getTrendingGames = unstable_cache(
       return [];
     }
   },
-  ["trending-games-week"],
+  ["trending-games-week-v2"],
   { revalidate: 3600 },
 );
 
 export default async function HomePage() {
-  // 1. Read hidden sections preference from cookie
-  const cookieStore = await cookies();
-  const hiddenCookie = cookieStore.get(HOME_HIDDEN_COOKIE)?.value;
-  const hiddenSections = parseHiddenSections(hiddenCookie);
-  const isTrendingHidden = hiddenSections.includes("trending");
-
-  // 2. Get current logged-in user from the secure cookie
   const currentUser = await getCurrentUser();
 
-  // 3. Query current user's tracked entries directly from Postgres
   let userEntries: Entry[] = [];
-  const heroEntries: Entry[] = [];
 
   if (currentUser) {
     const rawEntries = await db
@@ -149,55 +142,45 @@ export default async function HomePage() {
     userEntries = rawEntries.map((e) => ({
       ...e,
       updatedAt: e.updatedAt.toISOString(),
+      media: {
+        ...e.media,
+        posterUrl: normalizePosterUrl(e.media.posterUrl),
+        backdropUrl: normalizeBackdropUrl(e.media.backdropUrl),
+      },
     }));
-
-    // Hero entries: in-progress first, then queue, deduplicated, up to 5
-    const doing = userEntries.filter((e) => e.status === "doing");
-    const wantTo = userEntries.filter((e) => e.status === "want_to");
-    const seenMediaIds = new Set<string>();
-
-    for (const entry of [...doing, ...wantTo]) {
-      if (!seenMediaIds.has(entry.media.externalId)) {
-        seenMediaIds.add(entry.media.externalId);
-        heroEntries.push(entry);
-        if (heroEntries.length >= 5) break;
-      }
-    }
-
-    const backdrops = await Promise.all(
-      heroEntries.map((candidate) => ensureMediaBackdrop(candidate.media)),
-    );
-
-    heroEntries.forEach((candidate, idx) => {
-      const resolved = backdrops[idx];
-      if (resolved && !candidate.media.backdropUrl) {
-        candidate.media.backdropUrl = resolved;
-      }
-    });
   }
 
-  // 4. Fetch trending Movies, TV, and Games: skipped if trending section is hidden
-  let trendingMovies: UnifiedSearchResult[] = [];
-  let trendingTv: UnifiedSearchResult[] = [];
-  let trendingGames: UnifiedSearchResult[] = [];
+  // 1. Library Counts for Stats Strip
+  const libraryCounts = {
+    doingCount: userEntries.filter((e) => e.status === "doing").length,
+    queueCount: userEntries.filter((e) => e.status === "want_to").length,
+    doneCount: userEntries.filter((e) => e.status === "done").length,
+    totalCount: userEntries.length,
+  };
 
-  if (!isTrendingHidden) {
-    [trendingMovies, trendingTv, trendingGames] = await Promise.all([
-      getTrendingMovies(),
-      getTrendingTv(),
-      getTrendingGames(),
-    ]);
-  }
+  // 2. Priority "Continue" row items (in progress)
+  const activeItems = userEntries.filter((e) => e.status === "doing");
+
+  // 3. 5-8 Most recently updated entries for Activity row
+  const recentEntries = userEntries.slice(0, 8);
+
+  // 4. Trending items
+  const [trendingMovies, trendingTv, trendingGames] = await Promise.all([
+    getTrendingMovies(),
+    getTrendingTv(),
+    getTrendingGames(),
+  ]);
 
   return (
     <DashboardClient
       currentUser={currentUser}
-      initialEntries={userEntries}
-      heroEntries={heroEntries}
+      libraryCounts={libraryCounts}
+      activeItems={activeItems}
+      recentEntries={recentEntries}
       trendingMovies={trendingMovies}
       trendingTv={trendingTv}
       trendingGames={trendingGames}
-      hiddenSections={hiddenSections}
+      initialEntries={userEntries}
     />
   );
 }

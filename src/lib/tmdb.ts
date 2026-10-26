@@ -115,7 +115,7 @@ export function selectTmdbBackdrop(
       const cleanPath = textless[0].file_path.startsWith("/")
         ? textless[0].file_path
         : `/${textless[0].file_path}`;
-      return `https://image.tmdb.org/t/p/original${cleanPath}`;
+      return `https://image.tmdb.org/t/p/w1280${cleanPath}`;
     }
 
     // 2. Any backdrop with width >= 1920 (ignore language)
@@ -129,14 +129,14 @@ export function selectTmdbBackdrop(
       const cleanPath = anyHighRes[0].file_path.startsWith("/")
         ? anyHighRes[0].file_path
         : `/${anyHighRes[0].file_path}`;
-      return `https://image.tmdb.org/t/p/original${cleanPath}`;
+      return `https://image.tmdb.org/t/p/w1280${cleanPath}`;
     }
   }
 
   // 3. Fall back to fallbackPath (backdrop_path), never use the poster
   if (fallbackPath) {
     const cleanPath = fallbackPath.startsWith("/") ? fallbackPath : `/${fallbackPath}`;
-    return `https://image.tmdb.org/t/p/original${cleanPath}`;
+    return `https://image.tmdb.org/t/p/w1280${cleanPath}`;
   }
 
   return null;

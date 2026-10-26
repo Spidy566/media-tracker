@@ -2,6 +2,7 @@
 
 import { Film, Gamepad2, Tv } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 import { usePosters } from "@/components/providers/poster-provider";
 
 interface PosterImageProps {
@@ -36,7 +37,7 @@ export function PosterImage({
   src,
   title,
   mediaType,
-  releaseYear: _releaseYear,
+  releaseYear,
   sizes,
   priority,
   loading,
@@ -47,27 +48,43 @@ export function PosterImage({
   onError,
 }: PosterImageProps) {
   const { hidePosters } = usePosters();
+  const [prevSrc, setPrevSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
 
-  if (!src || hidePosters) {
+  // Reset error state if src changes
+  if (prevSrc !== src) {
+    setPrevSrc(src);
+    setHasError(false);
+  }
+
+  const showFallback = !src || hasError || hidePosters;
+
+  if (showFallback) {
     if (fallback === "none") return null;
 
     if (compact) {
       const Icon = getMediaTypeIcon(mediaType);
       return (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted/60 border border-border/40 select-none text-muted-foreground/70">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-900 border border-white/8 select-none text-neutral-400">
           <Icon className="size-4" />
         </div>
       );
     }
 
+    const Icon = getMediaTypeIcon(mediaType);
+
     return (
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3.5 sm:p-4 bg-linear-to-b from-card via-card/95 to-muted/80 border border-border/40 select-none">
-        <div className="my-auto py-1">
-          <span className="font-semibold text-foreground text-sm leading-snug line-clamp-3 text-balance text-left block">
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 bg-linear-to-b from-[#22222b] via-[#16161e] to-[#0e0e13] border border-white/8 select-none">
+        <div className="flex items-center justify-between text-neutral-400">
+          <Icon className="size-4 opacity-75" />
+          {releaseYear && <span className="text-[11px] font-mono opacity-60">{releaseYear}</span>}
+        </div>
+        <div className="my-auto py-2">
+          <span className="font-semibold text-white text-[14px] leading-snug line-clamp-3 text-balance text-left block drop-shadow-sm">
             {title}
           </span>
         </div>
-        <div className="w-6 h-0.5 rounded-full bg-brand/40" />
+        <div className="w-8 h-1 rounded-full bg-brand/50" />
       </div>
     );
   }
@@ -82,7 +99,10 @@ export function PosterImage({
       loading={loading}
       className={className}
       style={style}
-      onError={onError}
+      onError={() => {
+        setHasError(true);
+        onError?.();
+      }}
     />
   );
 }

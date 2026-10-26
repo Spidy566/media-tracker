@@ -1,9 +1,14 @@
 export function getIgdbCoverUrl(
-  url: string | undefined,
+  url: string | undefined | null,
   size: "cover_small" | "cover_big" | "1080p" = "cover_big",
 ): string | null {
   if (!url) return null;
-  return `https:${url.replace("t_thumb", `t_${size}`)}`;
+  const normalized = url.startsWith("//")
+    ? `https:${url}`
+    : url.startsWith("http")
+      ? url
+      : `https://${url}`;
+  return normalized.replace("t_thumb", `t_${size}`);
 }
 
 export interface IgdbImageItem {

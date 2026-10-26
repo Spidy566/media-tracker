@@ -36,3 +36,23 @@ export async function logEntryApi(payload: LogEntryPayload) {
 
   return res.json();
 }
+
+export async function deleteEntryApi(id: string) {
+  const res = await fetch(`/api/entries?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("Unauthorized");
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to remove entry");
+  }
+
+  return res.json();
+}

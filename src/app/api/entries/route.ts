@@ -4,6 +4,7 @@ import { z } from "zod";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { normalizeBackdropUrl, normalizePosterUrl } from "@/lib/image-url";
 
 const createEntrySchema = z.object({
   media: z.object({
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { media, status, rating, reviewNote } = parsed.data;
+    const normalizedPoster = normalizePosterUrl(media.posterUrl);
+    const normalizedBackdrop = normalizeBackdropUrl(media.backdropUrl);
 
     // Wrap both writes in a transaction so they succeed or fail together
     const { savedItem, entry } = await db.transaction(async (tx) => {
@@ -53,8 +56,8 @@ export async function POST(request: NextRequest) {
           mediaType: media.mediaType,
           title: media.title,
           releaseYear: media.releaseYear ?? null,
-          posterUrl: media.posterUrl ?? null,
-          backdropUrl: media.backdropUrl ?? null,
+          posterUrl: normalizedPoster,
+          backdropUrl: normalizedBackdrop,
           creator: media.creator ?? null,
           summary: media.summary ?? null,
           genres: media.genres ?? [],
@@ -62,8 +65,8 @@ export async function POST(request: NextRequest) {
         .onConflictDoUpdate({
           target: mediaItems.externalId,
           set: {
-            posterUrl: media.posterUrl ?? undefined,
-            backdropUrl: media.backdropUrl ?? undefined,
+            posterUrl: normalizedPoster ?? undefined,
+            backdropUrl: normalizedBackdrop ?? undefined,
             summary: media.summary ?? undefined,
           },
         })
