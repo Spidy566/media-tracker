@@ -1,4 +1,3 @@
-import { Users } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PosterImage } from "@/components/poster-image";
@@ -163,101 +162,7 @@ export default async function MediaDetailPage({
               </div>
             )}
 
-            {/* 4. Squad Activity */}
-            <div className="space-y-4 bg-card border border-border rounded-2xl p-6 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-xs font-semibold text-foreground">Squad activity</h3>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {details.squadEntries.length} logged
-                </span>
-              </div>
-
-              {/* Squad summary line: Squad ★ x.x · TMDB/IGDB y.y */}
-              {details.squadRatingAverage !== null && details.externalScore !== null && (
-                <div className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1 border-t border-border/50">
-                  <span>
-                    Squad ★{" "}
-                    <span className="font-mono text-foreground font-semibold">
-                      {details.squadRatingAverage.toFixed(1)}
-                    </span>
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {isGame ? "IGDB" : "TMDB"} ★{" "}
-                    <span className="font-mono text-foreground font-semibold">
-                      {details.externalScore.toFixed(1)}
-                    </span>
-                  </span>
-                </div>
-              )}
-
-              {details.squadEntries.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No one in the squad has logged this title yet. Be the first!
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {details.squadEntries.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="p-3.5 rounded-lg bg-background border border-border space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <Link
-                          href={`/squad/${entry.user.username}`}
-                          className="flex items-center gap-2 hover:opacity-80 transition"
-                        >
-                          <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center font-semibold text-xs">
-                            {entry.user.displayName[0]}
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold text-foreground block">
-                              {entry.user.displayName}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <span
-                                className={cn(
-                                  "size-1.5 rounded-full shrink-0",
-                                  entry.status === "want_to"
-                                    ? "bg-status-queue"
-                                    : entry.status === "doing"
-                                      ? "bg-status-doing"
-                                      : "bg-status-done",
-                                )}
-                              />
-                              <span>
-                                {entry.status === "want_to"
-                                  ? "Queued"
-                                  : entry.status === "doing"
-                                    ? "Started"
-                                    : "Finished"}
-                              </span>
-                            </span>
-                          </div>
-                        </Link>
-
-                        {entry.rating && (
-                          <span className="text-xs font-semibold text-rating bg-card px-2 py-0.5 rounded-full border border-border shadow-xs">
-                            ★ <span className="font-mono">{entry.rating} / 5</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {entry.reviewNote && (
-                        <p className="text-xs text-foreground/90 italic p-2.5 rounded-md bg-card border border-border leading-relaxed">
-                          &ldquo;{entry.reviewNote}&rdquo;
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 5. Movies & TV: Where to watch, Crew, Cast, and TV Details */}
+            {/* 4. Movies & TV: Where to watch, Crew, Cast, and TV Details */}
             {!isGame && (
               <>
                 <WatchProvidersSection watchProviders={details.watchProviders} />

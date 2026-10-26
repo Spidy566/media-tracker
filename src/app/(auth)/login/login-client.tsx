@@ -1,12 +1,11 @@
 "use client";
 
 import { Eye, EyeOff, Film, Lock, LogIn, User } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 export function LoginClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const nextParam = searchParams.get("next");
@@ -47,8 +46,7 @@ export function LoginClient() {
         return;
       }
 
-      router.replace(targetUrl);
-      router.refresh();
+      window.location.href = targetUrl;
     } catch (err: unknown) {
       const errorObj = err as { status?: number; message?: string };
       if (errorObj?.status === 429) {

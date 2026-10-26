@@ -18,7 +18,7 @@ export async function ensureMediaBackdrop(media: MediaBackdropInput): Promise<st
   }
 
   const timeoutPromise = new Promise<null>((resolve) => {
-    setTimeout(() => resolve(null), 2000);
+    setTimeout(() => resolve(null), 800);
   });
 
   const fetchPromise = (async (): Promise<string | null> => {

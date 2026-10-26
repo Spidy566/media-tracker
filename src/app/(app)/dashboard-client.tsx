@@ -11,7 +11,6 @@ import {
   Info,
   Pause,
   Play,
-  Star,
   Tv,
 } from "lucide-react";
 import Link from "next/link";
@@ -32,10 +31,8 @@ import type { Entry, EntryUser } from "@/types/entry";
 
 interface DashboardClientProps {
   currentUser: EntryUser | null;
-  users?: EntryUser[];
   initialEntries: Entry[];
   heroEntries: Entry[];
-  squadActivity: Entry[];
   trendingMovies: UnifiedSearchResult[];
   trendingTv: UnifiedSearchResult[];
   trendingGames: UnifiedSearchResult[];
@@ -59,41 +56,10 @@ function getMediaTypeIcon(type: "movie" | "tv" | "game") {
   }
 }
 
-function getStatusVerb(status: string) {
-  switch (status) {
-    case "done":
-      return "finished";
-    case "doing":
-      return "started";
-    case "want_to":
-      return "queued";
-    case "dropped":
-      return "dropped";
-    default:
-      return "logged";
-  }
-}
-
-function getStatusDotColor(status: string) {
-  switch (status) {
-    case "done":
-      return "bg-status-done";
-    case "doing":
-      return "bg-status-doing";
-    case "want_to":
-      return "bg-status-queue";
-    case "dropped":
-      return "bg-status-dropped";
-    default:
-      return "bg-muted-foreground";
-  }
-}
-
 export function DashboardClient({
   currentUser: _currentUser,
   initialEntries,
   heroEntries,
-  squadActivity,
   trendingMovies,
   trendingTv,
   trendingGames,
@@ -243,12 +209,10 @@ export function DashboardClient({
   };
 
   // Section visibility based on hiddenSections preference
-  const isSquadVisible = !hiddenSections.includes("squad");
   const isJumpVisible = !hiddenSections.includes("jump");
   const isQueueVisible = !hiddenSections.includes("queue");
   const isTrendingVisible = !hiddenSections.includes("trending");
-  const allSectionsHidden =
-    !isSquadVisible && !isJumpVisible && !isQueueVisible && !isTrendingVisible;
+  const allSectionsHidden = !isJumpVisible && !isQueueVisible && !isTrendingVisible;
 
   // Trending items based on active tab
   const currentTrendingItems =
@@ -547,114 +511,7 @@ export function DashboardClient({
           </div>
         ) : (
           <>
-            {/* 2. Squad Activity */}
-            {isSquadVisible && (
-              <section className="space-y-4">
-                {squadActivity.length > 0 ? (
-                  <ScrollRow
-                    title={
-                      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                        Squad Activity
-                      </h2>
-                    }
-                    action={
-                      <span className="text-xs text-muted-foreground">
-                        {squadActivity.length} recent
-                      </span>
-                    }
-                  >
-                    {squadActivity.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="w-[18rem] sm:w-[20rem] shrink-0 snap-start p-3.5 rounded-lg bg-card border border-border hover:border-border/80 transition-all flex flex-col justify-between gap-3 shadow-xs"
-                      >
-                        {/* Top user row with avatar & status verb + dot */}
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <Link
-                            href={`/squad/${activity.user.username}`}
-                            className="flex items-center gap-2 min-w-0 group hover:opacity-85 transition"
-                          >
-                            <div className="size-7 rounded-full bg-muted border border-border flex items-center justify-center font-semibold text-xs text-foreground shrink-0 shadow-xs">
-                              {activity.user.displayName[0]?.toUpperCase()}
-                            </div>
-                            <span className="text-xs font-semibold text-foreground truncate max-w-28">
-                              {activity.user.displayName}
-                            </span>
-                          </Link>
-
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                            <span
-                              className={cn(
-                                "size-1.5 rounded-full shrink-0",
-                                getStatusDotColor(activity.status),
-                              )}
-                            />
-                            <span className="capitalize">{getStatusVerb(activity.status)}</span>
-                          </span>
-                        </div>
-
-                        {/* Middle content: Poster + Title + Rating + Review */}
-                        <div className="flex gap-3 items-start min-w-0">
-                          <div className="relative w-14 h-20 rounded-md overflow-hidden bg-muted border border-border/50 shrink-0">
-                            <Link
-                              href={getMediaHref(activity.media)}
-                              className="absolute inset-0 z-10"
-                            />
-                            <PosterImage
-                              src={activity.media.posterUrl}
-                              title={activity.media.title}
-                              mediaType={activity.media.mediaType}
-                              releaseYear={activity.media.releaseYear}
-                              sizes="56px"
-                              compact
-                              className="object-cover"
-                            />
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <Link
-                              href={getMediaHref(activity.media)}
-                              className="text-xs sm:text-sm font-semibold text-foreground hover:opacity-80 transition line-clamp-1 leading-snug"
-                            >
-                              {activity.media.title}
-                            </Link>
-
-                            {activity.rating && (
-                              <div className="flex items-center gap-0.5 mt-1 text-rating">
-                                {[1, 2, 3, 4, 5].slice(0, activity.rating).map((starNum) => (
-                                  <Star
-                                    key={`${activity.id}-star-${starNum}`}
-                                    className="size-3 fill-current text-rating stroke-none"
-                                  />
-                                ))}
-                              </div>
-                            )}
-
-                            {activity.reviewNote && (
-                              <p className="mt-1 text-[11px] text-muted-foreground italic line-clamp-2 leading-relaxed">
-                                &ldquo;{activity.reviewNote}&rdquo;
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </ScrollRow>
-                ) : (
-                  <div>
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">
-                      Squad Activity
-                    </h2>
-                    <div className="p-6 rounded-lg bg-card border border-border text-center text-sm text-muted-foreground max-w-xl">
-                      No recent squad activity yet. When your squad logs movies, shows, or games,
-                      their latest milestones will appear here.
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* 3. Jump Back In Shelf (ScrollRow, no underline rule) */}
+            {/* 2. Jump Back In Shelf (ScrollRow, no underline rule) */}
             {isJumpVisible && myActive.length > 0 && (
               <section className="space-y-4">
                 <ScrollRow

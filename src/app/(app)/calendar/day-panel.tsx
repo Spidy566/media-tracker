@@ -16,7 +16,6 @@ interface DayPanelProps {
   items: CalendarItem[];
   todayYmd: string;
   myStatus: Record<string, MediaStatus>;
-  squad: Record<string, { name: string; status: MediaStatus }[]>;
   onStatusChange: (item: CalendarItem, status: "want_to" | "doing" | "done") => void;
 }
 
@@ -29,7 +28,6 @@ export function DayPanel({
   items,
   todayYmd,
   myStatus,
-  squad,
   onStatusChange,
 }: DayPanelProps) {
   if (!selectedYmd) return null;
@@ -149,7 +147,6 @@ export function DayPanel({
                   item={item}
                   todayYmd={todayYmd}
                   myStatus={myStatus[item.externalId]}
-                  squadMembers={squad[item.externalId]}
                   onStatusChange={(status) => onStatusChange(item, status)}
                 />
               ))

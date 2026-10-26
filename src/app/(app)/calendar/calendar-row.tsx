@@ -10,7 +10,6 @@ interface CalendarRowProps {
   item: CalendarItem;
   todayYmd: string;
   myStatus?: MediaStatus | null;
-  squadMembers?: { name: string; status: MediaStatus }[];
   onStatusChange: (status: "want_to" | "doing" | "done") => void;
   isMutating?: boolean;
 }
@@ -44,18 +43,6 @@ function getStatusDetails(status: MediaStatus, mediaType: "movie" | "tv" | "game
   }
 }
 
-function formatSquadLine(members: { name: string; status: MediaStatus }[]) {
-  if (!members || members.length === 0) return null;
-  const names = members.map((m) => m.name);
-  if (names.length === 1) {
-    return `${names[0]} queued this`;
-  }
-  if (names.length === 2) {
-    return `${names[0]} and ${names[1]} queued this`;
-  }
-  return `${names[0]}, ${names[1]} +${names.length - 2} queued this`;
-}
-
 function getMediaDetailUrl(externalId: string, mediaType: string) {
   const parts = externalId.split(":");
   const rawId = parts[parts.length - 1];
@@ -66,7 +53,6 @@ export function CalendarRow({
   item,
   todayYmd,
   myStatus,
-  squadMembers,
   onStatusChange,
   isMutating = false,
 }: CalendarRowProps) {
@@ -75,7 +61,6 @@ export function CalendarRow({
 
   const detailUrl = getMediaDetailUrl(item.externalId, item.mediaType);
   const statusInfo = myStatus ? getStatusDetails(myStatus, item.mediaType) : null;
-  const squadLine = formatSquadLine(squadMembers || []);
 
   const TypeIcon = item.mediaType === "tv" ? Tv : item.mediaType === "game" ? Gamepad2 : Film;
   const genresStr = item.genres.slice(0, 3).join(", ");
@@ -142,11 +127,6 @@ export function CalendarRow({
             <span className={`size-2 rounded-full shrink-0 ${statusInfo.colorClass}`} />
             <span className={statusInfo.textClass}>{statusInfo.label}</span>
           </div>
-        )}
-
-        {/* Squad line */}
-        {squadLine && (
-          <p className="text-[11px] text-muted-foreground/90 font-medium">{squadLine}</p>
         )}
       </div>
 

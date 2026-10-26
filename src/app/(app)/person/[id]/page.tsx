@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Image from "next/image";
@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/app/(app)/media/[type]/[id]/back-button";
 import { MediaCard } from "@/components/media-card";
 import { ScrollRow } from "@/components/scroll-row";
-import { mediaItems, userMediaEntries, users } from "@/db/schema";
+import { mediaItems, userMediaEntries } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getPersonDetails } from "@/lib/person-details";
@@ -85,12 +85,9 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   }
 
   const statusMap: Record<string, string> = {};
-  const squadSummary: { you: number; squad: Array<{ name: string; count: number }> } = {
-    you: 0,
-    squad: [],
-  };
+  let loggedCount = 0;
 
-  if (allExternalIds.size > 0) {
+  if (currentUser && allExternalIds.size > 0) {
     try {
       const externalIdArray = [...allExternalIds];
       const matchedMedia = await db
@@ -108,48 +105,30 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         const entries = await db
           .select({
             mediaItemId: userMediaEntries.mediaItemId,
-            userId: userMediaEntries.userId,
             status: userMediaEntries.status,
-            username: users.username,
-            displayName: users.displayName,
           })
           .from(userMediaEntries)
-          .innerJoin(users, eq(userMediaEntries.userId, users.id))
           .where(
-            inArray(
-              userMediaEntries.mediaItemId,
-              matchedMedia.map((m) => m.mediaItemId),
+            and(
+              eq(userMediaEntries.userId, currentUser.id),
+              inArray(
+                userMediaEntries.mediaItemId,
+                matchedMedia.map((m) => m.mediaItemId),
+              ),
             ),
           );
 
-        // Build status map and count distinct titles per user
-        const userLoggedTitles = new Map<string, { name: string; titles: Set<string> }>();
         for (const e of entries) {
           const extId = mediaIdToExternalId.get(e.mediaItemId);
-          if (!extId) continue;
-
-          if (currentUser && e.userId === currentUser.id) {
+          if (extId) {
             statusMap[extId] = e.status;
           }
-
-          if (!userLoggedTitles.has(e.userId)) {
-            userLoggedTitles.set(e.userId, { name: e.displayName, titles: new Set() });
-          }
-          userLoggedTitles.get(e.userId)?.titles.add(extId);
         }
 
-        if (currentUser && userLoggedTitles.has(currentUser.id)) {
-          squadSummary.you = userLoggedTitles.get(currentUser.id)?.titles.size ?? 0;
-        }
-
-        // Squad summary (exclude current user)
-        for (const [uid, data] of userLoggedTitles) {
-          if (currentUser && uid === currentUser.id) continue;
-          squadSummary.squad.push({ name: data.name, count: data.titles.size });
-        }
+        loggedCount = entries.length;
       }
     } catch (err) {
-      console.warn("Failed to fetch squad overlap for person:", err);
+      console.warn("Failed to fetch logged titles for person:", err);
     }
   }
 
@@ -170,10 +149,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   if (ageStr) metaParts.push(ageStr);
   if (person.placeOfBirth) metaParts.push(person.placeOfBirth);
 
-  // Squad summary line
-  const hasSelfCount = Boolean(currentUser && squadSummary.you > 0);
-  const hasSquadCounts = squadSummary.squad.some((s) => s.count > 0);
-  const showSquadLine = hasSelfCount || hasSquadCounts;
+  // Logged titles summary line
+  const showLoggedLine = loggedCount > 0;
 
   const totalCredits =
     person.castCredits.length + person.crewGroups.reduce((acc, g) => acc + g.credits.length, 0);
@@ -249,26 +226,11 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           </ScrollRow>
         )}
 
-        {/* Squad overlap summary */}
-        {showSquadLine && (
+        {/* Logged titles summary */}
+        {showLoggedLine && (
           <p className="text-xs text-muted-foreground">
-            {hasSelfCount && (
-              <>
-                You&apos;ve logged{" "}
-                <span className="font-semibold text-foreground">{squadSummary.you}</span> of their
-                titles
-              </>
-            )}
-            {hasSelfCount && hasSquadCounts && " · "}
-            {squadSummary.squad
-              .filter((s) => s.count > 0)
-              .map((s, i) => (
-                <span key={s.name}>
-                  {i > 0 && " · "}
-                  {s.name} has logged{" "}
-                  <span className="font-semibold text-foreground">{s.count}</span>
-                </span>
-              ))}
+            You&apos;ve logged <span className="font-semibold text-foreground">{loggedCount}</span>{" "}
+            of their titles
           </p>
         )}
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sign in · Tracklist",
-  description: "Sign in or join your squad on Tracklist.",
+  description: "Sign in to Tracklist.",
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

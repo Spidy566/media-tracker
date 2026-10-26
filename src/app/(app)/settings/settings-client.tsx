@@ -18,7 +18,6 @@ import {
   Sun,
   Trash2,
   TrendingUp,
-  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -245,12 +244,6 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
     icon: React.ReactNode;
   }[] = [
     {
-      id: "squad",
-      label: "Squad activity",
-      description: "Recent milestone logs and reviews from your squad.",
-      icon: <Users className="w-4 h-4" />,
-    },
-    {
       id: "jump",
       label: "Jump back in",
       description: "Quick access to titles you are currently watching or playing.",
@@ -403,9 +396,7 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
       <section className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
         <div>
           <h2 className="text-base font-bold text-foreground">Profile</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Your public display name shown to squad members.
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">Your public display name.</p>
         </div>
 
         <form onSubmit={handleNameSubmit} className="space-y-4 pt-2">

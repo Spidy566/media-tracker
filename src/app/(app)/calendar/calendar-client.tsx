@@ -76,10 +76,9 @@ interface CalendarClientProps {
     avatarUrl?: string | null;
   } | null;
   myStatus: Record<string, MediaStatus>;
-  squad: Record<string, { name: string; status: MediaStatus }[]>;
 }
 
-export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientProps) {
+export function CalendarClient({ currentUser, myStatus }: CalendarClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -277,10 +276,8 @@ export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientP
   const rawReleases = data?.releases || [];
   const filteredReleases = useMemo(() => {
     if (!isMyListOnly) return rawReleases;
-    return rawReleases.filter(
-      (item) => Boolean(myStatus[item.externalId]) || (squad[item.externalId]?.length ?? 0) > 0,
-    );
-  }, [rawReleases, isMyListOnly, myStatus, squad]);
+    return rawReleases.filter((item) => Boolean(myStatus[item.externalId]));
+  }, [rawReleases, isMyListOnly, myStatus]);
 
   // Highlights: Top 8 by popularity from filtered month
   const highlights = useMemo(() => {
@@ -308,18 +305,18 @@ export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientP
       }
     }
 
-    // Sort items within each day: items in my library or squad queues come FIRST, then by popularity
+    // Sort items within each day: items in my library come FIRST, then by popularity
     for (const key of Object.keys(map)) {
       map[key].sort((a, b) => {
-        const aHasMine = myStatus[a.externalId] || (squad[a.externalId]?.length ?? 0) > 0 ? 1 : 0;
-        const bHasMine = myStatus[b.externalId] || (squad[b.externalId]?.length ?? 0) > 0 ? 1 : 0;
+        const aHasMine = myStatus[a.externalId] ? 1 : 0;
+        const bHasMine = myStatus[b.externalId] ? 1 : 0;
         if (bHasMine !== aHasMine) return bHasMine - aHasMine;
         return b.popularity - a.popularity;
       });
     }
 
     return { map, tbaList };
-  }, [filteredReleases, myStatus, squad]);
+  }, [filteredReleases, myStatus]);
 
   // Agenda days sorted chronologically
   const sortedAgendaDays = useMemo(() => {
@@ -1013,10 +1010,7 @@ export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientP
                 const releaseCount = dayItems.length;
                 const isToday = cell.ymd === todayYmd;
                 const isPast = cell.ymd < todayYmd;
-                const hasMyItem = dayItems.some(
-                  (item) =>
-                    Boolean(myStatus[item.externalId]) || (squad[item.externalId]?.length ?? 0) > 0,
-                );
+                const hasMyItem = dayItems.some((item) => Boolean(myStatus[item.externalId]));
                 const isFocused = index === focusedCellIndex;
 
                 const cellAriaLabel = `${cell.dayNumber} ${monthTitle.split(" ")[0]}, ${releaseCount} ${
@@ -1164,7 +1158,6 @@ export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientP
                         item={item}
                         todayYmd={todayYmd}
                         myStatus={myStatus[item.externalId]}
-                        squadMembers={squad[item.externalId]}
                         isMutating={isMutatingStatus}
                         onStatusChange={(status) => setQuickStatus({ media: item, status })}
                       />
@@ -1194,7 +1187,6 @@ export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientP
                       item={item}
                       todayYmd={todayYmd}
                       myStatus={myStatus[item.externalId]}
-                      squadMembers={squad[item.externalId]}
                       isMutating={isMutatingStatus}
                       onStatusChange={(status) => setQuickStatus({ media: item, status })}
                     />
@@ -1218,7 +1210,6 @@ export function CalendarClient({ currentUser, myStatus, squad }: CalendarClientP
         items={filteredReleases}
         todayYmd={todayYmd}
         myStatus={myStatus}
-        squad={squad}
         onStatusChange={(item, status) => setQuickStatus({ media: item, status })}
       />
     </div>
