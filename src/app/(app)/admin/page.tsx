@@ -8,7 +8,7 @@ import { AdminClient, type SquadMember } from "./admin-client";
 
 export const metadata: Metadata = {
   title: "Admin · Tracklist",
-  description: "Squad member and access management.",
+  description: "Member and access management.",
 };
 
 export const dynamic = "force-dynamic";

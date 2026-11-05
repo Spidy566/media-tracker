@@ -1,3 +1,4 @@
+import { Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PosterImage } from "@/components/poster-image";
@@ -31,13 +32,15 @@ export default async function MediaDetailPage({
     notFound();
   }
 
-  const [details, currentUser] = await Promise.all([getMediaDetails(type, id), getCurrentUser()]);
+  const currentUser = await getCurrentUser();
+  const details = await getMediaDetails(type, id, currentUser?.id);
 
   if (!details) {
     notFound();
   }
 
   const myEntry = details.squadEntries.find((e) => e.user.id === currentUser?.id) || null;
+  const friendEntries = details.squadEntries.filter((e) => e.user.id !== currentUser?.id);
 
   const mediaData = {
     id: details.id,
@@ -159,6 +162,105 @@ export default async function MediaDetailPage({
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Friends' Activity */}
+            {friendEntries.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Friends&apos; Activity ({friendEntries.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {friendEntries.map((entry) => {
+                    const statusColors: Record<string, { badge: string; label: string }> = {
+                      want_to: {
+                        badge: "bg-status-queue/15 text-status-queue border-status-queue/30",
+                        label: "Queue",
+                      },
+                      doing: {
+                        badge: "bg-status-doing/15 text-status-doing border-status-doing/30",
+                        label: "In Progress",
+                      },
+                      done: {
+                        badge: "bg-status-done/15 text-status-done border-status-done/30",
+                        label: "Done",
+                      },
+                      dropped: {
+                        badge: "bg-status-dropped/15 text-status-dropped border-status-dropped/30",
+                        label: "Dropped",
+                      },
+                    };
+
+                    const config = statusColors[entry.status] || {
+                      badge: "bg-muted text-muted-foreground border-border",
+                      label: entry.status,
+                    };
+
+                    return (
+                      <div
+                        key={entry.id}
+                        className="p-3.5 rounded-xl bg-card border border-border flex flex-col justify-between gap-2.5 shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <Link
+                            href={`/friends/${entry.user.username}`}
+                            className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition"
+                          >
+                            <div className="size-8 rounded-lg bg-muted border border-border text-foreground flex items-center justify-center font-semibold text-xs shrink-0">
+                              {entry.user.displayName[0]?.toUpperCase() || "U"}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-semibold text-foreground block truncate">
+                                {entry.user.displayName}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground block truncate">
+                                @{entry.user.username}
+                              </span>
+                            </div>
+                          </Link>
+
+                          <span
+                            className={cn(
+                              "text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0",
+                              config.badge,
+                            )}
+                          >
+                            {config.label}
+                          </span>
+                        </div>
+
+                        {(entry.rating || entry.reviewNote) && (
+                          <div className="space-y-1.5 pt-1.5 border-t border-border/50">
+                            {entry.rating && (
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={cn(
+                                      "size-3",
+                                      star <= (entry.rating || 0)
+                                        ? "text-rating fill-rating"
+                                        : "text-muted/40",
+                                    )}
+                                  />
+                                ))}
+                                <span className="text-[11px] font-mono text-muted-foreground ml-1 tabular-nums">
+                                  {entry.rating} / 5
+                                </span>
+                              </div>
+                            )}
+                            {entry.reviewNote && (
+                              <p className="text-xs text-muted-foreground italic leading-relaxed">
+                                &ldquo;{entry.reviewNote}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

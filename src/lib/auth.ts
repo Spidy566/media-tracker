@@ -9,6 +9,7 @@ export type CurrentUser = {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  isPublic: boolean;
   createdAt: Date;
 };
 
@@ -30,11 +31,15 @@ export const getCurrentUser = cache(
       const displayName = session.user.name || username;
       const avatarUrl = session.user.image || null;
 
+      const sessionUser = session.user as { isPublic?: boolean };
+      const isPublic = sessionUser.isPublic ?? true;
+
       return {
         id: session.user.id,
         username,
         displayName,
         avatarUrl,
+        isPublic,
         createdAt: new Date(session.user.createdAt),
       };
     } catch (err: unknown) {

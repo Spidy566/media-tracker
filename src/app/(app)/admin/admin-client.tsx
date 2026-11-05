@@ -107,7 +107,7 @@ export function AdminClient({ currentUser, initialMembers }: AdminClientProps) {
         throw new Error(data.error || "Failed to remove member");
       }
 
-      toast.success(`@${removingMember.username} has been removed from the squad`);
+      toast.success(`@${removingMember.username} has been removed`);
       setMembers((prev) => prev.filter((m) => m.id !== removingMember.id));
       setRemovingMember(null);
       setRemoveConfirmUsername("");
@@ -128,11 +128,11 @@ export function AdminClient({ currentUser, initialMembers }: AdminClientProps) {
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-6 text-brand" />
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-              Squad Administration
+              Member Administration
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Manage squad members, reset passwords, and oversee account access.
+            Manage members, reset passwords, and oversee account access.
           </p>
         </div>
       </div>
@@ -260,9 +260,7 @@ export function AdminClient({ currentUser, initialMembers }: AdminClientProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="size-5 text-muted-foreground" />
-            <h2 className="text-base font-bold text-foreground">
-              Squad Members ({members.length})
-            </h2>
+            <h2 className="text-base font-bold text-foreground">Members ({members.length})</h2>
           </div>
         </div>
 

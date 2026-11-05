@@ -35,6 +35,13 @@ export const auth = betterAuth({
       name: "displayName",
       image: "avatarUrl",
     },
+    additionalFields: {
+      isPublic: {
+        type: "boolean",
+        defaultValue: true,
+        input: false,
+      },
+    },
     deleteUser: {
       enabled: true,
     },

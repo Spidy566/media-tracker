@@ -238,7 +238,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
           className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-destructive hover:opacity-80 pt-2 border-t border-border cursor-pointer transition"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Remove from Stash</span>
+          <span>Remove from Library</span>
         </button>
       )}
     </div>

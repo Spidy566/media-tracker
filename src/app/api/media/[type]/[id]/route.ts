@@ -10,6 +10,7 @@ export async function GET(
   if (authResult instanceof NextResponse) {
     return authResult;
   }
+  const currentUser = authResult;
 
   const { type, id } = await params;
 
@@ -22,7 +23,7 @@ export async function GET(
   }
 
   try {
-    const details = await getMediaDetails(type, id);
+    const details = await getMediaDetails(type, id, currentUser.id);
     if (!details) {
       return NextResponse.json({ error: "Media not found" }, { status: 404 });
     }

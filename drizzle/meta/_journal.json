@@ -15,6 +15,13 @@
       "when": 1792407938011,
       "tag": "0001_yielding_fabian_cortez",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793875906909,
+      "tag": "0002_supreme_nightshade",
+      "breakpoints": true
     }
   ]
 }

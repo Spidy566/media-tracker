@@ -28,13 +28,13 @@ export function SquadClient({ entries }: SquadClientProps) {
     },
     onSuccess: (_, variables) => {
       router.refresh();
-      toast.success("Saved to your stash", {
+      toast.success("Saved to your Library", {
         description: variables.media.title,
       });
     },
     onError: (err: Error) => {
       if (err.message !== "Unauthorized") {
-        toast.error("Failed to save to your stash");
+        toast.error("Failed to save to your Library");
       }
     },
   });
@@ -129,7 +129,7 @@ export function SquadClient({ entries }: SquadClientProps) {
         <div className="py-20 text-center border border-dashed border-border rounded-3xl">
           <p className="text-sm font-semibold text-foreground">No titles in this section</p>
           <p className="text-xs text-muted-foreground mt-1">
-            This squad member hasn&apos;t added any items here yet.
+            This friend hasn&apos;t added any items here yet.
           </p>
         </div>
       ) : (

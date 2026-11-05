@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { db } from "@/lib/db";
 import { igdbFetch } from "@/lib/igdb";
@@ -76,7 +76,11 @@ function parseIgdbAgeRating(
   return null;
 }
 
-export async function getMediaDetails(type: string, id: string): Promise<MediaDetails | null> {
+export async function getMediaDetails(
+  type: string,
+  id: string,
+  currentUserId?: string | null,
+): Promise<MediaDetails | null> {
   if (type !== "movie" && type !== "tv" && type !== "game") {
     return null;
   }
@@ -97,6 +101,10 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
 
       let squadEntries: Entry[] = [];
       if (savedItem) {
+        const privacyCondition = currentUserId
+          ? or(eq(users.isPublic, true), eq(users.id, currentUserId))
+          : eq(users.isPublic, true);
+
         const rawSquad = await db
           .select({
             id: userMediaEntries.id,
@@ -125,7 +133,7 @@ export async function getMediaDetails(type: string, id: string): Promise<MediaDe
           .from(userMediaEntries)
           .innerJoin(users, eq(userMediaEntries.userId, users.id))
           .innerJoin(mediaItems, eq(userMediaEntries.mediaItemId, mediaItems.id))
-          .where(eq(userMediaEntries.mediaItemId, savedItem.id));
+          .where(and(eq(userMediaEntries.mediaItemId, savedItem.id), privacyCondition));
 
         squadEntries = rawSquad.map((e) => ({
           ...e,
