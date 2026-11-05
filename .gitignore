@@ -1,5 +1,6 @@
 # AI Agent & Tool caches
 .agent/
+.agents/
 .impeccable/
 
 # Dependencies
