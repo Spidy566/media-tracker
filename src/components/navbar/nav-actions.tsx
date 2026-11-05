@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
+import { ChevronDown, LogOut, Settings, ShieldCheck, User as UserIcon, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { DropdownMenu } from "radix-ui";
@@ -77,11 +77,21 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
 
             <DropdownMenu.Item asChild>
               <Link
-                href="/shelf"
+                href="/library"
                 className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-neutral-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-white/8 focus:text-white"
               >
                 <UserIcon className="size-4 text-neutral-400" strokeWidth={1.75} />
                 <span>Profile</span>
+              </Link>
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Item asChild>
+              <Link
+                href={`/friends/${user.username}`}
+                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-neutral-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-white/8 focus:text-white"
+              >
+                <Users className="size-4 text-neutral-400" strokeWidth={1.75} />
+                <span>Public Profile</span>
               </Link>
             </DropdownMenu.Item>
 

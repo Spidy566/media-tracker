@@ -2,7 +2,6 @@
 
 import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useDiscover } from "@/components/discover/discover-context";
 import { useSearch } from "@/components/navbar/search-context";
 import { SearchDropdownContent } from "@/components/search-modal";
 import { cn } from "@/lib/utils";
@@ -22,12 +21,7 @@ const SEARCH_SUGGESTIONS = [
   "Try 'Shōgun'",
 ];
 
-interface SearchTriggerProps {
-  isIsland?: boolean;
-}
-
-export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
-  const { searchPlaceholder } = useDiscover();
+export function SearchTrigger() {
   const { isOpen, openSearch, closeSearch, query, setQuery } = useSearch();
   const [defaultPlaceholder, setDefaultPlaceholder] = useState("Try 'Elden Ring'");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,8 +65,6 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
     };
   }, [isOpen, closeSearch]);
 
-  const displayPlaceholder = searchPlaceholder || defaultPlaceholder;
-
   if (isOpen) {
     return (
       <div ref={containerRef} className="relative w-full max-w-110">
@@ -80,7 +72,7 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
         <div
           className={cn(
             "w-full h-12 px-4 rounded-full border flex items-center justify-between transition-all duration-200",
-            "bg-[#1c1c24] border-white/20 shadow-xl shadow-black/40 ring-2 ring-white/10 text-white",
+            "bg-popover border-border shadow-xl ring-1 ring-border text-foreground",
           )}
         >
           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -91,7 +83,7 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search movies, TV shows, games..."
-              className="w-full bg-transparent text-[14px] sm:text-[15px] text-white placeholder:text-neutral-400 outline-none"
+              className="w-full bg-transparent text-[14px] sm:text-[15px] text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>
 
@@ -101,7 +93,7 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="Clear query"
-                className="p-1 rounded-full text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                className="p-1 rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -110,7 +102,7 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
               type="button"
               onClick={closeSearch}
               aria-label="Close search"
-              className="inline-flex items-center text-[11px] font-mono font-medium text-neutral-300 bg-white/6 hover:bg-white/12 px-2 py-0.5 rounded border border-white/10 transition-colors cursor-pointer select-none"
+              className="inline-flex items-center text-[11px] font-mono font-medium text-muted-foreground bg-muted hover:bg-muted/80 px-2 py-0.5 rounded border border-border transition-colors cursor-pointer select-none"
             >
               Esc
             </button>
@@ -118,7 +110,7 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
         </div>
 
         {/* Anchored Dropdown Popover */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-[580px] max-w-[calc(100vw-2rem)] origin-top z-50 bg-[#1c1c24]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-145 max-w-[calc(100vw-2rem)] origin-top z-50 bg-popover/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
           <SearchDropdownContent />
         </div>
       </div>
@@ -130,23 +122,18 @@ export function SearchTrigger({ isIsland = false }: SearchTriggerProps) {
       type="button"
       onClick={openSearch}
       aria-label="Search media catalog or press Command K"
-      className={cn(
-        "group w-full max-w-110 h-12 px-5 rounded-full border border-white/8 flex items-center justify-between text-neutral-300 hover:text-white transition-all duration-300 ease-out cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-0 select-none",
-        isIsland
-          ? "bg-[#1a1a1a]/85 backdrop-blur-xl shadow-lg shadow-black/40 hover:border-white/20"
-          : "bg-[#222228] hover:bg-[#282832] hover:border-white/20 shadow-none",
-      )}
+      className="group w-full max-w-110 h-12 px-5 rounded-full border border-border flex items-center justify-between text-muted-foreground hover:text-foreground transition-all duration-300 ease-out cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 select-none bg-card hover:bg-muted/70 shadow-xs"
     >
       <div className="flex items-center gap-3 min-w-0">
         <Search
-          className="size-4.5 text-neutral-400 group-hover:text-white transition-colors shrink-0"
+          className="size-4.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
           strokeWidth={1.75}
         />
-        <span className="text-[14px] sm:text-[15px] font-normal text-neutral-300 group-hover:text-white transition-colors truncate">
-          {displayPlaceholder}
+        <span className="text-[14px] sm:text-[15px] font-normal text-muted-foreground group-hover:text-foreground transition-colors truncate">
+          {defaultPlaceholder}
         </span>
       </div>
-      <kbd className="inline-flex items-center text-[12px] font-mono font-medium text-neutral-300 bg-white/6 px-2 py-0.5 rounded border border-white/8 select-none shrink-0 ml-3">
+      <kbd className="inline-flex items-center text-[12px] font-mono font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border select-none shrink-0 ml-3">
         ⌘K
       </kbd>
     </button>

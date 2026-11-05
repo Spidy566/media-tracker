@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils";
 
 const NAV_TABS = [
   { label: "Home", href: "/" },
-  { label: "Shelf", href: "/shelf" },
-  { label: "Discover", href: "/discover" },
+  { label: "Library", href: "/library" },
+  { label: "Explore", href: "/explore" },
+  { label: "Calendar", href: "/calendar" },
+  { label: "Friends", href: "/friends" },
 ];
 
 export function NavTabs() {
@@ -16,12 +18,6 @@ export function NavTabs() {
   const isTabActive = (href: string) => {
     if (href === "/") {
       return pathname === "/" || pathname === "";
-    }
-    if (href === "/shelf") {
-      return pathname.startsWith("/shelf") || pathname.startsWith("/library");
-    }
-    if (href === "/discover") {
-      return pathname.startsWith("/discover") || pathname.startsWith("/explore");
     }
     return pathname.startsWith(href);
   };

@@ -41,14 +41,14 @@ export function AnchorChip({ item, onClear }: AnchorChipProps) {
       title="Click or press Esc to clear anchor"
       className={cn(
         "fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 z-50",
-        "bg-[#16161c]/90 hover:bg-[#202028]/95 backdrop-blur-xl border border-white/15 hover:border-brand/40",
+        "bg-card/90 hover:bg-muted/95 backdrop-blur-xl border border-border hover:border-brand/40",
         "rounded-2xl p-2 pr-4 sm:pr-5 shadow-2xl shadow-black/80 flex items-center gap-3.5 group cursor-pointer",
         "transition-all duration-300 ease-out select-none outline-none focus-visible:ring-2 focus-visible:ring-brand",
         "animate-in fade-in zoom-in-95 duration-200",
       )}
     >
       {/* Small Poster Thumbnail (~56-64px rounded square) with Crossfade */}
-      <div className="size-14 sm:size-16 rounded-xl overflow-hidden relative shrink-0 border border-white/10 bg-neutral-900 shadow-inner">
+      <div className="size-14 sm:size-16 rounded-xl overflow-hidden relative shrink-0 border border-border bg-muted shadow-inner">
         {!hidePosters && prevPoster && isCrossfading && (
           <Image
             src={prevPoster}
@@ -71,7 +71,7 @@ export function AnchorChip({ item, onClear }: AnchorChipProps) {
             )}
           />
         ) : (
-          <div className="absolute inset-0 bg-[#22222a] flex items-center justify-center text-brand">
+          <div className="absolute inset-0 bg-muted flex items-center justify-center text-brand">
             <Sparkles className="size-5" />
           </div>
         )}
@@ -83,17 +83,17 @@ export function AnchorChip({ item, onClear }: AnchorChipProps) {
           <Sparkles className="size-3 stroke-[2.5]" />
           <span>Anchored</span>
         </div>
-        <span className="text-[14px] sm:text-[15px] font-medium text-white truncate max-w-42.5 sm:max-w-65 leading-snug">
+        <span className="text-[14px] sm:text-[15px] font-medium text-foreground truncate max-w-42.5 sm:max-w-65 leading-snug">
           {item.title}
         </span>
-        <span className="text-[11px] sm:text-[12px] text-neutral-400 capitalize">
+        <span className="text-[11px] sm:text-[12px] text-muted-foreground capitalize font-mono tabular-nums">
           {item.mediaType} • {item.releaseYear || "TBA"}
         </span>
       </div>
 
       {/* Hover 'X' Button Indicator */}
       <div
-        className="size-7 rounded-full bg-white/10 group-hover:bg-rose-500/25 group-hover:text-rose-400 text-neutral-300 flex items-center justify-center transition-colors shrink-0 ml-1"
+        className="size-7 rounded-full bg-muted group-hover:bg-destructive/25 group-hover:text-destructive text-muted-foreground flex items-center justify-center transition-colors shrink-0 ml-1"
         title="Clear anchor"
       >
         <X className="size-3.5 stroke-[2.5]" />

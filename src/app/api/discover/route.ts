@@ -1,25 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { requireUser } from "@/lib/auth";
+import { GENRE_MAP } from "@/lib/genres";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
 import { tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGameItem } from "@/types/igdb";
 import type { TMDBResponse } from "@/types/tmdb";
 
-export const GENRE_MAP: Record<string, { tmdbMovie?: number; tmdbTv?: number; igdb?: number }> = {
-  Action: { tmdbMovie: 28, igdb: 4 },
-  Adventure: { tmdbMovie: 12, igdb: 31 },
-  "Action & Adventure": { tmdbTv: 10759 },
-  Animation: { tmdbMovie: 16, tmdbTv: 16 },
-  Comedy: { tmdbMovie: 35, tmdbTv: 35 },
-  Crime: { tmdbMovie: 80, tmdbTv: 80 },
-  Horror: { tmdbMovie: 27, igdb: 19 },
-  "Sci-Fi": { tmdbMovie: 878, tmdbTv: 10765, igdb: 18 },
-  RPG: { igdb: 12 },
-  Shooter: { igdb: 5 },
-  Strategy: { igdb: 15 },
-};
+export { GENRE_MAP };
 
 function parseReleaseYear(dateStr?: string | null): number | null {
   if (!dateStr?.trim()) return null;

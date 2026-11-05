@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Play,
   Plus,
+  Sparkles,
   Tv,
   X,
 } from "lucide-react";
@@ -34,14 +35,8 @@ interface PosterCardProps {
 }
 
 function getMediaHref(item: { externalId: string; mediaType: string }) {
-  const parts = item.externalId.split(":");
-  if (parts[0] === "tmdb") {
-    return `/media/${parts[1]}/${parts[2]}`;
-  }
-  if (parts[0] === "igdb") {
-    return `/media/game/${parts[1]}`;
-  }
-  return `/media/${item.mediaType}/${item.externalId}`;
+  const rawId = item.externalId.split(":").pop();
+  return `/media/${item.mediaType}/${rawId}`;
 }
 
 function getMediaTypeIcon(type: string) {
@@ -60,9 +55,9 @@ function getMediaTypeIcon(type: string) {
 function getStatusLabel(status: MediaStatus) {
   switch (status) {
     case "want_to":
-      return "Want to";
+      return "In Queue";
     case "doing":
-      return "Doing";
+      return "In Progress";
     case "done":
       return "Done";
     case "dropped":
@@ -73,13 +68,13 @@ function getStatusLabel(status: MediaStatus) {
 function getStatusColorClasses(status: MediaStatus) {
   switch (status) {
     case "want_to":
-      return "bg-[#3F6FD8] text-white border-blue-400/30";
+      return "bg-status-queue/20 text-status-queue border-status-queue/30";
     case "doing":
-      return "bg-[#D4580F] text-white border-orange-400/30";
+      return "bg-status-doing/20 text-status-doing border-status-doing/30";
     case "done":
-      return "bg-[#1E9467] text-white border-emerald-400/30";
+      return "bg-status-done/20 text-status-done border-status-done/30";
     case "dropped":
-      return "bg-[#6B6B76] text-white border-neutral-400/30";
+      return "bg-status-dropped/20 text-status-dropped border-status-dropped/30";
   }
 }
 
@@ -114,33 +109,33 @@ export function PosterCard({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [menuOpen]);
 
   const isFavorited = trackedStatus === "want_to";
+  const mediaHref = getMediaHref(item);
 
   return (
     <div
       className={cn(
-        "group relative aspect-2/3 w-full rounded-xl overflow-hidden select-none transition-all duration-300",
-        dense ? "rounded-lg" : "rounded-xl",
+        "group relative aspect-2/3 w-full rounded-2xl overflow-hidden select-none transition-all duration-300",
+        dense ? "rounded-xl" : "rounded-2xl",
         isAnchored
           ? "scale-[1.03] z-30 ring-2 ring-brand shadow-2xl shadow-brand/20 opacity-100"
           : isDimmed
             ? "opacity-20 grayscale-85 filter blur-[1.5px] scale-[0.98] pointer-events-auto hover:opacity-85 hover:grayscale-0 hover:blur-none hover:scale-100"
-            : "opacity-100 hover:scale-[1.025] shadow-md hover:shadow-xl border border-white/8",
+            : "opacity-100 hover:scale-[1.025] shadow-md hover:shadow-xl border border-border bg-card",
       )}
     >
-      {/* Anchor Click Target Overlay Button */}
-      <button
-        type="button"
-        onClick={() => onAnchor(item)}
-        aria-label={`Select ${item.title}`}
-        className="absolute inset-0 z-0 h-full w-full cursor-pointer bg-transparent border-0 p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
+      {/* Primary Click Target: Links cleanly to /media/[type]/[id] */}
+      <Link
+        href={mediaHref}
+        aria-label={`View details for ${item.title}`}
+        className="absolute inset-0 z-0 h-full w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
       />
 
       {/* Poster Artwork or Stealth Tile */}
@@ -159,16 +154,16 @@ export function PosterCard({
 
       {/* Stealth Mode fallback content if posters are hidden */}
       {hidePosters && (
-        <div className="pointer-events-none absolute inset-0 bg-[#16161c] p-3 flex flex-col justify-between border border-white/8">
-          <div className="flex items-center justify-between text-neutral-400 text-[11px] font-medium uppercase tracking-wider">
+        <div className="pointer-events-none absolute inset-0 bg-card p-3 flex flex-col justify-between border border-border">
+          <div className="flex items-center justify-between text-muted-foreground text-[11px] font-medium uppercase tracking-wider font-mono">
             <span className="flex items-center gap-1">
               {getMediaTypeIcon(item.mediaType)}
-              <span>{item.mediaType}</span>
+              <span className="capitalize">{item.mediaType}</span>
             </span>
-            <span>{item.releaseYear || "TBA"}</span>
+            <span className="tabular-nums">{item.releaseYear || "TBA"}</span>
           </div>
           <div className="my-auto py-2">
-            <span className="font-medium text-white text-[13px] sm:text-[14px] leading-snug line-clamp-3">
+            <span className="font-medium text-foreground text-[13px] sm:text-[14px] leading-snug line-clamp-3">
               {item.title}
             </span>
           </div>
@@ -194,24 +189,47 @@ export function PosterCard({
         </div>
       )}
 
-      {/* Hover Scrim & Action Overlays (opacity transition only) */}
+      {/* Hover Scrim & Action Overlays */}
       <div
         className={cn(
-          "absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent p-2.5 sm:p-3 flex flex-col justify-between transition-opacity duration-200 pointer-events-none",
+          "absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2.5 sm:p-3 flex flex-col justify-between transition-opacity duration-200 pointer-events-none",
           isAnchored || menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100",
         )}
       >
-        {/* Top-Right: "+ Log" Button */}
+        {/* Top-Right: "Find Similar" (Anchor) & "+ Log" Buttons */}
         <div className="flex justify-end items-center gap-1.5 w-full">
+          {/* Subtle Find Similar (Sparkles) button */}
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAnchor(item);
+            }}
+            aria-label={`Find titles similar to ${item.title}`}
+            title="Find similar titles"
+            className={cn(
+              "pointer-events-auto px-2 py-1 rounded-full border text-[11px] font-medium transition cursor-pointer backdrop-blur-md shadow-md flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              isAnchored
+                ? "bg-brand text-brand-foreground border-brand"
+                : "bg-card/80 hover:bg-muted text-foreground border-border",
+            )}
+          >
+            <Sparkles className="size-3" />
+            <span className="hidden sm:inline">Similar</span>
+          </button>
+
+          {/* Quick "+ Log" Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onStatusChange(item, "want_to");
             }}
             aria-label={`Log ${item.title}`}
-            title="Log / Save"
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-white/20 hover:bg-brand hover:text-brand-foreground text-white border border-white/20 text-[11px] font-medium transition cursor-pointer backdrop-blur-md shadow-md flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            title="Add to Queue"
+            className="pointer-events-auto px-2 py-1 rounded-full bg-card/80 hover:bg-brand hover:text-brand-foreground text-foreground border border-border text-[11px] font-medium transition cursor-pointer backdrop-blur-md shadow-md flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <Plus className="size-3 stroke-[2.5]" />
             <span>Log</span>
@@ -220,12 +238,15 @@ export function PosterCard({
 
         {/* Bottom Area: Title, Year, Heart, and "..." Menu */}
         <div className="space-y-1.5">
-          <span className="font-semibold text-white text-[13px] sm:text-[14px] leading-tight line-clamp-2 block drop-shadow-sm">
+          <Link
+            href={mediaHref}
+            className="font-semibold text-white text-[13px] sm:text-[14px] leading-tight line-clamp-2 block hover:text-brand transition-colors drop-shadow-sm pointer-events-auto"
+          >
             {item.title}
-          </span>
+          </Link>
 
           <div className="flex items-center justify-between pt-0.5">
-            <span className="text-[11px] sm:text-[12px] text-neutral-300">
+            <span className="text-[11px] sm:text-[12px] text-muted-foreground font-mono tabular-nums">
               {item.releaseYear || "TBA"}
             </span>
 
@@ -235,6 +256,7 @@ export function PosterCard({
               <button
                 type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onStatusChange(item, "want_to");
                 }}
@@ -244,7 +266,7 @@ export function PosterCard({
                   "p-1.5 rounded-full border backdrop-blur-md transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   isFavorited
                     ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
-                    : "bg-black/60 hover:bg-white/20 text-neutral-300 hover:text-white border-white/15",
+                    : "bg-card/80 hover:bg-muted text-muted-foreground hover:text-foreground border-border",
                 )}
               >
                 <Heart
@@ -258,6 +280,7 @@ export function PosterCard({
                 <button
                   type="button"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     setMenuOpen((prev) => !prev);
                   }}
@@ -265,7 +288,7 @@ export function PosterCard({
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   title="More actions"
-                  className="p-1.5 rounded-full bg-black/60 hover:bg-white/20 text-neutral-300 hover:text-white border border-white/15 backdrop-blur-md transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="p-1.5 rounded-full bg-card/80 hover:bg-muted text-muted-foreground hover:text-foreground border border-border backdrop-blur-md transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <MoreHorizontal className="size-3.5" />
                 </button>
@@ -274,25 +297,41 @@ export function PosterCard({
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 bottom-full mb-2 w-48 rounded-xl bg-[#1c1c22]/95 backdrop-blur-xl border border-white/15 shadow-2xl p-1.5 z-50 text-neutral-200 text-[12px] animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute right-0 bottom-full mb-2 w-48 rounded-xl bg-popover/95 backdrop-blur-xl border border-border shadow-2xl p-1.5 z-50 text-foreground text-[12px] animate-in fade-in zoom-in-95 duration-150"
                   >
                     {/* View Details Link */}
                     <Link
-                      href={getMediaHref(item)}
+                      href={mediaHref}
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
                       }}
                       role="menuitem"
-                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                     >
                       <span>View details</span>
-                      <ExternalLink className="size-3 text-neutral-400" />
+                      <ExternalLink className="size-3 text-muted-foreground" />
                     </Link>
 
-                    <div className="my-1 border-t border-white/10" />
+                    {/* Find Similar Action */}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onAnchor(item);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-muted hover:text-foreground transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span>Find similar</span>
+                      <Sparkles className="size-3 text-muted-foreground" />
+                    </button>
 
-                    <div className="px-2.5 py-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                    <div className="my-1 border-t border-border" />
+
+                    <div className="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                       Set Status
                     </div>
 
@@ -302,13 +341,16 @@ export function PosterCard({
                         type="button"
                         role="menuitem"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           setMenuOpen(false);
                           onStatusChange(item, status);
                         }}
                         className={cn(
-                          "w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-between cursor-pointer",
-                          trackedStatus === status ? "text-brand font-medium" : "text-neutral-300",
+                          "w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors flex items-center justify-between cursor-pointer",
+                          trackedStatus === status
+                            ? "text-brand font-medium"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
                         <span>{getStatusLabel(status)}</span>
@@ -318,16 +360,17 @@ export function PosterCard({
 
                     {trackedStatus && onRemoveTracked && (
                       <>
-                        <div className="my-1 border-t border-white/10" />
+                        <div className="my-1 border-t border-border" />
                         <button
                           type="button"
                           role="menuitem"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             setMenuOpen(false);
                             onRemoveTracked(item);
                           }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-destructive/20 text-destructive transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
                           <X className="size-3.5" />
                           <span>Remove from library</span>
