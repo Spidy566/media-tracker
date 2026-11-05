@@ -53,53 +53,11 @@
   --radius-2xl: 1.5rem;
 }
 
-/* Light */
-:root {
+/* 100% Dark Mode Only (Locked OTT / Letterboxd dark aesthetic) */
+:root,
+.dark {
   --radius: 0.75rem;
 
-  --background: #F6F6F8;
-  --foreground: #121216;
-  --card: #FFFFFF;
-  --card-foreground: #121216;
-  --popover: #FFFFFF;
-  --popover-foreground: #121216;
-
-  --primary: #C8F135;
-  --primary-foreground: #0B0B0E;
-  --secondary: #EEEEF2;
-  --secondary-foreground: #121216;
-  --muted: #EEEEF2;
-  --muted-foreground: #6B6B76;
-  --accent: #EEEEF2;
-  --accent-foreground: #121216;
-  --destructive: #E5484D;
-
-  --border: #E2E2E8;
-  --input: #E2E2E8;
-  --ring: #C8F135;
-
-  --brand: #C8F135;
-  --brand-foreground: #0B0B0E;
-  --brand-text: #5E7A00;
-
-  --status-queue: #3F6FD8;
-  --status-doing: #D4580F;
-  --status-done: #1E9467;
-  --status-dropped: #6B6B76;
-  --rating: #B7791F;
-
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #121216;
-  --sidebar-primary: #C8F135;
-  --sidebar-primary-foreground: #0B0B0E;
-  --sidebar-accent: #EEEEF2;
-  --sidebar-accent-foreground: #121216;
-  --sidebar-border: #E2E2E8;
-  --sidebar-ring: #C8F135;
-}
-
-/* Dark */
-.dark {
   --background: #0B0B0E;
   --foreground: #F2F2F5;
   --card: #121216;

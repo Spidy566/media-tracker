@@ -11,16 +11,13 @@ import {
   Loader2,
   Lock,
   LogOut,
-  Moon,
   Play,
   Shield,
   Smartphone,
-  Sun,
   Trash2,
   TrendingUp,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { usePosters } from "@/components/providers/poster-provider";
@@ -47,13 +44,12 @@ interface SettingsClientProps {
 export function SettingsClient({ initialUser, initialHiddenSections = [] }: SettingsClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
   const { hidePosters, togglePosters } = usePosters();
 
   const user = initialUser;
 
-  const [mounted, setMounted] = useState(false);
   const [displayName, setDisplayName] = useState(user.displayName);
+  const [isPublic, setIsPublic] = useState(user.isPublic ?? true);
   const [hiddenSections, setHiddenSections] = useState<HomeSection[]>(initialHiddenSections);
 
   // Security card states
@@ -92,7 +88,6 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
   }, []);
 
   useEffect(() => {
-    setMounted(true);
     loadSessions();
   }, [loadSessions]);
 
@@ -135,6 +130,31 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
     if (!displayName.trim() || displayName.trim() === user.displayName) return;
     updateName(displayName.trim());
   };
+
+  const { mutate: updatePrivacy, isPending: isUpdatingPrivacy } = useMutation({
+    mutationFn: async (newIsPublic: boolean) => {
+      const res = await fetch("/api/users/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: newIsPublic }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update privacy");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const updated = data?.user?.isPublic ?? !isPublic;
+      setIsPublic(updated);
+      toast.success(updated ? "Profile is now public" : "Profile is now private");
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      router.refresh();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,16 +284,7 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
   ];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Manage your interface, account security, and active sessions.
-        </p>
-      </div>
-
+    <div className="space-y-8">
       {/* 1. Appearance */}
       <section className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-6">
         <div>
@@ -284,36 +295,8 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
         </div>
 
         <div className="space-y-4">
-          {/* Theme Switcher */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <span className="text-sm font-semibold text-foreground block">Color Theme</span>
-              <span className="text-xs text-muted-foreground block">
-                Choose between dark and light appearance
-              </span>
-            </div>
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
-              <Button
-                variant={mounted && theme === "light" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTheme("light")}
-                className="h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer"
-              >
-                <Sun className="w-3.5 h-3.5 mr-1.5" /> Light
-              </Button>
-              <Button
-                variant={mounted && theme === "dark" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTheme("dark")}
-                className="h-8 px-3 rounded-lg text-xs font-semibold cursor-pointer"
-              >
-                <Moon className="w-3.5 h-3.5 mr-1.5" /> Dark
-              </Button>
-            </div>
-          </div>
-
           {/* Stealth Mode */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-sm font-semibold text-foreground block">Stealth Mode</span>
               <span className="text-xs text-muted-foreground block">
@@ -435,6 +418,35 @@ export function SettingsClient({ initialUser, initialHiddenSections = [] }: Sett
             <p className="text-[11px] text-muted-foreground">@{user.username}</p>
           </div>
         </form>
+
+        <div className="pt-4 border-t border-border flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-sm font-semibold text-foreground block">Public Profile</span>
+            <span className="text-xs text-muted-foreground block">
+              Allow friends to see your Library and currently watching/playing activity
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPublic}
+            disabled={isUpdatingPrivacy}
+            onClick={() => updatePrivacy(!isPublic)}
+            className={cn(
+              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50",
+              isPublic ? "bg-brand" : "bg-muted",
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none inline-block size-5 transform rounded-full bg-card shadow-xs ring-0 transition duration-200 ease-in-out",
+                isPublic
+                  ? "translate-x-5 bg-brand-foreground"
+                  : "translate-x-0 bg-muted-foreground",
+              )}
+            />
+          </button>
+        </div>
       </section>
 
       {/* 4. Security Card */}

@@ -1,9 +1,11 @@
 import { desc, eq } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { HOME_HIDDEN_COOKIE, parseHiddenSections } from "@/lib/home-prefs";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
 import { normalizeBackdropUrl, normalizePosterUrl } from "@/lib/image-url";
@@ -145,7 +147,8 @@ export default async function HomePage() {
       media: {
         ...e.media,
         posterUrl: normalizePosterUrl(e.media.posterUrl),
-        backdropUrl: normalizeBackdropUrl(e.media.backdropUrl),
+        backdropUrl:
+          normalizeBackdropUrl(e.media.backdropUrl) || normalizePosterUrl(e.media.posterUrl),
       },
     }));
   }
@@ -161,26 +164,35 @@ export default async function HomePage() {
   // 2. Priority "Continue" row items (in progress)
   const activeItems = userEntries.filter((e) => e.status === "doing");
 
-  // 3. 5-8 Most recently updated entries for Activity row
+  // 3. Up Next in Queue row items
+  const queueItems = userEntries.filter((e) => e.status === "want_to").slice(0, 12);
+
+  // 4. 5-8 Most recently updated entries for Activity row
   const recentEntries = userEntries.slice(0, 8);
 
-  // 4. Trending items
+  // 5. Trending items
   const [trendingMovies, trendingTv, trendingGames] = await Promise.all([
     getTrendingMovies(),
     getTrendingTv(),
     getTrendingGames(),
   ]);
 
+  const cookieStore = await cookies();
+  const hiddenCookie = cookieStore.get(HOME_HIDDEN_COOKIE)?.value;
+  const hiddenSections = parseHiddenSections(hiddenCookie);
+
   return (
     <DashboardClient
       currentUser={currentUser}
       libraryCounts={libraryCounts}
       activeItems={activeItems}
+      queueItems={queueItems}
       recentEntries={recentEntries}
       trendingMovies={trendingMovies}
       trendingTv={trendingTv}
       trendingGames={trendingGames}
       initialEntries={userEntries}
+      hiddenSections={hiddenSections}
     />
   );
 }
