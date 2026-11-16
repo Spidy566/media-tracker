@@ -22,6 +22,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
   const [rating, setRating] = useState<number | null>(initialEntry?.rating ?? null);
   const [note, setNote] = useState<string>(initialEntry?.reviewNote ?? "");
   const [isEditingNote, setIsEditingNote] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const activeStatus = initialEntry?.status || null;
 
@@ -72,9 +73,11 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
       router.refresh();
       setRating(null);
       setNote("");
+      setIsConfirmingDelete(false);
       toast.info("Removed from your library", { description: media.title });
     },
     onError: (err: Error) => {
+      setIsConfirmingDelete(false);
       toast.error(err.message || "Failed to remove entry");
     },
   });
@@ -232,14 +235,35 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
 
       {/* Remove Entry */}
       {initialEntry && (
-        <button
-          type="button"
-          onClick={() => removeEntry()}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-destructive hover:opacity-80 pt-2 border-t border-border cursor-pointer transition"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Remove from Library</span>
-        </button>
+        <div className="pt-2 border-t border-border">
+          {isConfirmingDelete ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => removeEntry()}
+                className="flex-1 text-xs font-semibold py-1.5 px-3 rounded-xl bg-destructive text-destructive-foreground hover:opacity-90 transition cursor-pointer"
+              >
+                Confirm Removal
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(false)}
+                className="text-xs font-semibold py-1.5 px-3 rounded-xl bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsConfirmingDelete(true)}
+              className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-destructive hover:opacity-80 cursor-pointer transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remove from Library</span>
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

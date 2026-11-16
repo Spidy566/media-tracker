@@ -14,6 +14,25 @@ interface LibraryClientProps {
   initialEntries: Entry[];
 }
 
+const EMPTY_STATES: Record<MediaStatus, { title: string; subtitle: string }> = {
+  want_to: {
+    title: "Your queue is empty",
+    subtitle: "Find movies, shows, or games in Explore to add to your queue.",
+  },
+  doing: {
+    title: "Nothing in progress",
+    subtitle: "Start watching or playing something from your queue.",
+  },
+  done: {
+    title: "No completed titles yet",
+    subtitle: "Titles you mark as finished will be logged here.",
+  },
+  dropped: {
+    title: "No dropped titles",
+    subtitle: "Titles you decided not to finish will appear here.",
+  },
+};
+
 export function LibraryClient({ initialEntries }: LibraryClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,6 +81,8 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     done: initialEntries.filter((e) => e.status === "done").length,
     dropped: initialEntries.filter((e) => e.status === "dropped").length,
   };
+
+  const isFilterMismatch = counts[activeTab] > 0 && filteredEntries.length === 0;
 
   return (
     <div className="space-y-6">
@@ -140,10 +161,25 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       {/* Grid */}
       {filteredEntries.length === 0 ? (
         <div className="text-center py-24 border border-dashed border-border rounded-3xl">
-          <p className="text-sm font-semibold text-foreground">No titles in this section</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Search to start building your collection.
+          <p className="text-sm font-semibold text-foreground">
+            {isFilterMismatch
+              ? `No ${mediaFilter === "tv" ? "TV Shows" : `${mediaFilter}s`} in this section`
+              : EMPTY_STATES[activeTab].title}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {isFilterMismatch
+              ? "You have other titles here. Switch to All Media to see them."
+              : EMPTY_STATES[activeTab].subtitle}
+          </p>
+          {isFilterMismatch && (
+            <button
+              type="button"
+              onClick={() => setMediaFilter("all")}
+              className="text-xs font-semibold px-4 py-1.5 rounded-full bg-muted text-foreground border border-border hover:bg-secondary transition cursor-pointer"
+            >
+              View All Media
+            </button>
+          )}
         </div>
       ) : (
         <MediaGrid>
