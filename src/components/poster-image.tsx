@@ -1,9 +1,9 @@
 "use client";
 
-import { Film, Gamepad2, Tv } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { usePosters } from "@/components/providers/poster-provider";
+import { getMediaTypeIcon } from "@/lib/media-formatters";
 
 interface PosterImageProps {
   src: string | null | undefined;
@@ -20,17 +20,6 @@ interface PosterImageProps {
   /** Renders a small centered icon without text for thumbnails under ~80px */
   compact?: boolean;
   onError?: () => void;
-}
-
-function getMediaTypeIcon(mediaType?: string) {
-  switch (mediaType) {
-    case "tv":
-      return Tv;
-    case "game":
-      return Gamepad2;
-    default:
-      return Film;
-  }
 }
 
 export function PosterImage({

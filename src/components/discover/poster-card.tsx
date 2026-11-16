@@ -4,14 +4,11 @@ import {
   Bookmark,
   Check,
   ExternalLink,
-  Film,
-  Gamepad2,
   Heart,
   MoreHorizontal,
   Play,
   Plus,
   Sparkles,
-  Tv,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -19,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
+import { getStatusBadgeClasses, getStatusLabel, MediaTypeIcon } from "@/lib/media-formatters";
 import { cn, getMediaHref } from "@/lib/utils";
 
 export type MediaStatus = "want_to" | "doing" | "done" | "dropped";
@@ -32,45 +30,6 @@ interface PosterCardProps {
   onStatusChange: (item: UnifiedSearchResult, status: MediaStatus) => void;
   onRemoveTracked?: (item: UnifiedSearchResult) => void;
   dense?: boolean;
-}
-
-function getMediaTypeIcon(type: string) {
-  switch (type) {
-    case "movie":
-      return <Film className="size-3.5 shrink-0" />;
-    case "tv":
-      return <Tv className="size-3.5 shrink-0" />;
-    case "game":
-      return <Gamepad2 className="size-3.5 shrink-0" />;
-    default:
-      return null;
-  }
-}
-
-function getStatusLabel(status: MediaStatus) {
-  switch (status) {
-    case "want_to":
-      return "In Queue";
-    case "doing":
-      return "In Progress";
-    case "done":
-      return "Done";
-    case "dropped":
-      return "Dropped";
-  }
-}
-
-function getStatusColorClasses(status: MediaStatus) {
-  switch (status) {
-    case "want_to":
-      return "bg-status-queue/20 text-status-queue border-status-queue/30";
-    case "doing":
-      return "bg-status-doing/20 text-status-doing border-status-doing/30";
-    case "done":
-      return "bg-status-done/20 text-status-done border-status-done/30";
-    case "dropped":
-      return "bg-status-dropped/20 text-status-dropped border-status-dropped/30";
-  }
 }
 
 export function PosterCard({
@@ -152,7 +111,7 @@ export function PosterCard({
         <div className="pointer-events-none absolute inset-0 bg-card p-3 flex flex-col justify-between border border-border">
           <div className="flex items-center justify-between text-muted-foreground text-[11px] font-medium uppercase tracking-wider font-mono">
             <span className="flex items-center gap-1">
-              {getMediaTypeIcon(item.mediaType)}
+              <MediaTypeIcon type={item.mediaType} className="size-3.5 shrink-0" />
               <span className="capitalize">{item.mediaType}</span>
             </span>
             <span className="tabular-nums">{item.releaseYear || "TBA"}</span>
@@ -172,7 +131,7 @@ export function PosterCard({
           <span
             className={cn(
               "px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium border shadow-md backdrop-blur-md inline-flex items-center gap-1",
-              getStatusColorClasses(trackedStatus),
+              getStatusBadgeClasses(trackedStatus),
             )}
           >
             {trackedStatus === "want_to" && <Bookmark className="size-2.5 stroke-[2.5]" />}
@@ -187,7 +146,7 @@ export function PosterCard({
       {/* Hover Scrim & Action Overlays */}
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2.5 sm:p-3 flex flex-col justify-between transition-opacity duration-200 pointer-events-none",
+          "absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent p-2.5 sm:p-3 flex flex-col justify-between transition-opacity duration-200 pointer-events-none",
           isAnchored || menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100",
         )}
       >
