@@ -15,57 +15,35 @@ import type { IGDBGameItem } from "@/types/igdb";
 import type { TMDBResponse } from "@/types/tmdb";
 import { DashboardClient } from "./dashboard-client";
 
-const getTrendingMovies = unstable_cache(
-  async (): Promise<UnifiedSearchResult[]> => {
+const getTrendingTmdb = unstable_cache(
+  async (type: "movie" | "tv"): Promise<UnifiedSearchResult[]> => {
     try {
-      const data: TMDBResponse = await tmdbFetch("/trending/movie/week");
+      const data: TMDBResponse = await tmdbFetch(`/trending/${type}/week`);
       if (!data?.results) return [];
-      return data.results.slice(0, 10).map((item) => ({
-        externalId: `tmdb:movie:${item.id}`,
-        mediaType: "movie",
-        title: item.title || "Untitled",
-        releaseYear: item.release_date ? Number.parseInt(item.release_date.slice(0, 4), 10) : null,
-        posterUrl: normalizePosterUrl(
-          item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-        ),
-        creator: null,
-        summary: item.overview || null,
-        genres: [],
-      }));
-    } catch (error) {
-      console.error("Failed to fetch trending movies:", error);
-      return [];
-    }
-  },
-  ["trending-movies-week-v2"],
-  { revalidate: 3600 },
-);
+      return data.results.slice(0, 10).map((item) => {
+        const title = (type === "movie" ? item.title : item.name) || "Untitled";
+        const dateStr = type === "movie" ? item.release_date : item.first_air_date;
+        const releaseYear = dateStr ? Number.parseInt(dateStr.slice(0, 4), 10) : null;
 
-const getTrendingTv = unstable_cache(
-  async (): Promise<UnifiedSearchResult[]> => {
-    try {
-      const data: TMDBResponse = await tmdbFetch("/trending/tv/week");
-      if (!data?.results) return [];
-      return data.results.slice(0, 10).map((item) => ({
-        externalId: `tmdb:tv:${item.id}`,
-        mediaType: "tv",
-        title: item.name || "Untitled",
-        releaseYear: item.first_air_date
-          ? Number.parseInt(item.first_air_date.slice(0, 4), 10)
-          : null,
-        posterUrl: normalizePosterUrl(
-          item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-        ),
-        creator: null,
-        summary: item.overview || null,
-        genres: [],
-      }));
+        return {
+          externalId: `tmdb:${type}:${item.id}`,
+          mediaType: type,
+          title,
+          releaseYear,
+          posterUrl: normalizePosterUrl(
+            item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+          ),
+          creator: null,
+          summary: item.overview || null,
+          genres: [],
+        };
+      });
     } catch (error) {
-      console.error("Failed to fetch trending TV:", error);
+      console.error(`Failed to fetch trending ${type}:`, error);
       return [];
     }
   },
-  ["trending-tv-week-v2"],
+  ["trending-tmdb-week-v2"],
   { revalidate: 3600 },
 );
 
@@ -172,8 +150,8 @@ export default async function HomePage() {
 
   // 5. Trending items
   const [trendingMovies, trendingTv, trendingGames] = await Promise.all([
-    getTrendingMovies(),
-    getTrendingTv(),
+    getTrendingTmdb("movie"),
+    getTrendingTmdb("tv"),
     getTrendingGames(),
   ]);
 

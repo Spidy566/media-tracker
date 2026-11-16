@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
-import { cn } from "@/lib/utils";
+import { cn, getMediaHref } from "@/lib/utils";
 
 export type MediaStatus = "want_to" | "doing" | "done" | "dropped";
 
@@ -32,11 +32,6 @@ interface PosterCardProps {
   onStatusChange: (item: UnifiedSearchResult, status: MediaStatus) => void;
   onRemoveTracked?: (item: UnifiedSearchResult) => void;
   dense?: boolean;
-}
-
-function getMediaHref(item: { externalId: string; mediaType: string }) {
-  const rawId = item.externalId.split(":").pop();
-  return `/media/${item.mediaType}/${rawId}`;
 }
 
 function getMediaTypeIcon(type: string) {

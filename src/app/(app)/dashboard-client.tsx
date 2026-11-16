@@ -24,7 +24,7 @@ import { ScrollRow } from "@/components/scroll-row";
 import { logEntryApi } from "@/lib/api-entries";
 import { openSearchModal } from "@/lib/auth-events";
 import type { HomeSection } from "@/lib/home-prefs";
-import { cn } from "@/lib/utils";
+import { cn, getMediaHref } from "@/lib/utils";
 import type { Entry, EntryUser } from "@/types/entry";
 
 export interface LibraryCounts {
@@ -45,12 +45,6 @@ interface DashboardClientProps {
   trendingGames: UnifiedSearchResult[];
   initialEntries?: Entry[];
   hiddenSections?: HomeSection[];
-}
-
-function getMediaHref(media: { externalId: string; mediaType: string }) {
-  const parts = media.externalId.split(":");
-  const rawId = parts[parts.length - 1];
-  return `/media/${media.mediaType}/${rawId}`;
 }
 
 function getMediaTypeLabel(type: string) {

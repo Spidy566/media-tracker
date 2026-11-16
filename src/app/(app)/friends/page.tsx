@@ -7,16 +7,12 @@ import { PosterImage } from "@/components/poster-image";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getMediaHref } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Friends — Tracklist",
   description: "Browse members, their stats, and what public friends are watching or playing.",
 };
-
-function getMediaHref(mediaType: string, externalId: string) {
-  const rawId = externalId.split(":").pop();
-  return `/media/${mediaType}/${rawId}`;
-}
 
 export default async function FriendsPage() {
   const currentUser = await getCurrentUser();
@@ -213,7 +209,7 @@ export default async function FriendsPage() {
                     {member.currentDoing.map((item) => (
                       <Link
                         key={item.externalId}
-                        href={getMediaHref(item.mediaType, item.externalId)}
+                        href={getMediaHref(item)}
                         className="flex items-center gap-2.5 p-2 rounded-xl bg-muted/30 hover:bg-muted/60 border border-border/50 transition group/item"
                       >
                         <div className="relative w-8 aspect-2/3 rounded-md overflow-hidden bg-muted shrink-0 border border-border/50">
