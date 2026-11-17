@@ -8,11 +8,19 @@ import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
 import { logEntryApi } from "@/lib/api-entries";
+import { getMediaHref } from "@/lib/utils";
 import type { Entry } from "@/types/entry";
 
 interface LibraryClientProps {
   initialEntries: Entry[];
 }
+
+const STATUS_TABS: Array<{ status: MediaStatus; label: string; icon: typeof Bookmark }> = [
+  { status: "want_to", label: "Queue", icon: Bookmark },
+  { status: "doing", label: "In Progress", icon: Play },
+  { status: "done", label: "Done", icon: Check },
+  { status: "dropped", label: "Dropped", icon: Ban },
+];
 
 const EMPTY_STATES: Record<MediaStatus, { title: string; subtitle: string }> = {
   want_to: {
@@ -89,54 +97,26 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       {/* Capsule Status Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-border">
         <div className="flex items-center gap-1.5 bg-muted/60 border border-border p-1 rounded-full">
-          <button
-            type="button"
-            onClick={() => setActiveTab("want_to")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-              activeTab === "want_to"
-                ? "bg-foreground text-background shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Bookmark className="w-3.5 h-3.5" />
-            <span>Queue ({counts.want_to})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("doing")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-              activeTab === "doing"
-                ? "bg-foreground text-background shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Play className="w-3.5 h-3.5" />
-            <span>In Progress ({counts.doing})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("done")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-              activeTab === "done"
-                ? "bg-foreground text-background shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Check className="w-3.5 h-3.5" />
-            <span>Done ({counts.done})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("dropped")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-              activeTab === "dropped"
-                ? "bg-foreground text-background shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Ban className="w-3.5 h-3.5" />
-            <span>Dropped ({counts.dropped})</span>
-          </button>
+          {STATUS_TABS.map(({ status, label, icon: Icon }) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => {
+                setActiveTab(status);
+                router.replace(`/library?status=${status}`, { scroll: false });
+              }}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                activeTab === status
+                  ? "bg-foreground text-background shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>
+                {label} ({counts[status]})
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Media Type Filter */}
@@ -183,24 +163,19 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
         </div>
       ) : (
         <MediaGrid>
-          {filteredEntries.map((entry) => {
-            const parts = entry.media.externalId.split(":");
-            const rawId = parts[parts.length - 1];
-
-            return (
-              <MediaCard
-                key={entry.id}
-                title={entry.media.title}
-                mediaType={entry.media.mediaType}
-                posterUrl={entry.media.posterUrl}
-                releaseYear={entry.media.releaseYear}
-                rating={entry.rating}
-                currentStatus={entry.status}
-                onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-                onClick={() => router.push(`/media/${entry.media.mediaType}/${rawId}`)}
-              />
-            );
-          })}
+          {filteredEntries.map((entry) => (
+            <MediaCard
+              key={entry.id}
+              title={entry.media.title}
+              mediaType={entry.media.mediaType}
+              posterUrl={entry.media.posterUrl}
+              releaseYear={entry.media.releaseYear}
+              rating={entry.rating}
+              currentStatus={entry.status}
+              onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
+              onClick={() => router.push(getMediaHref(entry.media))}
+            />
+          ))}
         </MediaGrid>
       )}
     </div>

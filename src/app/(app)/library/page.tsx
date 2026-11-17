@@ -59,7 +59,11 @@ export default async function LibraryPage() {
         </p>
       </div>
 
-      <Suspense fallback={<div className="h-40 animate-pulse bg-white/5 rounded-2xl" />}>
+      <Suspense
+        fallback={
+          <div className="h-40 animate-pulse bg-muted/40 border border-border rounded-2xl" />
+        }
+      >
         <LibraryClient initialEntries={entries} />
       </Suspense>
     </main>
