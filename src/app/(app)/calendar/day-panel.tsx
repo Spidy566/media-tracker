@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Dialog } from "radix-ui";
 import type { CalendarItem } from "@/app/api/calendar/route";
-import type { MediaStatus } from "@/components/media-card";
+import type { MediaStatus } from "@/db/schema";
 import { formatFullDay, parseYMD, relativeLabel, toYMD } from "@/lib/calendar-dates";
 import { CalendarRow } from "./calendar-row";
 

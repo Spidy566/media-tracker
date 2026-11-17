@@ -24,10 +24,10 @@ import { Popover } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { CalendarApiResponse, CalendarItem } from "@/app/api/calendar/route";
-import type { MediaStatus } from "@/components/media-card";
 import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
 import { ScrollRow } from "@/components/scroll-row";
+import type { MediaStatus } from "@/db/schema";
 import { logEntryApi } from "@/lib/api-entries";
 import {
   buildMonthGrid,
@@ -38,6 +38,7 @@ import {
   relativeLabel,
   toYMD,
 } from "@/lib/calendar-dates";
+import { getMediaHref } from "@/lib/utils";
 import { CalendarRow } from "./calendar-row";
 import { DayPanel } from "./day-panel";
 
@@ -833,8 +834,6 @@ export function CalendarClient({ currentUser, myStatus }: CalendarClientProps) {
           >
             {highlights.map((item) => {
               const itemStatus = myStatus[item.externalId];
-              const parts = item.externalId.split(":");
-              const rawId = parts[parts.length - 1];
               const isFuture = item.releaseDate ? item.releaseDate > todayYmd : true;
 
               // Date badge string
@@ -853,7 +852,7 @@ export function CalendarClient({ currentUser, myStatus }: CalendarClientProps) {
                   <div className="relative aspect-2/3 w-full rounded-2xl overflow-hidden bg-muted border border-border group-hover:border-foreground/30 group-hover:shadow-lg transition-all duration-200">
                     {/* Link to detail page */}
                     <Link
-                      href={`/media/${item.mediaType}/${rawId}`}
+                      href={getMediaHref(item)}
                       className="absolute inset-0 z-0 w-full h-full cursor-pointer focus:outline-none"
                       aria-label={`View details for ${item.title}`}
                     />

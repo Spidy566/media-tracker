@@ -1,10 +1,12 @@
 "use client";
 
-import { Bookmark, Check, Film, Gamepad2, Play, Tv } from "lucide-react";
+import { Bookmark, Check, Play } from "lucide-react";
 import Link from "next/link";
 import type { CalendarItem } from "@/app/api/calendar/route";
-import type { MediaStatus } from "@/components/media-card";
 import { PosterImage } from "@/components/poster-image";
+import type { MediaStatus } from "@/db/schema";
+import { MediaTypeIcon } from "@/lib/media-formatters";
+import { getMediaHref } from "@/lib/utils";
 
 interface CalendarRowProps {
   item: CalendarItem;
@@ -43,12 +45,6 @@ function getStatusDetails(status: MediaStatus, mediaType: "movie" | "tv" | "game
   }
 }
 
-function getMediaDetailUrl(externalId: string, mediaType: string) {
-  const parts = externalId.split(":");
-  const rawId = parts[parts.length - 1];
-  return `/media/${mediaType}/${rawId}`;
-}
-
 export function CalendarRow({
   item,
   todayYmd,
@@ -59,10 +55,9 @@ export function CalendarRow({
   const isFuture = item.releaseDate ? item.releaseDate > todayYmd : true;
   const isPast = item.releaseDate ? item.releaseDate < todayYmd : false;
 
-  const detailUrl = getMediaDetailUrl(item.externalId, item.mediaType);
+  const detailUrl = getMediaHref(item);
   const statusInfo = myStatus ? getStatusDetails(myStatus, item.mediaType) : null;
 
-  const TypeIcon = item.mediaType === "tv" ? Tv : item.mediaType === "game" ? Gamepad2 : Film;
   const genresStr = item.genres.slice(0, 3).join(", ");
 
   return (
@@ -102,7 +97,7 @@ export function CalendarRow({
         {/* Muted meta line */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
           <span className="inline-flex items-center gap-1 shrink-0">
-            <TypeIcon className="size-3.5 text-muted-foreground/80" />
+            <MediaTypeIcon type={item.mediaType} className="size-3.5 text-muted-foreground/80" />
             <span className="capitalize">
               {item.mediaType === "tv" ? "TV series" : item.mediaType}
             </span>

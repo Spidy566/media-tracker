@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import type { MediaStatus } from "@/components/media-card";
-import { mediaItems, userMediaEntries } from "@/db/schema";
+import { type MediaStatus, mediaItems, userMediaEntries } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CalendarClient } from "./calendar-client";
