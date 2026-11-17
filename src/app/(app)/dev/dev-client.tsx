@@ -18,10 +18,11 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { MediaCard } from "@/components/media-card";
 import { PosterImage } from "@/components/poster-image";
 import { PosterToggle } from "@/components/poster-toggle";
 import { usePosters } from "@/components/providers/poster-provider";
+import type { MediaStatus } from "@/db/schema";
 import type { CurrentUser } from "@/lib/auth";
 
 export interface DbStats {
