@@ -1,6 +1,8 @@
 import { Film, Gamepad2, type LucideIcon, Tv } from "lucide-react";
 
-export type MediaStatus = "want_to" | "doing" | "done" | "dropped";
+import type { MediaStatus } from "@/db/schema";
+
+export type { MediaStatus };
 
 /**
  * Returns the human-readable display label for a media type.

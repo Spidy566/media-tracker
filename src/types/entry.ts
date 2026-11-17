@@ -1,4 +1,4 @@
-import type { MediaStatus } from "@/components/media-card";
+import type { MediaStatus } from "@/db/schema";
 
 export interface EntryUser {
   id: string;

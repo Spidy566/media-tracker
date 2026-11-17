@@ -4,7 +4,9 @@ import { Bookmark, Check, Play } from "lucide-react";
 import type { ReactNode } from "react";
 import { PosterImage } from "@/components/poster-image";
 
-export type MediaStatus = "want_to" | "doing" | "done" | "dropped";
+import type { MediaStatus } from "@/db/schema";
+
+export type { MediaStatus };
 
 interface MediaCardProps {
   title: string;

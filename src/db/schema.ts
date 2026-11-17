@@ -16,6 +16,8 @@ import {
 // 1. Enums
 export const mediaTypeEnum = pgEnum("media_type", ["movie", "tv", "game"]);
 export const mediaStatusEnum = pgEnum("media_status", ["want_to", "doing", "done", "dropped"]);
+export type MediaType = (typeof mediaTypeEnum.enumValues)[number];
+export type MediaStatus = (typeof mediaStatusEnum.enumValues)[number];
 
 // 2A. Users (The Squad)
 export const users = pgTable("users", {
