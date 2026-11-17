@@ -4,9 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { MediaCard } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
+import type { MediaStatus } from "@/db/schema";
 import { logEntryApi } from "@/lib/api-entries";
+import { getMediaHref } from "@/lib/utils";
 import type { Entry } from "@/types/entry";
 
 interface SquadClientProps {
@@ -50,9 +52,7 @@ export function SquadClient({ entries }: SquadClientProps) {
   });
 
   const navigateToMedia = (media: Entry["media"]) => {
-    const parts = media.externalId.split(":");
-    const rawId = parts[parts.length - 1];
-    router.push(`/media/${media.mediaType}/${rawId}`);
+    router.push(getMediaHref(media));
   };
 
   return (

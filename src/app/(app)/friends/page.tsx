@@ -1,12 +1,13 @@
 import { asc, desc, eq, inArray, or } from "drizzle-orm";
-import { ArrowRight, Bookmark, Check, Film, Gamepad2, Lock, Play, Tv, Users } from "lucide-react";
+import { ArrowRight, Bookmark, Check, Lock, Play, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PosterImage } from "@/components/poster-image";
-import { mediaItems, userMediaEntries, users } from "@/db/schema";
+import { type MediaStatus, type MediaType, mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { MediaTypeIcon } from "@/lib/media-formatters";
 import { getMediaHref } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -39,11 +40,11 @@ export default async function FriendsPage() {
   // 2. Query all entries for these users in one batch
   type UserEntryRow = {
     userId: string;
-    status: "want_to" | "doing" | "done" | "dropped";
+    status: MediaStatus;
     rating: number | null;
     updatedAt: Date;
     title: string;
-    mediaType: "movie" | "tv" | "game";
+    mediaType: MediaType;
     posterUrl: string | null;
     externalId: string;
   };
@@ -225,13 +226,7 @@ export default async function FriendsPage() {
                             {item.title}
                           </span>
                           <span className="text-[11px] text-status-doing flex items-center gap-1 capitalize font-medium">
-                            {item.mediaType === "movie" ? (
-                              <Film className="size-2.5" />
-                            ) : item.mediaType === "tv" ? (
-                              <Tv className="size-2.5" />
-                            ) : (
-                              <Gamepad2 className="size-2.5" />
-                            )}
+                            <MediaTypeIcon type={item.mediaType} className="size-2.5" />
                             <span>In Progress</span>
                           </span>
                         </div>
