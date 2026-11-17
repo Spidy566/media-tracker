@@ -17,7 +17,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#1a1a1a]/95 backdrop-blur-xl border-t border-white/8 px-4 py-2 safe-area-pb"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-popover/90 backdrop-blur-xl border-t border-border px-4 py-2 safe-area-pb"
     >
       <div className="flex items-center justify-around max-w-md mx-auto">
         {/* Home */}

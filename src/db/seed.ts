@@ -1,6 +1,13 @@
 import "dotenv/config";
 import { and, eq, sql } from "drizzle-orm";
-import { account, mediaItems, userMediaEntries, users } from "@/db/schema";
+import {
+  account,
+  type MediaStatus,
+  type MediaType,
+  mediaItems,
+  userMediaEntries,
+  users,
+} from "@/db/schema";
 import { db } from "@/lib/db";
 import { ensureMediaBackdrop } from "@/lib/media-backdrop";
 
@@ -18,9 +25,6 @@ if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "tr
 /* -------------------------------------------------------------------------- */
 
 import { hashSync } from "bcrypt-ts";
-
-type MediaType = "movie" | "tv" | "game";
-type Status = "want_to" | "doing" | "done";
 
 const DEFAULT_PASSWORD_HASH = hashSync("demo", 10);
 
@@ -138,7 +142,7 @@ const CATALOG: {
 const ENTRIES: {
   username: string;
   externalId: string;
-  status: Status;
+  status: MediaStatus;
   rating?: number;
   reviewNote?: string;
 }[] = [

@@ -3,8 +3,8 @@
 import { Bookmark, Check, Play } from "lucide-react";
 import type { ReactNode } from "react";
 import { PosterImage } from "@/components/poster-image";
-
 import type { MediaStatus } from "@/db/schema";
+import { getMediaTypeLabel } from "@/lib/media-formatters";
 
 export type { MediaStatus };
 
@@ -139,7 +139,7 @@ export function MediaCard({
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
           <span>{releaseYear || "TBA"}</span>
           <span>•</span>
-          <span className="capitalize">{mediaType === "tv" ? "TV series" : mediaType}</span>
+          <span>{getMediaTypeLabel(mediaType)}</span>
           {subtitle && (
             <>
               <span>•</span>

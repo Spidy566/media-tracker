@@ -22,7 +22,8 @@ import { type MediaFilterType, useSearch } from "@/components/navbar/search-cont
 import { PosterImage } from "@/components/poster-image";
 import { useDebounce } from "@/hooks/use-debounce";
 import { logEntryApi } from "@/lib/api-entries";
-import { cn } from "@/lib/utils";
+import { getMediaTypeLabel } from "@/lib/media-formatters";
+import { cn, getMediaHref } from "@/lib/utils";
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
 
@@ -296,7 +297,6 @@ export function SearchDropdownContent() {
               filteredResults.map((item) => {
                 const currentLoggedStatus = trackedStatus[item.externalId];
                 const isLoggingThis = activeLoggingId === item.externalId;
-                const rawId = item.externalId.split(":").pop();
 
                 const badgeColor =
                   item.mediaType === "movie"
@@ -313,7 +313,7 @@ export function SearchDropdownContent() {
                     <div className="flex items-center gap-3">
                       {/* 40px rounded poster thumbnail */}
                       <Link
-                        href={`/media/${item.mediaType}/${rawId}`}
+                        href={getMediaHref(item)}
                         onClick={closeSearch}
                         className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 border border-border bg-muted group"
                       >
@@ -331,7 +331,7 @@ export function SearchDropdownContent() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <Link
-                            href={`/media/${item.mediaType}/${rawId}`}
+                            href={getMediaHref(item)}
                             onClick={closeSearch}
                             className="font-medium text-sm text-foreground hover:text-brand truncate transition-colors"
                           >
@@ -343,11 +343,7 @@ export function SearchDropdownContent() {
                               badgeColor,
                             )}
                           >
-                            {item.mediaType === "movie"
-                              ? "Movie"
-                              : item.mediaType === "tv"
-                                ? "TV"
-                                : "Game"}
+                            {getMediaTypeLabel(item.mediaType)}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate font-mono">

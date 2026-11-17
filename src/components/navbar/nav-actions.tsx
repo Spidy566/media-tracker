@@ -68,11 +68,11 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
           <DropdownMenu.Content
             align="end"
             sideOffset={8}
-            className="z-50 min-w-56 rounded-2xl bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 p-1.5 shadow-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-white"
+            className="z-50 min-w-56 rounded-2xl bg-popover/95 backdrop-blur-xl border border-border p-1.5 shadow-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 text-foreground"
           >
-            <div className="px-3 py-2.5 border-b border-white/8 mb-1">
-              <p className="text-xs font-medium text-white truncate">{user.displayName}</p>
-              <p className="text-[11px] text-neutral-400 truncate">@{user.username}</p>
+            <div className="px-3 py-2.5 border-b border-border mb-1">
+              <p className="text-xs font-medium text-foreground truncate">{user.displayName}</p>
+              <p className="text-[11px] text-muted-foreground truncate">@{user.username}</p>
             </div>
 
             <DropdownMenu.Item asChild>
@@ -117,7 +117,7 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
               </DropdownMenu.Item>
             )}
 
-            <DropdownMenu.Separator className="h-px bg-white/8 my-1" />
+            <DropdownMenu.Separator className="h-px bg-border my-1" />
 
             <DropdownMenu.Item
               onSelect={handleLogout}
