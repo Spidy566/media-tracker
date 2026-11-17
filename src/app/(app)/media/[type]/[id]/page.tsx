@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PosterImage } from "@/components/poster-image";
 import { getCurrentUser } from "@/lib/auth";
 import { getMediaDetails } from "@/lib/media-details";
+import { getStatusBadgeClasses, getStatusLabel } from "@/lib/media-formatters";
 import { getHeroTitleSizeClass } from "@/lib/typography";
 import { cn } from "@/lib/utils";
 import { CastSection } from "./cast-section";
@@ -173,30 +174,6 @@ export default async function MediaDetailPage({
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {friendEntries.map((entry) => {
-                    const statusColors: Record<string, { badge: string; label: string }> = {
-                      want_to: {
-                        badge: "bg-status-queue/15 text-status-queue border-status-queue/30",
-                        label: "Queue",
-                      },
-                      doing: {
-                        badge: "bg-status-doing/15 text-status-doing border-status-doing/30",
-                        label: "In Progress",
-                      },
-                      done: {
-                        badge: "bg-status-done/15 text-status-done border-status-done/30",
-                        label: "Done",
-                      },
-                      dropped: {
-                        badge: "bg-status-dropped/15 text-status-dropped border-status-dropped/30",
-                        label: "Dropped",
-                      },
-                    };
-
-                    const config = statusColors[entry.status] || {
-                      badge: "bg-muted text-muted-foreground border-border",
-                      label: entry.status,
-                    };
-
                     return (
                       <div
                         key={entry.id}
@@ -223,10 +200,10 @@ export default async function MediaDetailPage({
                           <span
                             className={cn(
                               "text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0",
-                              config.badge,
+                              getStatusBadgeClasses(entry.status),
                             )}
                           >
-                            {config.label}
+                            {getStatusLabel(entry.status)}
                           </span>
                         </div>
 

@@ -5,7 +5,7 @@ import { Ban, Bookmark, Check, Play, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { MediaStatus } from "@/components/media-card";
+import type { MediaStatus } from "@/db/schema";
 import { logEntryApi } from "@/lib/api-entries";
 import type { Entry } from "@/types/entry";
 
@@ -15,6 +15,43 @@ interface MediaLogCardProps {
   media: Entry["media"] & { summary: string | null };
   initialEntry: Entry | null;
 }
+
+const STATUS_BUTTONS: Array<{
+  status: MediaStatus;
+  label: string;
+  title: string;
+  icon: typeof Bookmark;
+  activeClass: string;
+}> = [
+  {
+    status: "want_to",
+    label: "Queue",
+    title: "Add to Queue",
+    icon: Bookmark,
+    activeClass: "bg-status-queue/20 text-status-queue border-status-queue/40 shadow-xs",
+  },
+  {
+    status: "doing",
+    label: "Active",
+    title: "Currently In Progress",
+    icon: Play,
+    activeClass: "bg-status-doing/20 text-status-doing border-status-doing/40 shadow-xs",
+  },
+  {
+    status: "done",
+    label: "Done",
+    title: "Mark as Completed",
+    icon: Check,
+    activeClass: "bg-status-done/20 text-status-done border-status-done/40 shadow-xs",
+  },
+  {
+    status: "dropped",
+    label: "Dropped",
+    title: "Mark as Dropped",
+    icon: Ban,
+    activeClass: "bg-status-dropped/20 text-status-dropped border-status-dropped/40 shadow-xs",
+  },
+];
 
 export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
   const router = useRouter();
@@ -85,64 +122,22 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
   return (
     <div className="bg-card border border-border rounded-3xl p-5 shadow-lg space-y-4">
       <span className="text-xs font-semibold text-muted-foreground block">Your log</span>
-
-      {/* Status Switcher (4 Buttons) */}
+      {/* Status Switcher */}
       <div className="grid grid-cols-4 gap-1 bg-muted/60 p-1 rounded-2xl border border-border">
-        <button
-          type="button"
-          title="Add to Queue"
-          onClick={() => updateEntry({ status: "want_to" })}
-          className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeStatus === "want_to"
-              ? "bg-status-queue/20 text-status-queue border border-status-queue/40 shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Bookmark className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-          <span>Queue</span>
-        </button>
-
-        <button
-          type="button"
-          title="Currently In Progress"
-          onClick={() => updateEntry({ status: "doing" })}
-          className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeStatus === "doing"
-              ? "bg-status-doing/20 text-status-doing border border-status-doing/40 shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Play className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-          <span>Active</span>
-        </button>
-
-        <button
-          type="button"
-          title="Mark as Completed"
-          onClick={() => updateEntry({ status: "done" })}
-          className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeStatus === "done"
-              ? "bg-status-done/20 text-status-done border border-status-done/40 shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Check className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-          <span>Done</span>
-        </button>
-
-        <button
-          type="button"
-          title="Mark as Dropped"
-          onClick={() => updateEntry({ status: "dropped" })}
-          className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeStatus === "dropped"
-              ? "bg-status-dropped/20 text-status-dropped border border-status-dropped/40 shadow-xs"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Ban className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
-          <span>Dropped</span>
-        </button>
+        {STATUS_BUTTONS.map(({ status, label, title, icon: Icon, activeClass }) => (
+          <button
+            key={status}
+            type="button"
+            title={title}
+            onClick={() => updateEntry({ status })}
+            className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeStatus === status ? activeClass : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5 mb-1 stroke-[2.2]" />
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
 
       {/* 5-Star Rating Selector */}

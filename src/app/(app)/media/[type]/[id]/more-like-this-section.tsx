@@ -7,23 +7,11 @@ import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { ScrollRow } from "@/components/scroll-row";
 import { logEntryApi } from "@/lib/api-entries";
+import { getStatusVerb } from "@/lib/media-formatters";
 import type { RecommendationItem } from "@/types/media-details";
 
 interface MoreLikeThisSectionProps {
   recommendations: RecommendationItem[];
-}
-
-function getStatusVerb(status: string) {
-  switch (status) {
-    case "done":
-      return "finished";
-    case "doing":
-      return "started";
-    case "want_to":
-      return "queued";
-    default:
-      return "logged";
-  }
 }
 
 export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProps) {

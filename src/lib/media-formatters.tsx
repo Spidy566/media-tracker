@@ -65,6 +65,24 @@ export function getStatusLabel(status: string): string {
 }
 
 /**
+ * Returns a past-tense verb for status change toasts.
+ */
+export function getStatusVerb(status: string): string {
+  switch (status) {
+    case "done":
+      return "finished";
+    case "doing":
+      return "started";
+    case "want_to":
+      return "queued";
+    case "dropped":
+      return "dropped";
+    default:
+      return "logged";
+  }
+}
+
+/**
  * Returns the Tailwind CSS classes for status pill badges.
  */
 export function getStatusBadgeClasses(status: string): string {

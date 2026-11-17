@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
 import { logEntryApi } from "@/lib/api-entries";
+import { getStatusVerb } from "@/lib/media-formatters";
 import type { PersonCastCredit, PersonCrewGroup } from "@/lib/person-details";
+import { getMediaHref } from "@/lib/utils";
 
 // --- Types ---
 
@@ -56,19 +58,6 @@ function getDepartmentTab(department: string | null | undefined): TabKey | null 
       return "Music";
     default:
       return null;
-  }
-}
-
-function getStatusVerb(status: string) {
-  switch (status) {
-    case "done":
-      return "finished";
-    case "doing":
-      return "started";
-    case "want_to":
-      return "queued";
-    default:
-      return "logged";
   }
 }
 
@@ -232,6 +221,33 @@ export function Filmography({
 
   const mergedStatuses = { ...statusMap, ...localStatuses };
 
+  const renderCreditCard = (credit: NormalizedCreditItem) => (
+    <MediaCard
+      key={credit.externalId}
+      title={credit.title}
+      mediaType={credit.mediaType}
+      posterUrl={posterUrl(credit.posterPath)}
+      releaseYear={credit.year}
+      subtitle={credit.subtitle}
+      badge={
+        mergedStatuses[credit.externalId] ? (
+          <span
+            className={`size-2.5 rounded-full ring-2 ring-background inline-block ${
+              mergedStatuses[credit.externalId] === "done"
+                ? "bg-status-done"
+                : mergedStatuses[credit.externalId] === "doing"
+                  ? "bg-status-doing"
+                  : "bg-status-queue"
+            }`}
+          />
+        ) : null
+      }
+      currentStatus={mergedStatuses[credit.externalId] || null}
+      onClick={() => router.push(getMediaHref(credit))}
+      onQuickStatus={(status) => setQuickStatus({ credit, status })}
+    />
+  );
+
   return (
     <div className="space-y-5">
       {/* Tab bar */}
@@ -319,75 +335,13 @@ export function Filmography({
           {[...yearGroups.entries()].map(([year, items]) => (
             <div key={year ?? "tba"} className="space-y-3">
               <h4 className="text-xs font-semibold text-muted-foreground">{year ?? "TBA"}</h4>
-              <MediaGrid>
-                {items.map((credit) => (
-                  <MediaCard
-                    key={credit.externalId}
-                    title={credit.title}
-                    mediaType={credit.mediaType}
-                    posterUrl={posterUrl(credit.posterPath)}
-                    releaseYear={credit.year}
-                    subtitle={credit.subtitle}
-                    badge={
-                      mergedStatuses[credit.externalId] ? (
-                        <span
-                          className={`size-2.5 rounded-full ring-2 ring-background inline-block ${
-                            mergedStatuses[credit.externalId] === "done"
-                              ? "bg-status-done"
-                              : mergedStatuses[credit.externalId] === "doing"
-                                ? "bg-status-doing"
-                                : "bg-status-queue"
-                          }`}
-                        />
-                      ) : null
-                    }
-                    currentStatus={mergedStatuses[credit.externalId] || null}
-                    onClick={() => {
-                      const parts = credit.externalId.split(":");
-                      const id = parts[parts.length - 1];
-                      router.push(`/media/${credit.mediaType}/${id}`);
-                    }}
-                    onQuickStatus={(status) => setQuickStatus({ credit, status })}
-                  />
-                ))}
-              </MediaGrid>
+              <MediaGrid>{items.map(renderCreditCard)}</MediaGrid>
             </div>
           ))}
         </div>
       ) : (
         // Flat grid (popular sort)
-        <MediaGrid>
-          {filtered.map((credit) => (
-            <MediaCard
-              key={credit.externalId}
-              title={credit.title}
-              mediaType={credit.mediaType}
-              posterUrl={posterUrl(credit.posterPath)}
-              releaseYear={credit.year}
-              subtitle={credit.subtitle}
-              badge={
-                mergedStatuses[credit.externalId] ? (
-                  <span
-                    className={`size-2.5 rounded-full ring-2 ring-background inline-block ${
-                      mergedStatuses[credit.externalId] === "done"
-                        ? "bg-status-done"
-                        : mergedStatuses[credit.externalId] === "doing"
-                          ? "bg-status-doing"
-                          : "bg-status-queue"
-                    }`}
-                  />
-                ) : null
-              }
-              currentStatus={mergedStatuses[credit.externalId] || null}
-              onClick={() => {
-                const parts = credit.externalId.split(":");
-                const id = parts[parts.length - 1];
-                router.push(`/media/${credit.mediaType}/${id}`);
-              }}
-              onQuickStatus={(status) => setQuickStatus({ credit, status })}
-            />
-          ))}
-        </MediaGrid>
+        <MediaGrid>{filtered.map(renderCreditCard)}</MediaGrid>
       )}
     </div>
   );

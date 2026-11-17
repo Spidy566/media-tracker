@@ -66,7 +66,7 @@ export function MediaDetailBanner({
               title=""
               fallback="none"
               sizes="10vw"
-              className="w-full h-full object-cover blur-3xl scale-150 opacity-10 dark:opacity-25"
+              className="w-full h-full object-cover blur-3xl scale-150 opacity-25"
             />
           </div>
         ) : null}

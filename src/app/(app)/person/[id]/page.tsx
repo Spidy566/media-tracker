@@ -12,6 +12,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getPersonDetails } from "@/lib/person-details";
 import { HIDE_POSTERS_COOKIE } from "@/lib/poster-cookie";
+import { getMediaHref } from "@/lib/utils";
 import { BiographyToggle } from "./biography-toggle";
 import { Filmography } from "./filmography";
 
@@ -203,11 +204,9 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         {person.knownFor.length > 0 && (
           <ScrollRow title={<h2 className="text-xs font-semibold text-foreground">Known for</h2>}>
             {person.knownFor.map((credit) => {
-              const parts = credit.externalId.split(":");
-              const tmdbId = parts[parts.length - 1];
               return (
                 <div key={credit.externalId} className="w-36 sm:w-44 shrink-0 snap-start">
-                  <Link href={`/media/${credit.mediaType}/${tmdbId}`} className="block group">
+                  <Link href={getMediaHref(credit)} className="block group">
                     <MediaCard
                       title={credit.title}
                       mediaType={credit.mediaType}

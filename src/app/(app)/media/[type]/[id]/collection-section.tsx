@@ -76,9 +76,7 @@ export function CollectionSection({ collection, franchise, mediaType }: Collecti
             <div className="mt-2 min-w-0">
               <span
                 className={`text-xs font-semibold line-clamp-1 block transition ${
-                  isCurrent
-                    ? "text-brand-text dark:text-brand"
-                    : "text-foreground group-hover:opacity-80"
+                  isCurrent ? "text-brand" : "text-foreground group-hover:opacity-80"
                 }`}
               >
                 {part.title}
