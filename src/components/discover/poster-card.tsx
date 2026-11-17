@@ -16,10 +16,11 @@ import { useEffect, useRef, useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
+import type { MediaStatus } from "@/db/schema";
 import { getStatusBadgeClasses, getStatusLabel, MediaTypeIcon } from "@/lib/media-formatters";
 import { cn, getMediaHref } from "@/lib/utils";
 
-export type MediaStatus = "want_to" | "doing" | "done" | "dropped";
+export type { MediaStatus };
 
 interface PosterCardProps {
   item: UnifiedSearchResult;

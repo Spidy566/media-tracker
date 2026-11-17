@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { AnchorChip } from "@/components/discover/anchor-chip";
 import { CosmosSpinner } from "@/components/discover/cosmos-spinner";
-import type { MediaStatus } from "@/components/discover/poster-card";
 import { PosterWall } from "@/components/discover/poster-wall";
+import type { MediaStatus } from "@/db/schema";
 import { deleteEntryApi, logEntryApi } from "@/lib/api-entries";
 import { getGenresForType } from "@/lib/genres";
 
