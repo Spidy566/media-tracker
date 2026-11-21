@@ -2,14 +2,12 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  ArrowRight,
   Bookmark,
   Check,
   Film,
   Gamepad2,
   Play,
   Search,
-  Star,
   Tv,
   X,
 } from "lucide-react";
@@ -22,10 +20,8 @@ import { type MediaFilterType, useSearch } from "@/components/navbar/search-cont
 import { PosterImage } from "@/components/poster-image";
 import { useDebounce } from "@/hooks/use-debounce";
 import { logEntryApi } from "@/lib/api-entries";
-import { getMediaTypeLabel } from "@/lib/media-formatters";
+import { getMediaTypeLabel, getStatusVerb } from "@/lib/media-formatters";
 import { cn, getMediaHref } from "@/lib/utils";
-
-const STAR_VALUES = [1, 2, 3, 4, 5];
 
 const TRENDING_SUGGESTIONS = [
   { title: "Dune: Part Two", type: "Movie" },
@@ -40,9 +36,6 @@ export function SearchDropdownContent() {
   const router = useRouter();
   const { query, setQuery, mediaFilter, setMediaFilter, closeSearch } = useSearch();
   const [trackedStatus, setTrackedStatus] = useState<Record<string, string>>({});
-  const [activeLoggingId, setActiveLoggingId] = useState<string | null>(null);
-  const [rating, setRating] = useState<number>(5);
-  const [note, setNote] = useState("");
 
   const debouncedQuery = useDebounce(query, 300);
 
@@ -54,7 +47,7 @@ export function SearchDropdownContent() {
       if (!debouncedQuery.trim()) return { results: [] };
       const res = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`);
       if (!res.ok) {
-        throw new Error("Failed to search archives");
+        throw new Error("Failed to search catalog");
       }
       return res.json();
     },
@@ -65,19 +58,13 @@ export function SearchDropdownContent() {
     mutationFn: async ({
       media,
       status,
-      userRating,
-      reviewNote,
     }: {
       media: UnifiedSearchResult;
       status: "want_to" | "doing" | "done";
-      userRating?: number | null;
-      reviewNote?: string | null;
     }) => {
       return logEntryApi({
         media,
         status,
-        rating: userRating ?? null,
-        reviewNote: reviewNote || null,
       });
     },
     onSuccess: (_, variables) => {
@@ -85,22 +72,14 @@ export function SearchDropdownContent() {
         ...prev,
         [variables.media.externalId]: variables.status,
       }));
-      setActiveLoggingId(null);
-      setNote("");
       router.refresh();
-
-      const messages = {
-        want_to: "Added to Queue",
-        doing: "Marked as In Progress",
-        done: "Logged as Completed",
-      };
-      toast.success(messages[variables.status], {
+      toast.success(getStatusVerb(variables.status), {
         description: variables.media.title,
       });
     },
     onError: (err: Error) => {
       if (err.message !== "Unauthorized") {
-        toast.error("Failed to log media");
+        toast.error("Failed to log title");
       }
     },
   });
@@ -118,104 +97,58 @@ export function SearchDropdownContent() {
       {!isQueryActive && (
         <div className="p-4 sm:p-5 flex flex-col gap-4.5 overflow-y-auto no-scrollbar">
           {/* Media Type Chips */}
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
-              Media Type
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-mono">
+              Filter by medium
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
               {(
                 [
-                  { label: "All", value: "all" as MediaFilterType },
-                  {
-                    label: "Movies",
-                    value: "movie" as MediaFilterType,
-                    icon: Film,
-                  },
-                  {
-                    label: "TV Shows",
-                    value: "tv" as MediaFilterType,
-                    icon: Tv,
-                  },
-                  {
-                    label: "Games",
-                    value: "game" as MediaFilterType,
-                    icon: Gamepad2,
-                  },
+                  { id: "all", label: "All", icon: Search },
+                  { id: "movie", label: "Movies", icon: Film },
+                  { id: "tv", label: "TV Series", icon: Tv },
+                  { id: "game", label: "Games", icon: Gamepad2 },
                 ] as const
-              ).map((tab) => {
-                const Icon = "icon" in tab ? tab.icon : null;
-                const isSelected = mediaFilter === tab.value;
+              ).map((chip) => {
+                const Icon = chip.icon;
+                const isSelected = mediaFilter === chip.id;
                 return (
                   <button
-                    key={tab.value}
+                    key={chip.id}
                     type="button"
-                    onClick={() => setMediaFilter(tab.value)}
+                    onClick={() => setMediaFilter(chip.id as MediaFilterType)}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer border select-none",
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer border",
                       isSelected
-                        ? "bg-muted text-foreground border-border shadow-xs"
-                        : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+                        ? "bg-foreground text-background border-foreground shadow-xs"
+                        : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border-border",
                     )}
                   >
-                    {Icon && <Icon className="size-3.5 opacity-70" />}
-                    <span>{tab.label}</span>
+                    <Icon className="size-3.5" />
+                    <span>{chip.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Status Quick Filters */}
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
-              Library Status
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  closeSearch();
-                  router.push("/library?status=want_to");
-                }}
-                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-card hover:bg-muted border border-border text-foreground transition-all text-xs font-medium cursor-pointer group text-left select-none"
-              >
-                <span className="size-2 rounded-full bg-status-queue shadow-xs shadow-status-queue shrink-0" />
-                <span className="flex-1 truncate">In Queue</span>
-                <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  closeSearch();
-                  router.push("/library?status=doing");
-                }}
-                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-card hover:bg-muted border border-border text-foreground transition-all text-xs font-medium cursor-pointer group text-left select-none"
-              >
-                <span className="size-2 rounded-full bg-status-doing shadow-xs shadow-status-doing shrink-0" />
-                <span className="flex-1 truncate">In Progress</span>
-                <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Trending Suggestions */}
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1 flex items-center justify-between">
-              <span>Quick Suggestions</span>
-              <span className="text-[10px] text-muted-foreground font-normal">Click to search</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
+          {/* Quick Trending Searches */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-mono">
+              Trending suggestions
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
               {TRENDING_SUGGESTIONS.map((item) => (
                 <button
                   key={item.title}
                   type="button"
                   onClick={() => setQuery(item.title)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card hover:bg-muted border border-border text-muted-foreground hover:text-foreground transition-all text-xs cursor-pointer group select-none"
+                  className="flex items-center justify-between p-2 rounded-xl bg-card hover:bg-muted border border-border text-xs text-left transition group cursor-pointer"
                 >
-                  <Search className="size-3 text-muted-foreground group-hover:text-foreground" />
-                  <span className="font-medium text-foreground">{item.title}</span>
-                  <span className="text-[10px] text-muted-foreground uppercase font-mono px-1 py-0.2 rounded bg-muted">
+                  <span className="font-medium text-foreground truncate group-hover:text-brand transition-colors">
+                    {item.title}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono shrink-0 ml-1">
                     {item.type}
                   </span>
                 </button>
@@ -225,57 +158,48 @@ export function SearchDropdownContent() {
         </div>
       )}
 
-      {/* 2. ACTIVE QUERY RESULTS STATE */}
+      {/* 2. ACTIVE QUERY RESULTS */}
       {isQueryActive && (
         <>
-          {/* Category Filter Subbar */}
-          <div className="px-4 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/30 shrink-0">
-            <div className="flex items-center gap-1.5">
-              {(
-                [
-                  { label: "All", value: "all" as MediaFilterType },
-                  { label: "Movies", value: "movie" as MediaFilterType },
-                  { label: "TV", value: "tv" as MediaFilterType },
-                  { label: "Games", value: "game" as MediaFilterType },
-                ] as const
-              ).map((tab) => (
+          {/* Subheader: Result Count + Active Type Filters */}
+          <div className="px-4 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/20">
+            <div className="flex items-center gap-1">
+              {(["all", "movie", "tv", "game"] as const).map((t) => (
                 <button
-                  key={tab.value}
+                  key={t}
                   type="button"
-                  onClick={() => setMediaFilter(tab.value)}
+                  onClick={() => setMediaFilter(t)}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer select-none",
-                    mediaFilter === tab.value
-                      ? "bg-muted text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    "px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition cursor-pointer",
+                    mediaFilter === t
+                      ? "bg-card text-foreground border border-border shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {tab.label}
+                  {t === "all" ? "All" : t === "tv" ? "TV Series" : `${t}s`}
                 </button>
               ))}
             </div>
-            <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
-              {isLoading
-                ? "Searching..."
-                : `${filteredResults.length} ${filteredResults.length === 1 ? "result" : "results"}`}
-            </span>
+
+            {!isLoading && (
+              <span className="text-[11px] font-mono tabular-nums">
+                {filteredResults.length} {filteredResults.length === 1 ? "result" : "results"}
+              </span>
+            )}
           </div>
 
-          {/* Results List */}
-          <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2">
+          {/* Scrollable Results List */}
+          <div className="p-3 overflow-y-auto max-h-[48vh] space-y-1.5">
             {isLoading && (
-              <div className="py-12 flex flex-col items-center justify-center gap-2 text-center text-xs text-muted-foreground">
-                <div className="size-4 rounded-full border-2 border-border border-t-brand animate-spin" />
-                <span>Searching TMDB & IGDB archives...</span>
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <div className="size-5 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+                <span className="text-xs font-mono">Searching catalog...</span>
               </div>
             )}
 
             {isError && (
-              <div className="text-center py-10 space-y-2.5">
-                <p className="text-xs font-semibold text-foreground">Failed to search archives</p>
-                <p className="text-xs text-muted-foreground">
-                  Something went wrong while querying TMDB & IGDB.
-                </p>
+              <div className="py-8 text-center flex flex-col items-center gap-2">
+                <p className="text-xs text-destructive">Failed to load search results</p>
                 <button
                   type="button"
                   onClick={() => refetch()}
@@ -296,27 +220,20 @@ export function SearchDropdownContent() {
             {!isError &&
               filteredResults.map((item) => {
                 const currentLoggedStatus = trackedStatus[item.externalId];
-                const isLoggingThis = activeLoggingId === item.externalId;
-
-                const badgeColor =
-                  item.mediaType === "movie"
-                    ? "bg-purple-500/15 text-purple-300 border-purple-500/25"
-                    : item.mediaType === "tv"
-                      ? "bg-blue-500/15 text-blue-300 border-blue-500/25"
-                      : "bg-emerald-500/15 text-emerald-300 border-emerald-500/25";
 
                 return (
                   <div
                     key={item.externalId}
-                    className="flex flex-col p-2.5 rounded-xl bg-card hover:bg-muted/50 border border-border transition-all"
+                    className="flex items-center justify-between gap-3 p-2 rounded-xl bg-card hover:bg-muted/50 border border-border transition-all group"
                   >
-                    <div className="flex items-center gap-3">
+                    {/* Poster + Title Area (Click to Open) */}
+                    <Link
+                      href={getMediaHref(item)}
+                      onClick={closeSearch}
+                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                    >
                       {/* 40px rounded poster thumbnail */}
-                      <Link
-                        href={getMediaHref(item)}
-                        onClick={closeSearch}
-                        className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 border border-border bg-muted group"
-                      >
+                      <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 border border-border bg-muted">
                         <PosterImage
                           src={item.posterUrl}
                           title={item.title}
@@ -325,24 +242,15 @@ export function SearchDropdownContent() {
                           compact
                           className="object-cover group-hover:scale-105 transition-transform duration-200"
                         />
-                      </Link>
+                      </div>
 
                       {/* Title + Pill + Release Year */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <Link
-                            href={getMediaHref(item)}
-                            onClick={closeSearch}
-                            className="font-medium text-sm text-foreground hover:text-brand truncate transition-colors"
-                          >
+                          <span className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-brand truncate transition-colors font-sans">
                             {item.title}
-                          </Link>
-                          <span
-                            className={cn(
-                              "text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border shrink-0",
-                              badgeColor,
-                            )}
-                          >
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground shrink-0 font-mono">
                             {getMediaTypeLabel(item.mediaType)}
                           </span>
                         </div>
@@ -351,122 +259,58 @@ export function SearchDropdownContent() {
                           {item.creator ? ` • ${item.creator}` : ""}
                         </p>
                       </div>
+                    </Link>
 
-                      {/* Right-aligned Quick Action Buttons */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {/* 1. Queue (+ Queue / Bookmark) */}
-                        <button
-                          type="button"
-                          title="Add to Queue"
-                          disabled={isPending}
-                          onClick={() => logMedia({ media: item, status: "want_to" })}
-                          className={cn(
-                            "p-2 rounded-xl transition cursor-pointer border select-none",
-                            currentLoggedStatus === "want_to"
-                              ? "bg-status-queue/20 text-status-queue border-status-queue/40 font-bold"
-                              : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
-                          )}
-                        >
-                          <Bookmark className="size-4 stroke-2" />
-                        </button>
+                    {/* Right-aligned Quick Status Action Buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* 1. Queue (+ Queue / Bookmark) */}
+                      <button
+                        type="button"
+                        title="Add to Queue"
+                        disabled={isPending}
+                        onClick={() => logMedia({ media: item, status: "want_to" })}
+                        className={cn(
+                          "p-2 rounded-xl transition cursor-pointer border select-none",
+                          currentLoggedStatus === "want_to"
+                            ? "bg-status-queue/20 text-status-queue border-status-queue/40 font-bold"
+                            : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
+                        )}
+                      >
+                        <Bookmark className="size-4 stroke-2" />
+                      </button>
 
-                        {/* 2. In Progress (Play / Doing) */}
-                        <button
-                          type="button"
-                          title="Currently In Progress"
-                          disabled={isPending}
-                          onClick={() => logMedia({ media: item, status: "doing" })}
-                          className={cn(
-                            "p-2 rounded-xl transition cursor-pointer border select-none",
-                            currentLoggedStatus === "doing"
-                              ? "bg-status-doing/20 text-status-doing border-status-doing/40 font-bold"
-                              : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
-                          )}
-                        >
-                          <Play className="size-4 stroke-2" />
-                        </button>
+                      {/* 2. In Progress (Play / Doing) */}
+                      <button
+                        type="button"
+                        title="In Progress"
+                        disabled={isPending}
+                        onClick={() => logMedia({ media: item, status: "doing" })}
+                        className={cn(
+                          "p-2 rounded-xl transition cursor-pointer border select-none",
+                          currentLoggedStatus === "doing"
+                            ? "bg-status-doing/20 text-status-doing border-status-doing/40 font-bold"
+                            : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
+                        )}
+                      >
+                        <Play className="size-4 stroke-2" />
+                      </button>
 
-                        {/* 3. Finished (Check / Done) */}
-                        <button
-                          type="button"
-                          title="Mark as Completed"
-                          disabled={isPending}
-                          onClick={() => setActiveLoggingId(isLoggingThis ? null : item.externalId)}
-                          className={cn(
-                            "p-2 rounded-xl transition cursor-pointer border select-none",
-                            currentLoggedStatus === "done" || isLoggingThis
-                              ? "bg-status-done/20 text-status-done border-status-done/40 font-bold"
-                              : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
-                          )}
-                        >
-                          <Check className="size-4 stroke-2" />
-                        </button>
-                      </div>
+                      {/* 3. Completed (Check / Done) */}
+                      <button
+                        type="button"
+                        title="Completed"
+                        disabled={isPending}
+                        onClick={() => logMedia({ media: item, status: "done" })}
+                        className={cn(
+                          "p-2 rounded-xl transition cursor-pointer border select-none",
+                          currentLoggedStatus === "done"
+                            ? "bg-status-done/20 text-status-done border-status-done/40 font-bold"
+                            : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
+                        )}
+                      >
+                        <Check className="size-4 stroke-2" />
+                      </button>
                     </div>
-
-                    {/* Inline 5-Star Rating & Review Drawer */}
-                    {isLoggingThis && (
-                      <div className="mt-3 pt-3 border-t border-border flex flex-col gap-2.5 animate-in fade-in-50 duration-150">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground">
-                            Score:
-                          </span>
-                          <div className="flex items-center gap-1">
-                            {STAR_VALUES.map((star) => (
-                              <button
-                                key={star}
-                                type="button"
-                                onClick={() => setRating(star)}
-                                className="p-1 cursor-pointer transition hover:scale-110"
-                              >
-                                <Star
-                                  className={cn(
-                                    "size-4",
-                                    star <= rating ? "fill-rating text-rating" : "text-muted",
-                                  )}
-                                />
-                              </button>
-                            ))}
-                            <span className="text-xs font-semibold text-rating ml-1.5 font-mono tabular-nums">
-                              {rating} / 5
-                            </span>
-                          </div>
-                        </div>
-
-                        <input
-                          type="text"
-                          placeholder="One-line review or thought (optional)..."
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                          className="w-full text-xs bg-muted border border-border rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground outline-none focus:border-brand/40"
-                        />
-
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setActiveLoggingId(null)}
-                            className="text-xs px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() =>
-                              logMedia({
-                                media: item,
-                                status: "done",
-                                userRating: rating,
-                                reviewNote: note,
-                              })
-                            }
-                            className="text-xs font-semibold px-4 py-1.5 rounded-lg bg-brand text-brand-foreground hover:opacity-90 transition cursor-pointer"
-                          >
-                            Save Finished
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -507,7 +351,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-14 sm:pt-20 px-4">
       {/* Soft transparent backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs cursor-default"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs cursor-default"
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -523,8 +367,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search movies, TV shows, games..."
-              className="w-full bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none"
+              placeholder="Search movies, TV series, games..."
+              className="w-full bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground outline-none font-sans"
             />
           </div>
           <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -541,7 +385,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             <button
               type="button"
               onClick={handleClose}
-              className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:text-foreground cursor-pointer border border-border"
+              className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:text-foreground cursor-pointer border border-border font-mono"
             >
               Esc
             </button>

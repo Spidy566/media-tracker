@@ -2,15 +2,17 @@
 
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { Film, Gamepad2, Layers, Tv } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
-import { AnchorChip } from "@/components/discover/anchor-chip";
-import { CosmosSpinner } from "@/components/discover/cosmos-spinner";
-import { PosterWall } from "@/components/discover/poster-wall";
-import type { MediaStatus } from "@/db/schema";
+import { AnchorChip } from "@/components/explore/anchor-chip";
+import { ExploreSpinner } from "@/components/explore/explore-spinner";
+import { MediaCard, type MediaStatus } from "@/components/media-card";
+import { MediaGrid } from "@/components/media-grid";
 import { deleteEntryApi, logEntryApi } from "@/lib/api-entries";
 import { getGenresForType } from "@/lib/genres";
+import { getMediaHref } from "@/lib/utils";
 
 type MediaTypeFilter = "all" | "movie" | "tv" | "game";
 type SortOption = "popular" | "top_rated" | "upcoming";
@@ -26,6 +28,7 @@ interface ExploreClientProps {
 }
 
 export function ExploreClient({ initialTitles, initialTrackedMap = {} }: ExploreClientProps) {
+  const router = useRouter();
   const [mediaType, setMediaType] = useState<MediaTypeFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
@@ -246,11 +249,11 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
   });
 
   const handleStatusChange = (item: UnifiedSearchResult, status: MediaStatus) => {
+    if (trackedMap[item.externalId]?.status === status) {
+      removeMutation.mutate(item);
+      return;
+    }
     statusMutation.mutate({ item, status });
-  };
-
-  const handleRemoveTracked = (item: UnifiedSearchResult) => {
-    removeMutation.mutate(item);
   };
 
   const isInitialLoading = mediaType !== "all" && !anchoredItem && isLoading;
@@ -410,7 +413,7 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
       {/* Loading overlay for related titles fetch */}
       {isLoadingRelated && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <CosmosSpinner size={48} />
+          <ExploreSpinner size={48} />
           <span className="text-[13px] text-foreground font-medium tracking-wide mt-4">
             Finding related titles for {anchoredItem?.title}...
           </span>
@@ -420,9 +423,9 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
       {/* Main Poster Wall or Loading/Empty state */}
       {isInitialLoading ? (
         <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
-          <CosmosSpinner size={40} />
+          <ExploreSpinner size={40} />
           <span className="text-xs text-muted-foreground mt-4 font-mono tracking-wide">
-            Loading {mediaType === "movie" ? "movies" : mediaType === "tv" ? "TV shows" : "games"}
+            Loading {mediaType === "movie" ? "movies" : mediaType === "tv" ? "TV series" : "games"}
             ...
           </span>
         </div>
@@ -434,14 +437,30 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
           </p>
         </div>
       ) : (
-        <PosterWall
-          items={displayedTitles}
-          anchoredItem={anchoredItem}
-          trackedMap={trackedMap}
-          onAnchor={handleAnchor}
-          onStatusChange={handleStatusChange}
-          onRemoveTracked={handleRemoveTracked}
-        >
+        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 pt-6 pb-28 sm:pb-24">
+          <MediaGrid>
+            {displayedTitles.map((item) => {
+              const isAnchored = anchoredItem?.externalId === item.externalId;
+              const currentStatus = trackedMap[item.externalId]?.status ?? null;
+
+              return (
+                <MediaCard
+                  key={item.externalId}
+                  title={item.title}
+                  mediaType={item.mediaType as "movie" | "tv" | "game"}
+                  posterUrl={item.posterUrl}
+                  releaseYear={item.releaseYear}
+                  currentStatus={currentStatus}
+                  isAnchored={isAnchored}
+                  onAnchor={() => handleAnchor(item)}
+                  allowedStatuses={["want_to", "doing", "done"]}
+                  onQuickStatus={(status) => handleStatusChange(item, status)}
+                  onClick={() => router.push(getMediaHref(item))}
+                />
+              );
+            })}
+          </MediaGrid>
+
           {/* Pagination / Load More button */}
           {mediaType !== "all" && !anchoredItem && hasNextPage && (
             <div className="flex justify-center pt-8 pb-4">
@@ -453,7 +472,7 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
               >
                 {isFetchingNextPage ? (
                   <>
-                    <CosmosSpinner size={16} />
+                    <ExploreSpinner size={16} />
                     <span>Loading more...</span>
                   </>
                 ) : (
@@ -462,7 +481,7 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
               </button>
             </div>
           )}
-        </PosterWall>
+        </div>
       )}
 
       {/* Floating Bottom-Center Anchor Chip */}

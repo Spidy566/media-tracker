@@ -1,6 +1,6 @@
 "use client";
 
-interface CosmosSpinnerProps {
+interface ExploreSpinnerProps {
   className?: string;
   size?: number;
 }
@@ -18,7 +18,7 @@ const DOT_KEYS = [
   "dot-9",
 ];
 
-export function CosmosSpinner({ className = "", size = 44 }: CosmosSpinnerProps) {
+export function ExploreSpinner({ className = "", size = 44 }: ExploreSpinnerProps) {
   const dotCount = DOT_KEYS.length;
   const radius = (size - 6) / 2;
   const center = size / 2;
@@ -48,15 +48,17 @@ export function CosmosSpinner({ className = "", size = 44 }: CosmosSpinnerProps)
               key={key}
               cx={cx}
               cy={cy}
-              r={2.2}
+              r={2.5}
               fill="currentColor"
-              className="text-white"
+              className="text-brand"
               style={{ opacity }}
             />
           );
         })}
       </svg>
-      <span className="sr-only">Loading...</span>
     </div>
   );
 }
+
+// Backward-compatible alias
+export const CosmosSpinner = ExploreSpinner;

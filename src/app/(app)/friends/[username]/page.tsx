@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { SquadClient } from "./squad-client";
+import { FriendProfileClient } from "./friend-profile-client";
 
 export default async function FriendProfilePage({
   params,
@@ -165,13 +165,13 @@ export default async function FriendProfilePage({
             <span className="text-2xl font-semibold text-status-queue font-mono tabular-nums">
               {queueCount}
             </span>
-            <span className="text-xs font-semibold text-muted-foreground block">In Queue</span>
+            <span className="text-xs font-semibold text-muted-foreground block">Queue</span>
           </div>
         </div>
       </div>
 
       {/* Interactive Tabs and Grid */}
-      <SquadClient entries={serializedEntries} />
+      <FriendProfileClient entries={serializedEntries} />
     </main>
   );
 }

@@ -48,55 +48,55 @@ export function AnchorChip({ item, onClear }: AnchorChipProps) {
       )}
     >
       {/* Small Poster Thumbnail (~56-64px rounded square) with Crossfade */}
-      <div className="size-14 sm:size-16 rounded-xl overflow-hidden relative shrink-0 border border-border bg-muted shadow-inner">
-        {!hidePosters && prevPoster && isCrossfading && (
-          <Image
-            src={prevPoster}
-            alt=""
-            fill
-            sizes="64px"
-            className="object-cover absolute inset-0 transition-opacity duration-300 opacity-0"
-          />
-        )}
-
-        {!hidePosters && currentPoster ? (
-          <Image
-            src={currentPoster}
-            alt={item.title}
-            fill
-            sizes="64px"
-            className={cn(
-              "object-cover transition-opacity duration-300",
-              isCrossfading ? "opacity-100" : "opacity-100",
-            )}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-muted flex items-center justify-center text-brand">
+      <div className="relative size-12 sm:size-14 rounded-xl overflow-hidden bg-muted border border-border shrink-0 shadow-inner">
+        {hidePosters ? (
+          <div className="w-full h-full flex items-center justify-center bg-card text-brand font-bold text-base">
             <Sparkles className="size-5" />
           </div>
+        ) : (
+          <>
+            {prevPoster && isCrossfading && (
+              <Image
+                src={prevPoster}
+                alt=""
+                fill
+                sizes="56px"
+                className="object-cover absolute inset-0 z-0 opacity-100 transition-opacity duration-300 ease-out"
+              />
+            )}
+            {currentPoster && (
+              <Image
+                src={currentPoster}
+                alt={item.title}
+                fill
+                sizes="56px"
+                className={cn(
+                  "object-cover absolute inset-0 z-10 transition-opacity duration-300 ease-in",
+                  isCrossfading ? "opacity-0 animate-in fade-in duration-300 fill-mode-forwards" : "opacity-100",
+                )}
+              />
+            )}
+          </>
         )}
       </div>
 
-      {/* Info Stack */}
+      {/* Center Text Block */}
       <div className="flex flex-col text-left min-w-0 pr-1">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand">
-          <Sparkles className="size-3 stroke-[2.5]" />
-          <span>Anchored</span>
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-brand tracking-wide">
+          <Sparkles className="size-3 shrink-0" />
+          <span className="uppercase font-mono text-[10px]">Anchor</span>
         </div>
-        <span className="text-[14px] sm:text-[15px] font-medium text-foreground truncate max-w-42.5 sm:max-w-65 leading-snug">
+        <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[180px] sm:max-w-[240px]">
           {item.title}
         </span>
-        <span className="text-[11px] sm:text-[12px] text-muted-foreground capitalize font-mono tabular-nums">
-          {item.mediaType} • {item.releaseYear || "TBA"}
+        <span className="text-[11px] text-muted-foreground truncate hidden sm:inline">
+          Showing related titles
         </span>
       </div>
 
-      {/* Hover 'X' Button Indicator */}
-      <div
-        className="size-7 rounded-full bg-muted group-hover:bg-destructive/25 group-hover:text-destructive text-muted-foreground flex items-center justify-center transition-colors shrink-0 ml-1"
-        title="Clear anchor"
-      >
-        <X className="size-3.5 stroke-[2.5]" />
+      {/* Right Close / Clear Button */}
+      <div className="size-7 rounded-full bg-muted/80 group-hover:bg-muted border border-border/60 flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors shrink-0 ml-1">
+        <X className="size-3.5" />
       </div>
     </button>
   );

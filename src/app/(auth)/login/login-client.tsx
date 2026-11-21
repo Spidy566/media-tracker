@@ -107,7 +107,7 @@ export function LoginClient() {
 
       if (res.error) {
         if (res.error.message?.toLowerCase().includes("invite")) {
-          setErrorMessage("Invalid squad invite code.");
+          setErrorMessage("Invalid invite code.");
         } else if (
           res.error.message?.toLowerCase().includes("unique") ||
           res.error.message?.toLowerCase().includes("already") ||
@@ -125,7 +125,7 @@ export function LoginClient() {
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       if (errorObj?.message?.toLowerCase().includes("invite")) {
-        setErrorMessage("Invalid squad invite code.");
+        setErrorMessage("Invalid invite code.");
       } else {
         setErrorMessage("Sign-up failed. Please check your credentials.");
       }
@@ -373,7 +373,7 @@ export function LoginClient() {
                 required
                 value={signupInviteCode}
                 onChange={(e) => setSignupInviteCode(e.target.value)}
-                placeholder="Enter squad invite code"
+                placeholder="Enter invite code"
                 className="w-full h-10 pl-10 pr-3.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition font-mono"
               />
             </div>

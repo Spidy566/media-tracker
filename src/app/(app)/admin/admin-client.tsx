@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CurrentUser } from "@/lib/auth";
 
-export interface SquadMember {
+export interface Member {
   id: string;
   username: string;
   displayName: string;
@@ -25,14 +25,16 @@ export interface SquadMember {
   createdAt: string;
 }
 
+export type SquadMember = Member;
+
 interface AdminClientProps {
   currentUser: CurrentUser;
-  initialMembers: SquadMember[];
+  initialMembers: Member[];
 }
 
 export function AdminClient({ currentUser, initialMembers }: AdminClientProps) {
   const router = useRouter();
-  const [members, setMembers] = useState<SquadMember[]>(initialMembers);
+  const [members, setMembers] = useState<Member[]>(initialMembers);
 
   // Reset password states
   const [resettingUserId, setResettingUserId] = useState<string | null>(null);
@@ -43,11 +45,11 @@ export function AdminClient({ currentUser, initialMembers }: AdminClientProps) {
   const [hasCopied, setHasCopied] = useState(false);
 
   // Remove member states
-  const [removingMember, setRemovingMember] = useState<SquadMember | null>(null);
+  const [removingMember, setRemovingMember] = useState<Member | null>(null);
   const [removeConfirmUsername, setRemoveConfirmUsername] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
 
-  const handleResetPassword = async (member: SquadMember) => {
+  const handleResetPassword = async (member: Member) => {
     setResettingUserId(member.id);
     try {
       const res = await fetch("/api/admin/reset-password", {
@@ -255,7 +257,7 @@ export function AdminClient({ currentUser, initialMembers }: AdminClientProps) {
         </div>
       )}
 
-      {/* Squad Members List */}
+      {/* Members List */}
       <section className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

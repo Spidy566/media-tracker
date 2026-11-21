@@ -32,7 +32,7 @@ const STATUS_BUTTONS: Array<{
   },
   {
     status: "doing",
-    label: "Active",
+    label: "In Progress",
     title: "Currently In Progress",
     icon: Play,
     activeClass: "bg-status-doing/20 text-status-doing border-status-doing/40 shadow-xs",

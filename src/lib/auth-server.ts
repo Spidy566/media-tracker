@@ -122,7 +122,7 @@ export const auth = betterAuth({
           !timingSafeEqualStr(inviteCode.trim(), env.SQUAD_INVITE_CODE.trim())
         ) {
           throw new APIError("FORBIDDEN", {
-            message: "Invalid squad invite code",
+            message: "Invalid invite code",
           });
         }
         delete ctx.body.inviteCode;

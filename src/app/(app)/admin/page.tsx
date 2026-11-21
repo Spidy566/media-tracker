@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { users } from "@/db/schema";
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { AdminClient, type SquadMember } from "./admin-client";
+import { AdminClient, type Member } from "./admin-client";
 
 export const metadata: Metadata = {
   title: "Admin · Tracklist",
@@ -31,7 +31,7 @@ export default async function AdminPage() {
     .from(users)
     .orderBy(asc(users.createdAt));
 
-  const members: SquadMember[] = rawMembers.map((m) => ({
+  const members: Member[] = rawMembers.map((m) => ({
     ...m,
     createdAt: m.createdAt.toISOString(),
   }));

@@ -1,10 +1,11 @@
 "use client";
 
-import { Bookmark, Check, Play } from "lucide-react";
+import { Bookmark, Check, Play, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { PosterImage } from "@/components/poster-image";
 import type { MediaStatus } from "@/db/schema";
 import { getMediaTypeLabel } from "@/lib/media-formatters";
+import { cn } from "@/lib/utils";
 
 export type { MediaStatus };
 
@@ -21,6 +22,8 @@ interface MediaCardProps {
   onQuickStatus?: (status: "want_to" | "doing" | "done") => void;
   onClick?: () => void;
   priority?: boolean;
+  isAnchored?: boolean;
+  onAnchor?: () => void;
 }
 
 export function MediaCard({
@@ -36,11 +39,18 @@ export function MediaCard({
   onQuickStatus,
   onClick,
   priority = false,
+  isAnchored = false,
+  onAnchor,
 }: MediaCardProps) {
   return (
     <div className="flex flex-col gap-2 w-full group select-none">
       {/* Poster Container */}
-      <div className="relative aspect-2/3 w-full rounded-2xl overflow-hidden bg-muted border border-border group-hover:border-foreground/30 group-hover:shadow-lg transition-all duration-200">
+      <div
+        className={cn(
+          "relative aspect-2/3 w-full rounded-2xl overflow-hidden bg-muted border border-border group-hover:border-foreground/30 group-hover:shadow-lg transition-all duration-200",
+          isAnchored && "ring-2 ring-brand shadow-2xl shadow-brand/20 scale-[1.02] z-20 border-brand",
+        )}
+      >
         {onClick && (
           <button
             type="button"
@@ -59,11 +69,31 @@ export function MediaCard({
           className="object-cover transition duration-300 group-hover:scale-103 pointer-events-none"
         />
 
-        {/* Top Floating Badge */}
+        {/* Top Floating Badge & Anchor Button */}
         <div className="absolute top-2 inset-x-2 flex items-center justify-between gap-1 z-10 pointer-events-none">
-          {badge ? <div className="pointer-events-auto">{badge}</div> : <div />}
+          <div className="flex items-center gap-1">
+            {badge && <div className="pointer-events-auto">{badge}</div>}
+            {onAnchor && (
+              <button
+                type="button"
+                title={isAnchored ? "Clear anchor" : "Find related titles"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAnchor();
+                }}
+                className={cn(
+                  "p-1.5 rounded-full transition cursor-pointer pointer-events-auto backdrop-blur-md shadow-xs",
+                  isAnchored
+                    ? "bg-brand text-brand-foreground shadow-brand/40"
+                    : "bg-background/80 hover:bg-background text-muted-foreground hover:text-brand border border-border opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
+                )}
+              >
+                <Sparkles className="size-3.5" />
+              </button>
+            )}
+          </div>
           {rating ? (
-            <span className="bg-background/90 text-rating font-bold text-[10px] px-2 py-0.5 rounded-full border border-border shadow-xs pointer-events-auto">
+            <span className="bg-background/90 text-rating font-bold font-mono tabular-nums text-[10px] px-2 py-0.5 rounded-full border border-border shadow-xs pointer-events-auto">
               ★ {rating}
             </span>
           ) : null}
@@ -137,7 +167,7 @@ export function MediaCard({
           {title}
         </h4>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-          <span>{releaseYear || "TBA"}</span>
+          <span className="font-mono tabular-nums">{releaseYear || "TBA"}</span>
           <span>•</span>
           <span>{getMediaTypeLabel(mediaType)}</span>
           {subtitle && (

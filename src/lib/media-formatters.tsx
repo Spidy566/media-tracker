@@ -54,9 +54,9 @@ export function getStatusLabel(status: string): string {
     case "doing":
       return "In Progress";
     case "want_to":
-      return "In Queue";
+      return "Queue";
     case "done":
-      return "Completed";
+      return "Done";
     case "dropped":
       return "Dropped";
     default:
@@ -70,15 +70,15 @@ export function getStatusLabel(status: string): string {
 export function getStatusVerb(status: string): string {
   switch (status) {
     case "done":
-      return "finished";
+      return "Logged as Completed";
     case "doing":
-      return "started";
+      return "Marked as In Progress";
     case "want_to":
-      return "queued";
+      return "Added to Queue";
     case "dropped":
-      return "dropped";
+      return "Marked as Dropped";
     default:
-      return "logged";
+      return "Updated";
   }
 }
 
