@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { openSearchModal } from "@/lib/auth-events";
+import { openSearch } from "@/hooks/use-search-modal";
 import type { EntryUser } from "@/types/entry";
 
 export interface LibraryCounts {
@@ -32,7 +32,7 @@ export function DashboardHeader({ currentUser, libraryCounts }: DashboardHeaderP
 
         <button
           type="button"
-          onClick={openSearchModal}
+          onClick={openSearch}
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-card hover:bg-muted border border-border text-foreground text-xs font-semibold transition cursor-pointer shadow-2xs hover:border-border/80 self-start sm:self-auto shrink-0"
         >
           <Plus className="size-3.5 text-brand stroke-[2.5]" />

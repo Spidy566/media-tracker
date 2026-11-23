@@ -3,7 +3,7 @@
 import { Bookmark, Calendar, Compass, Home, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { openSearchModal } from "@/lib/auth-events";
+import { openSearch } from "@/hooks/use-search-modal";
 import { cn } from "@/lib/utils";
 
 export function MobileNav() {
@@ -53,7 +53,7 @@ export function MobileNav() {
         {/* Centered + Log action button */}
         <button
           type="button"
-          onClick={openSearchModal}
+          onClick={openSearch}
           aria-label="Log media"
           className="flex items-center justify-center size-10 rounded-full border border-white/15 bg-white/6 hover:bg-white/12 text-white transition-all duration-150 active:scale-95 cursor-pointer shadow-xs outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
         >
