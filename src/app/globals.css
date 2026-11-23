@@ -53,50 +53,50 @@
   --radius-2xl: 1.5rem;
 }
 
-/* 100% Dark Mode Only (Locked OTT / Letterboxd dark aesthetic) */
+/* 100% Dark Mode Only — Modern Atomic Dark Palette */
 :root,
 .dark {
   --radius: 0.75rem;
 
-  --background: #0B0B0E;
-  --foreground: #F2F2F5;
-  --card: #121216;
-  --card-foreground: #F2F2F5;
-  --popover: #121216;
-  --popover-foreground: #F2F2F5;
+  --background: #0B0C0F;
+  --foreground: #ECEDEF;
+  --card: #16181D;
+  --card-foreground: #ECEDEF;
+  --popover: #16181D;
+  --popover-foreground: #ECEDEF;
 
-  --primary: #C8F135;
-  --primary-foreground: #0B0B0E;
-  --secondary: #1B1B21;
-  --secondary-foreground: #F2F2F5;
-  --muted: #1B1B21;
-  --muted-foreground: #8B8B97;
-  --accent: #1B1B21;
-  --accent-foreground: #F2F2F5;
+  --primary: #7B7FEB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #20232A;
+  --secondary-foreground: #ECEDEF;
+  --muted: #20232A;
+  --muted-foreground: #A1A5AD;
+  --accent: #20232A;
+  --accent-foreground: #ECEDEF;
   --destructive: #E5484D;
 
-  --border: #26262E;
-  --input: #26262E;
-  --ring: #C8F135;
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.08);
+  --ring: #7B7FEB;
 
-  --brand: #C8F135;
-  --brand-foreground: #0B0B0E;
-  --brand-text: #C8F135;
+  --brand: #7B7FEB;
+  --brand-foreground: #FFFFFF;
+  --brand-text: #7B7FEB;
 
-  --status-queue: #7DA7FF;
-  --status-doing: #FF8A3D;
-  --status-done: #5ED6A0;
+  --status-queue: #A1A5AD;
+  --status-doing: #7B7FEB;
+  --status-done: #4FB286;
   --status-dropped: #6B6B76;
   --rating: #FFC94D;
 
-  --sidebar: #121216;
-  --sidebar-foreground: #F2F2F5;
-  --sidebar-primary: #C8F135;
-  --sidebar-primary-foreground: #0B0B0E;
-  --sidebar-accent: #1B1B21;
-  --sidebar-accent-foreground: #F2F2F5;
-  --sidebar-border: #26262E;
-  --sidebar-ring: #C8F135;
+  --sidebar: #16181D;
+  --sidebar-foreground: #ECEDEF;
+  --sidebar-primary: #7B7FEB;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #20232A;
+  --sidebar-accent-foreground: #ECEDEF;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: #7B7FEB;
 }
 
 .font-display {

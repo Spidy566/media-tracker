@@ -43,11 +43,7 @@ export function CollectionSection({ collection, franchise, mediaType }: Collecti
           <Link
             key={part.id}
             href={`/media/movie/${part.id}`}
-            className={`flex flex-col w-32 shrink-0 snap-start group select-none rounded-2xl transition-all ${
-              isCurrent
-                ? "ring-2 ring-brand ring-offset-2 ring-offset-background"
-                : "hover:opacity-90"
-            }`}
+            className="flex flex-col w-32 shrink-0 snap-start group select-none transition-opacity hover:opacity-90"
           >
             <div
               className={`relative aspect-2/3 w-full rounded-2xl overflow-hidden bg-muted border ${
