@@ -1,12 +1,31 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowUpDown, Ban, Bookmark, Check, Play, Search, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
-import { MediaGrid } from "@/components/media-grid";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearchModal } from "@/hooks/use-search-modal";
 import { logEntryApi } from "@/lib/api-entries";
 import { getStatusVerb } from "@/lib/media-formatters";
 import { getMediaHref } from "@/lib/utils";
@@ -16,72 +35,215 @@ interface LibraryClientProps {
   initialEntries: Entry[];
 }
 
+type TabType = "all" | "want_to" | "doing" | "done";
 type SortOption = "updated" | "rating" | "year" | "title";
+type MediumFilter = "all" | "movie" | "tv" | "game";
 
-const STATUS_TABS: Array<{ status: MediaStatus; label: string; icon: typeof Bookmark }> = [
-  { status: "want_to", label: "Queue", icon: Bookmark },
-  { status: "doing", label: "In Progress", icon: Play },
-  { status: "done", label: "Done", icon: Check },
-  { status: "dropped", label: "Dropped", icon: Ban },
+const PAGE_SIZE = 48;
+
+const STATUS_TABS: Array<{ id: TabType; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "want_to", label: "Queue" },
+  { id: "doing", label: "In Progress" },
+  { id: "done", label: "Done" },
 ];
 
-const SORT_OPTIONS: Array<{ key: SortOption; label: string }> = [
-  { key: "updated", label: "Recently Updated" },
-  { key: "rating", label: "Highest Rated" },
-  { key: "year", label: "Release Year" },
-  { key: "title", label: "Title (A–Z)" },
+const MEDIUM_OPTIONS: Array<{ value: MediumFilter; label: string }> = [
+  { value: "all", label: "All Media" },
+  { value: "movie", label: "Movies" },
+  { value: "tv", label: "TV Series" },
+  { value: "game", label: "Games" },
 ];
 
-const EMPTY_STATES: Record<MediaStatus, { title: string; subtitle: string }> = {
-  want_to: {
-    title: "Your Queue is empty",
-    subtitle: "Find movies, TV series, or games in Explore to add to your queue.",
-  },
-  doing: {
-    title: "Nothing in progress",
-    subtitle: "Start watching or playing something from your queue.",
-  },
-  done: {
-    title: "No completed titles yet",
-    subtitle: "Titles you mark as finished will appear here.",
-  },
-  dropped: {
-    title: "No dropped titles",
-    subtitle: "Titles you decided not to finish will appear here.",
-  },
-};
+const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
+  { value: "updated", label: "Recently updated" },
+  { value: "year", label: "Release year" },
+  { value: "rating", label: "Highest rated" },
+  { value: "title", label: "Title (A–Z)" },
+];
+
+// Helper to generate pagination items with ellipsis
+function getPaginationRange(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | "...")[] = [];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  pages.push(1);
+
+  if (start > 2) {
+    pages.push("...");
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (end < total - 1) {
+    pages.push("...");
+  }
+
+  pages.push(total);
+  return pages;
+}
 
 export function LibraryClient({ initialEntries }: LibraryClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const statusParam = searchParams.get("status") as MediaStatus | null;
-  const initialTab: MediaStatus =
-    statusParam && ["want_to", "doing", "done", "dropped"].includes(statusParam)
-      ? statusParam
-      : "want_to";
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const { openSearch } = useSearchModal();
 
-  const [activeTab, setActiveTab] = useState<MediaStatus>(initialTab);
-  const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv" | "game">("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("updated");
+  // Read initial filter & page values from URL params
+  const statusParam = searchParams.get("status") as TabType | null;
+  const initialTab: TabType =
+    statusParam && ["all", "want_to", "doing", "done"].includes(statusParam) ? statusParam : "all";
 
+  const mediumParam = searchParams.get("medium") as MediumFilter | null;
+  const initialMedium: MediumFilter =
+    mediumParam && ["all", "movie", "tv", "game"].includes(mediumParam) ? mediumParam : "all";
+
+  const sortParam = searchParams.get("sort") as SortOption | null;
+  const initialSort: SortOption =
+    sortParam && ["updated", "year", "rating", "title"].includes(sortParam) ? sortParam : "updated";
+
+  const initialQuery = searchParams.get("q") || "";
+  const pageParam = searchParams.get("page");
+  const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : 1;
+  const initialPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [mediumFilter, setMediumFilter] = useState<MediumFilter>(initialMedium);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [sortBy, setSortBy] = useState<SortOption>(initialSort);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+
+  // Sync state with URL params when user hits Browser Back/Forward
   useEffect(() => {
-    if (statusParam && ["want_to", "doing", "done", "dropped"].includes(statusParam)) {
+    if (statusParam && ["all", "want_to", "doing", "done"].includes(statusParam)) {
       setActiveTab(statusParam);
+    } else if (!statusParam) {
+      setActiveTab("all");
     }
-  }, [statusParam]);
 
+    if (mediumParam && ["all", "movie", "tv", "game"].includes(mediumParam)) {
+      setMediumFilter(mediumParam);
+    } else if (!mediumParam) {
+      setMediumFilter("all");
+    }
+
+    if (sortParam && ["updated", "year", "rating", "title"].includes(sortParam)) {
+      setSortBy(sortParam);
+    } else if (!sortParam) {
+      setSortBy("updated");
+    }
+
+    setSearchQuery(searchParams.get("q") || "");
+
+    const newPageRaw = searchParams.get("page");
+    const newPageParsed = newPageRaw ? Number.parseInt(newPageRaw, 10) : 1;
+    setCurrentPage(Number.isNaN(newPageParsed) || newPageParsed < 1 ? 1 : newPageParsed);
+  }, [searchParams, statusParam, mediumParam, sortParam]);
+
+  // Sync active filters and page to URL search params
+  const updateUrlParams = useCallback(
+    (
+      newTab: TabType,
+      newMedium: MediumFilter,
+      newSort: SortOption,
+      newQuery: string,
+      newPage = 1,
+    ) => {
+      const params = new URLSearchParams();
+      if (newTab !== "all") params.set("status", newTab);
+      if (newMedium !== "all") params.set("medium", newMedium);
+      if (newSort !== "updated") params.set("sort", newSort);
+      if (newQuery.trim()) params.set("q", newQuery.trim());
+      if (newPage > 1) params.set("page", String(newPage));
+
+      const queryString = params.toString();
+      const targetUrl = queryString ? `/library?${queryString}` : "/library";
+      router.replace(targetUrl, { scroll: false });
+    },
+    [router],
+  );
+
+  // Reset page to 1 whenever tab, medium, sort, or search changes
+  const handleTabChange = (tabId: TabType) => {
+    setActiveTab(tabId);
+    setCurrentPage(1);
+    updateUrlParams(tabId, mediumFilter, sortBy, searchQuery, 1);
+  };
+
+  const handleMediumChange = (newMedium: MediumFilter) => {
+    setMediumFilter(newMedium);
+    setCurrentPage(1);
+    updateUrlParams(activeTab, newMedium, sortBy, searchQuery, 1);
+  };
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSortBy(newSort);
+    setCurrentPage(1);
+    updateUrlParams(activeTab, mediumFilter, newSort, searchQuery, 1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    updateUrlParams(activeTab, mediumFilter, sortBy, query, 1);
+  };
+
+  const handleClearFilters = () => {
+    setMediumFilter("all");
+    setSearchQuery("");
+    setCurrentPage(1);
+    updateUrlParams(activeTab, "all", sortBy, "", 1);
+  };
+
+  // Global '/' keyboard shortcut to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (e.key === "/" && targetTag !== "INPUT" && targetTag !== "TEXTAREA") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Quick status progression mutation with interactive Undo toast
   const { mutate: setQuickStatus } = useMutation({
-    mutationFn: async ({ media, status }: { media: Entry["media"]; status: MediaStatus }) => {
-      return logEntryApi({
-        media,
-        status,
-      });
+    mutationFn: async ({
+      media,
+      status,
+    }: {
+      media: Entry["media"];
+      status: MediaStatus;
+      previousStatus?: MediaStatus | null;
+    }) => {
+      return logEntryApi({ media, status });
     },
     onSuccess: (_, variables) => {
       router.refresh();
       toast.success(getStatusVerb(variables.status), {
         description: variables.media.title,
+        action: variables.previousStatus
+          ? {
+              label: "Undo",
+              onClick: () => {
+                setQuickStatus({
+                  media: variables.media,
+                  status: variables.previousStatus as MediaStatus,
+                });
+              },
+            }
+          : undefined,
       });
     },
     onError: (err: Error) => {
@@ -91,20 +253,52 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     },
   });
 
+  // Calculate live tab counts based on currently selected medium filter
+  const tabCounts = useMemo(() => {
+    const mediumFiltered = initialEntries.filter((e) => {
+      if (mediumFilter === "all") return true;
+      return e.media.mediaType === mediumFilter;
+    });
+
+    return {
+      all: mediumFiltered.length,
+      want_to: mediumFiltered.filter((e) => e.status === "want_to").length,
+      doing: mediumFiltered.filter((e) => e.status === "doing").length,
+      done: mediumFiltered.filter((e) => e.status === "done").length,
+    };
+  }, [initialEntries, mediumFilter]);
+
+  // Calculate live medium counts based on currently selected tab
+  const mediumCounts = useMemo(() => {
+    const tabFiltered = initialEntries.filter((e) => {
+      if (activeTab === "all") return true;
+      return e.status === activeTab;
+    });
+
+    return {
+      all: tabFiltered.length,
+      movie: tabFiltered.filter((e) => e.media.mediaType === "movie").length,
+      tv: tabFiltered.filter((e) => e.media.mediaType === "tv").length,
+      game: tabFiltered.filter((e) => e.media.mediaType === "game").length,
+    };
+  }, [initialEntries, activeTab]);
+
+  // Filter and sort entries across whole library
   const filteredEntries = useMemo(() => {
     let result = initialEntries.filter((e) => {
-      if (e.status !== activeTab) return false;
-      if (mediaFilter !== "all" && e.media.mediaType !== mediaFilter) return false;
+      if (activeTab !== "all" && e.status !== activeTab) return false;
+      if (mediumFilter !== "all" && e.media.mediaType !== mediumFilter) return false;
+
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchesTitle = e.media.title.toLowerCase().includes(query);
         const matchesCreator = e.media.creator?.toLowerCase().includes(query);
         if (!matchesTitle && !matchesCreator) return false;
       }
+
       return true;
     });
 
-    // Sorting
     result = [...result].sort((a, b) => {
       if (sortBy === "rating") {
         return (b.rating ?? 0) - (a.rating ?? 0);
@@ -120,160 +314,377 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     });
 
     return result;
-  }, [initialEntries, activeTab, mediaFilter, searchQuery, sortBy]);
+  }, [initialEntries, activeTab, mediumFilter, searchQuery, sortBy]);
 
-  const counts = {
-    want_to: initialEntries.filter((e) => e.status === "want_to").length,
-    doing: initialEntries.filter((e) => e.status === "doing").length,
-    done: initialEntries.filter((e) => e.status === "done").length,
-    dropped: initialEntries.filter((e) => e.status === "dropped").length,
+  // Calculate total pages for current filtered set
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+
+  // Auto-correct out-of-range page (e.g. when items are removed or filters shrink the set)
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages >= 1) {
+      setCurrentPage(totalPages);
+      updateUrlParams(activeTab, mediumFilter, sortBy, searchQuery, totalPages);
+    }
+  }, [currentPage, totalPages, activeTab, mediumFilter, sortBy, searchQuery, updateUrlParams]);
+
+  // Paginated items slice (24 items per page)
+  const paginatedEntries = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    return filteredEntries.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredEntries, currentPage]);
+
+  // Handle page change: smooth scroll to top of grid (below sticky toolbar)
+  const handlePageChange = (newPage: number) => {
+    const validPage = Math.max(1, Math.min(newPage, totalPages));
+    setCurrentPage(validPage);
+    updateUrlParams(activeTab, mediumFilter, sortBy, searchQuery, validPage);
+
+    // Scroll to top of grid (just below the sticky header/toolbar)
+    if (gridContainerRef.current) {
+      const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const targetScrollY = window.scrollY + rect.top - 180; // offset for sticky navbar + toolbar
+
+      window.scrollTo({
+        top: Math.max(0, targetScrollY),
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
+    }
   };
 
-  const isFilterMismatch = counts[activeTab] > 0 && filteredEntries.length === 0;
+  const hasActiveFilters = mediumFilter !== "all" || searchQuery.trim().length > 0;
+
+  // Pagination display figures
+  const startItem = filteredEntries.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(currentPage * PAGE_SIZE, filteredEntries.length);
+  const paginationRange = useMemo(
+    () => getPaginationRange(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
   return (
     <div className="space-y-6">
-      {/* 1. Status Tabs & Media Filter */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-border">
-        {/* Capsule Status Tabs */}
-        <div className="flex items-center gap-1.5 bg-muted/60 border border-border p-1 rounded-full overflow-x-auto scrollbar-none">
-          {STATUS_TABS.map(({ status, label, icon: Icon }) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => {
-                setActiveTab(status);
-                router.replace(`/library?status=${status}`, { scroll: false });
-              }}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
-                activeTab === status
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="size-3.5" />
-              <span>
-                {label}{" "}
-                <span className="font-mono tabular-nums">({counts[status]})</span>
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* Sticky Top Toolbar with Dark Glass Backdrop */}
+      <div className="sticky top-20 z-20 bg-[#0B0C0F]/90 backdrop-blur-md pb-4 pt-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 space-y-4 border-b border-white/4">
+        {/* Row 2: Status Underline Tabs (Radix UI Tabs) */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => handleTabChange(val as TabType)}
+          className="w-full"
+        >
+          <TabsList variant="line">
+            {STATUS_TABS.map((tab) => {
+              const count = tabCounts[tab.id];
 
-        {/* Media Type Filter */}
-        <div className="flex items-center gap-1 text-xs">
-          {(["all", "movie", "tv", "game"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setMediaFilter(t)}
-              className={`px-3 py-1 rounded-full capitalize font-semibold transition cursor-pointer ${
-                mediaFilter === t
-                  ? "bg-muted text-foreground border border-border"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              return (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  <span>{tab.label}</span>
+                  <span className="tab-count text-xs font-mono tabular-nums">{count}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
+
+        {/* Row 3: Filter & Search Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Left Side: Medium Select & Clear Filters Link */}
+          <div className="flex items-center gap-3">
+            <Select
+              value={mediumFilter}
+              onValueChange={(val) => handleMediumChange(val as MediumFilter)}
             >
-              {t === "all" ? "All Media" : t === "tv" ? "TV Series" : `${t}s`}
-            </button>
-          ))}
+              <SelectTrigger aria-label="Filter by Medium">
+                <SelectValue placeholder="All Media" />
+              </SelectTrigger>
+              <SelectContent align="start">
+                {MEDIUM_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} count={mediumCounts[opt.value]}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="text-xs text-[#A1A5AD] hover:text-[#ECEDEF] transition cursor-pointer underline underline-offset-4"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {/* Right Side: Search Input + Sort Select */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="absolute left-3 top-2.5 size-4 text-[#A1A5AD] pointer-events-none z-10" />
+              <Input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search library (/)"
+                className="pl-9 pr-7"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange("")}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-2.5 p-0.5 rounded text-[#A1A5AD] hover:text-[#ECEDEF] transition cursor-pointer z-10"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            <Select value={sortBy} onValueChange={(val) => handleSortChange(val as SortOption)}>
+              <SelectTrigger aria-label="Sort library">
+                <SelectValue placeholder="Recently updated" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {SORT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      {/* 2. Search & Sort Controls Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Instant Title Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search your library..."
-            className="w-full h-9 pl-9 pr-8 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
+      {/* Grid Anchor for Scroll-to-Top on Page Change */}
+      <div ref={gridContainerRef} className="scroll-mt-48" />
 
-        {/* Sort Dropdown / Selector */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto">
-          <ArrowUpDown className="size-3.5 text-muted-foreground shrink-0" />
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-mono mr-1 hidden sm:inline">
-            Sort
-          </span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="h-9 px-3 rounded-xl bg-card border border-border text-xs text-foreground font-medium focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand transition cursor-pointer"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.key} value={opt.key}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Row 4: Empty States OR 48-Item Paginated Grid (with min-height to prevent vertical collapse) */}
+      <div className="min-h-[60vh]">
+        {filteredEntries.length === 0 ? (
+          <div className="py-20 flex flex-col items-center justify-center text-center">
+            {/* Situation A: Brand new library (Zero items overall) */}
+            {initialEntries.length === 0 && (
+              <div className="flex flex-col items-center gap-3">
+                <span className="size-10 grid place-items-center rounded-full bg-white/6 text-[#A1A5AD]">
+                  <Plus className="size-5" />
+                </span>
+                <h3 className="text-sm font-semibold text-[#ECEDEF]">Your Library is empty</h3>
+                <p className="text-xs text-[#A1A5AD] max-w-xs">
+                  Add your first movie, show, or game to start tracking.
+                </p>
+                <button
+                  type="button"
+                  onClick={openSearch}
+                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7B7FEB] hover:bg-[#7B7FEB]/90 text-white text-xs font-semibold transition cursor-pointer shadow-sm"
+                >
+                  <Plus className="size-4 stroke-2" />
+                  <span>Add something</span>
+                </button>
+              </div>
+            )}
+
+            {/* Situation B: Search/Filter returned nothing */}
+            {initialEntries.length > 0 && searchQuery.trim().length > 0 && (
+              <div className="flex flex-col items-center gap-3">
+                <h3 className="text-sm font-semibold text-[#ECEDEF]">
+                  No results for &ldquo;{searchQuery}&rdquo;
+                </h3>
+                <p className="text-xs text-[#A1A5AD] max-w-xs">
+                  Try searching catalog or clearing your active filters.
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="px-3.5 py-1.5 rounded-lg border border-white/8 bg-[#16181D] hover:bg-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                  >
+                    Clear filters
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openSearch}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#7B7FEB] hover:bg-[#7B7FEB]/90 text-white text-xs font-semibold transition cursor-pointer"
+                  >
+                    Search all of Tracklist
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Situation C: Specific tab is empty */}
+            {initialEntries.length > 0 && !searchQuery.trim() && (
+              <div className="flex flex-col items-center gap-3">
+                <span className="size-8 grid place-items-center rounded-full bg-black/60 border border-white/10 text-xs">
+                  {activeTab === "want_to" && (
+                    <span className="size-2.5 rounded-full bg-[#8A8F98]" />
+                  )}
+                  {activeTab === "doing" && <span className="size-2.5 rounded-full bg-[#E3A94B]" />}
+                  {activeTab === "done" && <span className="size-2.5 rounded-full bg-[#4FB286]" />}
+                </span>
+
+                <h3 className="text-sm font-semibold text-[#ECEDEF]">
+                  {activeTab === "want_to" && "Your queue is empty"}
+                  {activeTab === "doing" && "Nothing in progress right now"}
+                  {activeTab === "done" && "Nothing finished yet"}
+                  {activeTab === "all" && "No titles match the selected medium"}
+                </h3>
+
+                <p className="text-xs text-[#A1A5AD] max-w-xs">
+                  {activeTab === "want_to" && "Find movies, TV series, or games to queue up next."}
+                  {activeTab === "doing" &&
+                    "Pick something from your Queue and start watching or playing."}
+                  {activeTab === "done" &&
+                    "Titles you complete will appear here with your ratings."}
+                  {activeTab === "all" && "Try switching back to Medium: All."}
+                </p>
+
+                {activeTab === "doing" && (
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("want_to")}
+                    className="mt-2 px-4 py-2 rounded-lg bg-[#16181D] hover:bg-white/8 border border-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                  >
+                    Go to Queue
+                  </button>
+                )}
+
+                {activeTab === "done" && (
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("doing")}
+                    className="mt-2 px-4 py-2 rounded-lg bg-[#16181D] hover:bg-white/8 border border-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                  >
+                    Go to In Progress
+                  </button>
+                )}
+
+                {activeTab === "want_to" && (
+                  <Link
+                    href="/explore"
+                    className="mt-2 px-4 py-2 rounded-lg bg-[#7B7FEB] hover:bg-[#7B7FEB]/90 text-white text-xs font-semibold transition cursor-pointer"
+                  >
+                    Browse and add
+                  </Link>
+                )}
+
+                {activeTab === "all" && mediumFilter !== "all" && (
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="mt-2 px-4 py-2 rounded-lg border border-white/8 bg-[#16181D] hover:bg-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                  >
+                    Reset Medium to All
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* The Responsive Poster Grid: 48 items per page (locked to 2, 3, 4, 6, 8 columns) */
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-8 pt-2">
+              {paginatedEntries.map((entry) => (
+                <MediaCard
+                  key={entry.id}
+                  title={entry.media.title}
+                  mediaType={entry.media.mediaType}
+                  posterUrl={entry.media.posterUrl}
+                  releaseYear={entry.media.releaseYear}
+                  currentStatus={entry.status}
+                  showStatusDot={activeTab === "all"}
+                  onQuickStatus={(status) =>
+                    setQuickStatus({
+                      media: entry.media,
+                      status,
+                      previousStatus: entry.status,
+                    })
+                  }
+                  onClick={() => router.push(getMediaHref(entry.media))}
+                />
+              ))}
+            </div>
+
+            {/* Classic Numbered Pagination Controls (Centered: 40px above, 64px below) */}
+            {totalPages > 1 && (
+              <div className="mt-10 mb-16 flex flex-col items-center justify-center gap-3">
+                {/* Muted Footer Count Text */}
+                <span className="text-xs text-[#A1A5AD] font-mono tabular-nums">
+                  Showing {startItem}–{endItem} of {filteredEntries.length}
+                </span>
+
+                <Pagination>
+                  <PaginationContent>
+                    {/* Mobile View (<640px): Prev, "Page X of Y", Next */}
+                    <div className="flex sm:hidden items-center gap-3">
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage <= 1}
+                        />
+                      </PaginationItem>
+                      <span className="text-xs text-[#ECEDEF] font-mono tabular-nums">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage >= totalPages}
+                        />
+                      </PaginationItem>
+                    </div>
+
+                    {/* Desktop View (>=640px): Numbered Buttons with Prev/Next and Ellipsis */}
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage <= 1}
+                        />
+                      </PaginationItem>
+
+                      {paginationRange.map((page, index) => {
+                        if (page === "...") {
+                          const ellipsisKey = index < 3 ? "ellipsis-left" : "ellipsis-right";
+                          return (
+                            <PaginationItem key={ellipsisKey}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+
+                        const isCurrent = page === currentPage;
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              isActive={isCurrent}
+                              aria-label={`Page ${page}`}
+                              onClick={() => handlePageChange(page)}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage >= totalPages}
+                        />
+                      </PaginationItem>
+                    </div>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* 3. Grid or Empty State */}
-      {filteredEntries.length === 0 ? (
-        <div className="text-center py-24 border border-dashed border-border rounded-3xl p-6">
-          <p className="text-sm font-semibold text-foreground font-sans">
-            {searchQuery
-              ? `No titles match "${searchQuery}"`
-              : isFilterMismatch
-                ? `No ${mediaFilter === "tv" ? "TV Series" : `${mediaFilter}s`} in this section`
-                : EMPTY_STATES[activeTab].title}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-            {searchQuery
-              ? "Try adjusting your search terms or clearing the filter."
-              : isFilterMismatch
-                ? "You have other titles in this status. Switch to All Media to see them."
-                : EMPTY_STATES[activeTab].subtitle}
-          </p>
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="mt-4 text-xs font-semibold px-4 py-1.5 rounded-xl bg-muted text-foreground border border-border hover:bg-secondary transition cursor-pointer"
-            >
-              Clear Search
-            </button>
-          ) : isFilterMismatch ? (
-            <button
-              type="button"
-              onClick={() => setMediaFilter("all")}
-              className="mt-4 text-xs font-semibold px-4 py-1.5 rounded-xl bg-muted text-foreground border border-border hover:bg-secondary transition cursor-pointer"
-            >
-              View All Media
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <MediaGrid>
-          {filteredEntries.map((entry) => (
-            <MediaCard
-              key={entry.id}
-              title={entry.media.title}
-              mediaType={entry.media.mediaType}
-              posterUrl={entry.media.posterUrl}
-              releaseYear={entry.media.releaseYear}
-              rating={entry.rating}
-              currentStatus={entry.status}
-              onQuickStatus={(status) => setQuickStatus({ media: entry.media, status })}
-              onClick={() => router.push(getMediaHref(entry.media))}
-            />
-          ))}
-        </MediaGrid>
-      )}
     </div>
   );
 }

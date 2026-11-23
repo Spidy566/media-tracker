@@ -14,11 +14,7 @@ interface QueueSectionProps {
   onOpenRoulette: () => void;
 }
 
-export function QueueSection({
-  queueItems,
-  onQuickStatus,
-  onOpenRoulette,
-}: QueueSectionProps) {
+export function QueueSection({ queueItems, onQuickStatus, onOpenRoulette }: QueueSectionProps) {
   const router = useRouter();
 
   if (queueItems.length === 0) {

@@ -186,10 +186,7 @@ export function SecurityCard() {
               onChange={(e) => setRevokeOtherSessions(e.target.checked)}
               className="rounded border-border text-brand focus:ring-brand size-4 cursor-pointer"
             />
-            <label
-              htmlFor="revokeOtherSessions"
-              className="text-xs text-foreground cursor-pointer"
-            >
+            <label htmlFor="revokeOtherSessions" className="text-xs text-foreground cursor-pointer">
               Sign out of all other devices
             </label>
           </div>

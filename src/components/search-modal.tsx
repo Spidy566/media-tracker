@@ -1,16 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Bookmark,
-  Check,
-  Film,
-  Gamepad2,
-  Play,
-  Search,
-  Tv,
-  X,
-} from "lucide-react";
+import { Bookmark, Check, Film, Gamepad2, Play, Search, Tv, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";

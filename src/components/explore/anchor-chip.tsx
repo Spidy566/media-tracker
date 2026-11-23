@@ -72,7 +72,9 @@ export function AnchorChip({ item, onClear }: AnchorChipProps) {
                 sizes="56px"
                 className={cn(
                   "object-cover absolute inset-0 z-10 transition-opacity duration-300 ease-in",
-                  isCrossfading ? "opacity-0 animate-in fade-in duration-300 fill-mode-forwards" : "opacity-100",
+                  isCrossfading
+                    ? "opacity-0 animate-in fade-in duration-300 fill-mode-forwards"
+                    : "opacity-100",
                 )}
               />
             )}

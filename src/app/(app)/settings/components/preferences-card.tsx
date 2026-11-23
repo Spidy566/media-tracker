@@ -67,7 +67,9 @@ export function PreferencesCard({ initialHiddenSections }: PreferencesCardProps)
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-sm font-semibold text-foreground block font-sans">Stealth Mode</span>
+              <span className="text-sm font-semibold text-foreground block font-sans">
+                Stealth Mode
+              </span>
               <span className="text-xs text-muted-foreground block">
                 Hide cover posters and backdrops with typographic fallbacks for discreet browsing
               </span>
@@ -111,7 +113,9 @@ export function PreferencesCard({ initialHiddenSections }: PreferencesCardProps)
                     {sec.icon}
                   </div>
                   <div className="min-w-0">
-                    <span className="text-sm font-semibold text-foreground block font-sans">{sec.label}</span>
+                    <span className="text-sm font-semibold text-foreground block font-sans">
+                      {sec.label}
+                    </span>
                     <span className="text-xs text-muted-foreground block truncate">
                       {sec.description}
                     </span>

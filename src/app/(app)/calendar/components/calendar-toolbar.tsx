@@ -163,7 +163,9 @@ export function CalendarToolbar({
                     >
                       <ChevronLeft className="size-4" />
                     </button>
-                    <span className="font-semibold text-sm text-foreground font-mono tabular-nums">{stepperYear}</span>
+                    <span className="font-semibold text-sm text-foreground font-mono tabular-nums">
+                      {stepperYear}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setStepperYear((y) => Math.min(maxAllowedYear, y + 1))}

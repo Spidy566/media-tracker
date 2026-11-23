@@ -87,7 +87,9 @@ export function DangerZoneCard({ user }: DangerZoneCardProps) {
           <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 space-y-3">
             <div className="flex items-center gap-2 text-destructive font-semibold text-xs">
               <AlertTriangle className="size-4 shrink-0" />
-              <span>This action cannot be undone. All your media entries will be permanently deleted.</span>
+              <span>
+                This action cannot be undone. All your media entries will be permanently deleted.
+              </span>
             </div>
             <p className="text-xs text-muted-foreground">
               To confirm, type your username{" "}

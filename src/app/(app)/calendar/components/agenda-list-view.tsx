@@ -29,7 +29,8 @@ export function AgendaListView({
       <div className="py-20 text-center border border-dashed border-border rounded-3xl p-6">
         <p className="text-sm font-semibold text-foreground font-sans">No releases found</p>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-          No releases match your current filters for this month. Try changing language or release type.
+          No releases match your current filters for this month. Try changing language or release
+          type.
         </p>
       </div>
     );
@@ -60,7 +61,9 @@ export function AgendaListView({
                 <span>{headingLabel}</span>
               </h3>
               {relText && (
-                <span className="text-xs font-medium text-muted-foreground font-mono">{relText}</span>
+                <span className="text-xs font-medium text-muted-foreground font-mono">
+                  {relText}
+                </span>
               )}
             </div>
 

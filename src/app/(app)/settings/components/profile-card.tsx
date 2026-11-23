@@ -80,7 +80,9 @@ export function ProfileCard({ user }: ProfileCardProps) {
     <section className="p-6 rounded-2xl bg-card border border-border shadow-xs space-y-4">
       <div>
         <h2 className="text-base font-bold text-foreground font-sans">Profile</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">Your personal public profile details.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Your personal public profile details.
+        </p>
       </div>
 
       <form onSubmit={handleNameSubmit} className="space-y-4 pt-2">
@@ -122,7 +124,9 @@ export function ProfileCard({ user }: ProfileCardProps) {
 
       <div className="pt-4 border-t border-border flex items-center justify-between">
         <div className="space-y-0.5">
-          <span className="text-sm font-semibold text-foreground block font-sans">Public Profile</span>
+          <span className="text-sm font-semibold text-foreground block font-sans">
+            Public Profile
+          </span>
           <span className="text-xs text-muted-foreground block">
             Allow other members to see your Library and currently watching/playing items
           </span>
@@ -141,9 +145,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
           <span
             className={cn(
               "pointer-events-none inline-block size-5 transform rounded-full bg-card shadow-xs ring-0 transition duration-200 ease-in-out",
-              isPublic
-                ? "translate-x-5 bg-brand-foreground"
-                : "translate-x-0 bg-muted-foreground",
+              isPublic ? "translate-x-5 bg-brand-foreground" : "translate-x-0 bg-muted-foreground",
             )}
           />
         </button>

@@ -17,6 +17,7 @@ interface MediaCardProps {
   rating?: number | null;
   subtitle?: string | null;
   currentStatus?: MediaStatus | null;
+  showStatusDot?: boolean;
   allowedStatuses?: ("want_to" | "doing" | "done")[];
   onQuickStatus?: (status: "want_to" | "doing" | "done") => void;
   onClick?: () => void;
@@ -46,6 +47,7 @@ export function MediaCard({
   posterUrl,
   releaseYear,
   currentStatus,
+  showStatusDot = true,
   onQuickStatus,
   onClick,
   priority = false,
@@ -119,8 +121,8 @@ export function MediaCard({
           className="h-full w-full object-cover transition duration-300 group-hover:scale-102"
         />
 
-        {/* Top-Right: Traffic-Light Status Dot (Visible only when tracked) */}
-        {currentStatus && (
+        {/* Top-Right: Traffic-Light Status Dot (Visible only when tracked and showStatusDot is enabled) */}
+        {currentStatus && showStatusDot && (
           <span
             title={STATUS_LABELS[currentStatus]}
             className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-black/60 backdrop-blur-xs"

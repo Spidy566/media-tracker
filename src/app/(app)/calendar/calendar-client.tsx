@@ -6,15 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { CalendarApiResponse, CalendarItem } from "@/app/api/calendar/route";
-import { logEntryApi } from "@/lib/api-entries";
-import {
-  buildMonthGrid,
-  formatMonthTitle,
-  getAdjacentMonths,
-  toYMD,
-} from "@/lib/calendar-dates";
-import { getStatusVerb } from "@/lib/media-formatters";
 import type { MediaStatus } from "@/db/schema";
+import { logEntryApi } from "@/lib/api-entries";
+import { buildMonthGrid, formatMonthTitle, getAdjacentMonths, toYMD } from "@/lib/calendar-dates";
+import { getStatusVerb } from "@/lib/media-formatters";
 import { AgendaListView } from "./components/agenda-list-view";
 import { CalendarHighlights } from "./components/calendar-highlights";
 import { CalendarToolbar } from "./components/calendar-toolbar";
@@ -160,7 +155,9 @@ export function CalendarClient({ currentUser, myStatus: initialMyStatus }: Calen
           externalId: media.externalId,
           mediaType: media.mediaType,
           title: media.title,
-          releaseYear: media.releaseDate ? Number.parseInt(media.releaseDate.slice(0, 4), 10) : null,
+          releaseYear: media.releaseDate
+            ? Number.parseInt(media.releaseDate.slice(0, 4), 10)
+            : null,
           posterUrl: media.posterUrl,
           creator: null,
           summary: media.summary || null,
