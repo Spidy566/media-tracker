@@ -3,7 +3,6 @@ import { Barlow_Condensed, Geist_Mono, Host_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import { PosterProvider } from "@/components/providers/poster-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HIDE_POSTERS_COOKIE } from "@/lib/poster-cookie";
@@ -49,21 +48,14 @@ export default async function RootLayout({
       className={`${barlowCondensed.variable} ${hostGrotesk.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <PosterProvider initialHidden={hidePosters}>
-              <TooltipProvider>
-                <main className="flex-1 pb-16 md:pb-0">{children}</main>
-              </TooltipProvider>
-            </PosterProvider>
-          </QueryProvider>
-          <Toaster position="bottom-right" />
-        </ThemeProvider>
+        <QueryProvider>
+          <PosterProvider initialHidden={hidePosters}>
+            <TooltipProvider>
+              <main className="flex-1 pb-16 md:pb-0">{children}</main>
+            </TooltipProvider>
+          </PosterProvider>
+        </QueryProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
