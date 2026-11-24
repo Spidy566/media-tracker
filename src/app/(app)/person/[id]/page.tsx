@@ -206,19 +206,17 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             {person.knownFor.map((credit) => {
               return (
                 <div key={credit.externalId} className="w-36 sm:w-44 shrink-0 snap-start">
-                  <Link href={getMediaHref(credit)} className="block group">
-                    <MediaCard
-                      title={credit.title}
-                      mediaType={credit.mediaType}
-                      posterUrl={
-                        credit.posterPath
-                          ? `https://image.tmdb.org/t/p/w780${credit.posterPath}`
-                          : null
-                      }
-                      releaseYear={credit.year}
-                      subtitle={credit.character || credit.job || undefined}
-                    />
-                  </Link>
+                  <MediaCard
+                    title={credit.title}
+                    mediaType={credit.mediaType}
+                    posterUrl={
+                      credit.posterPath
+                        ? `https://image.tmdb.org/t/p/w780${credit.posterPath}`
+                        : null
+                    }
+                    releaseYear={credit.year}
+                    href={getMediaHref(credit)}
+                  />
                 </div>
               );
             })}

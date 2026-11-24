@@ -141,9 +141,8 @@ export function FriendProfileClient({ entries }: FriendProfileClientProps) {
                 mediaType={entry.media.mediaType}
                 posterUrl={entry.media.posterUrl}
                 releaseYear={entry.media.releaseYear}
-                rating={entry.rating}
+                href={getMediaHref(entry.media)}
                 onQuickStatus={(status) => quickTrack({ media: entry.media, status })}
-                onClick={() => navigateToMedia(entry.media)}
               />
               {entry.reviewNote && (
                 <div className="p-2 rounded-xl bg-card border border-border shadow-2xs">

@@ -26,9 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchModal } from "@/hooks/use-search-modal";
-import { logEntryApi } from "@/lib/api-entries";
-import { getStatusVerb } from "@/lib/media-formatters";
-import { getMediaHref } from "@/lib/utils";
+import { deleteEntryApi, logEntryApi } from "@/lib/api-entries";
+import { cn, getMediaHref } from "@/lib/utils";
 import type { Entry } from "@/types/entry";
 
 interface LibraryClientProps {
@@ -120,6 +119,13 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const [entries, setEntries] = useState<Entry[]>(initialEntries);
+  const [fadingEntryIds, setFadingEntryIds] = useState<Set<string>>(new Set());
+
+  // Keep local entries in sync when initialEntries changes
+  useEffect(() => {
+    setEntries(initialEntries);
+  }, [initialEntries]);
 
   // Sync state with URL params when user hits Browser Back/Forward
   useEffect(() => {
@@ -217,7 +223,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Quick status progression mutation with interactive Undo toast
+  // Quick status progression mutation with optimistic update and interactive Undo toast
   const { mutate: setQuickStatus } = useMutation({
     mutationFn: async ({
       media,
@@ -229,10 +235,52 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     }) => {
       return logEntryApi({ media, status });
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ media, status }) => {
+      const targetLabel =
+        status === "want_to"
+          ? "Queue"
+          : status === "doing"
+            ? "In Progress"
+            : status === "done"
+              ? "Done"
+              : "Dropped";
+
+      // If activeTab is not "all" and the new status no longer matches activeTab, fade out the card
+      const matchesCurrentTab = activeTab === "all" || activeTab === status;
+      const matched = entries.find((e) => e.media.externalId === media.externalId);
+
+      if (matched && !matchesCurrentTab) {
+        setFadingEntryIds((prev) => new Set(prev).add(matched.id));
+        setTimeout(() => {
+          setEntries((prev) =>
+            prev.map((e) =>
+              e.media.externalId === media.externalId
+                ? { ...e, status, updatedAt: new Date().toISOString() }
+                : e,
+            ),
+          );
+          setFadingEntryIds((prev) => {
+            const next = new Set(prev);
+            next.delete(matched.id);
+            return next;
+          });
+        }, 300);
+      } else {
+        setEntries((prev) =>
+          prev.map((e) =>
+            e.media.externalId === media.externalId
+              ? { ...e, status, updatedAt: new Date().toISOString() }
+              : e,
+          ),
+        );
+      }
+
+      return { targetLabel };
+    },
+    onSuccess: (_, variables, context) => {
       router.refresh();
-      toast.success(getStatusVerb(variables.status), {
-        description: variables.media.title,
+      toast(`Moved to ${context?.targetLabel || "status"}.`, {
+        duration: 5000,
         action: variables.previousStatus
           ? {
               label: "Undo",
@@ -253,9 +301,47 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     },
   });
 
+  // Remove from library mutation with optimistic update and Undo toast
+  const { mutate: removeEntry } = useMutation({
+    mutationFn: async (entry: Entry) => {
+      return deleteEntryApi(entry.id);
+    },
+    onMutate: async (entry) => {
+      setFadingEntryIds((prev) => new Set(prev).add(entry.id));
+      setTimeout(() => {
+        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        setFadingEntryIds((prev) => {
+          const next = new Set(prev);
+          next.delete(entry.id);
+          return next;
+        });
+      }, 300);
+    },
+    onSuccess: (_, entry) => {
+      router.refresh();
+      toast("Removed from library.", {
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            setQuickStatus({
+              media: entry.media,
+              status: entry.status,
+            });
+          },
+        },
+      });
+    },
+    onError: (err: Error) => {
+      if (err.message !== "Unauthorized") {
+        toast.error("Failed to remove from library");
+      }
+    },
+  });
+
   // Calculate live tab counts based on currently selected medium filter
   const tabCounts = useMemo(() => {
-    const mediumFiltered = initialEntries.filter((e) => {
+    const mediumFiltered = entries.filter((e) => {
       if (mediumFilter === "all") return true;
       return e.media.mediaType === mediumFilter;
     });
@@ -266,11 +352,11 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       doing: mediumFiltered.filter((e) => e.status === "doing").length,
       done: mediumFiltered.filter((e) => e.status === "done").length,
     };
-  }, [initialEntries, mediumFilter]);
+  }, [entries, mediumFilter]);
 
   // Calculate live medium counts based on currently selected tab
   const mediumCounts = useMemo(() => {
-    const tabFiltered = initialEntries.filter((e) => {
+    const tabFiltered = entries.filter((e) => {
       if (activeTab === "all") return true;
       return e.status === activeTab;
     });
@@ -281,11 +367,11 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       tv: tabFiltered.filter((e) => e.media.mediaType === "tv").length,
       game: tabFiltered.filter((e) => e.media.mediaType === "game").length,
     };
-  }, [initialEntries, activeTab]);
+  }, [entries, activeTab]);
 
   // Filter and sort entries across whole library
   const filteredEntries = useMemo(() => {
-    let result = initialEntries.filter((e) => {
+    let result = entries.filter((e) => {
       if (activeTab !== "all" && e.status !== activeTab) return false;
       if (mediumFilter !== "all" && e.media.mediaType !== mediumFilter) return false;
 
@@ -314,7 +400,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     });
 
     return result;
-  }, [initialEntries, activeTab, mediumFilter, searchQuery, sortBy]);
+  }, [entries, activeTab, mediumFilter, searchQuery, sortBy]);
 
   // Calculate total pages for current filtered set
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
@@ -368,7 +454,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
   return (
     <div className="space-y-6">
       {/* Sticky Top Toolbar with Dark Glass Backdrop */}
-      <div className="sticky top-20 z-20 bg-[#0B0C0F]/90 backdrop-blur-md pb-4 pt-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 space-y-4 border-b border-white/4">
+      <div className="sticky top-20 z-20 bg-[#0B0C0F]/95 backdrop-blur-md pb-3 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 space-y-3 border-b border-white/6">
         {/* Row 2: Status Underline Tabs (Radix UI Tabs) */}
         <Tabs
           value={activeTab}
@@ -390,9 +476,9 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
         </Tabs>
 
         {/* Row 3: Filter & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Left Side: Medium Select & Clear Filters Link */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Select
               value={mediumFilter}
               onValueChange={(val) => handleMediumChange(val as MediumFilter)}
@@ -421,7 +507,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
           </div>
 
           {/* Right Side: Search Input + Sort Select */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-56">
               <Search className="absolute left-3 top-2.5 size-4 text-[#A1A5AD] pointer-events-none z-10" />
               <Input
@@ -464,7 +550,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       <div ref={gridContainerRef} className="scroll-mt-48" />
 
       {/* Row 4: Empty States OR 48-Item Paginated Grid (with min-height to prevent vertical collapse) */}
-      <div className="min-h-[60vh]">
+      <div className="min-h-[50vh]">
         {filteredEntries.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-center">
             {/* Situation A: Brand new library (Zero items overall) */}
@@ -587,25 +673,33 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
         ) : (
           /* The Responsive Poster Grid: 48 items per page (locked to 2, 3, 4, 6, 8 columns) */
           <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-8 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4 pt-1">
               {paginatedEntries.map((entry) => (
-                <MediaCard
+                <div
                   key={entry.id}
-                  title={entry.media.title}
-                  mediaType={entry.media.mediaType}
-                  posterUrl={entry.media.posterUrl}
-                  releaseYear={entry.media.releaseYear}
-                  currentStatus={entry.status}
-                  showStatusDot={activeTab === "all"}
-                  onQuickStatus={(status) =>
-                    setQuickStatus({
-                      media: entry.media,
-                      status,
-                      previousStatus: entry.status,
-                    })
-                  }
-                  onClick={() => router.push(getMediaHref(entry.media))}
-                />
+                  className={cn(
+                    "transition-opacity duration-300",
+                    fadingEntryIds.has(entry.id) && "opacity-0 pointer-events-none",
+                  )}
+                >
+                  <MediaCard
+                    title={entry.media.title}
+                    mediaType={entry.media.mediaType}
+                    posterUrl={entry.media.posterUrl}
+                    releaseYear={entry.media.releaseYear}
+                    currentStatus={entry.status}
+                    activeTab={activeTab}
+                    href={getMediaHref(entry.media)}
+                    onQuickStatus={(status) =>
+                      setQuickStatus({
+                        media: entry.media,
+                        status,
+                        previousStatus: entry.status,
+                      })
+                    }
+                    onRemove={() => removeEntry(entry)}
+                  />
+                </div>
               ))}
             </div>
 

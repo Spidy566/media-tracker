@@ -453,9 +453,10 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
                   currentStatus={currentStatus}
                   isAnchored={isAnchored}
                   onAnchor={() => handleAnchor(item)}
+                  href={getMediaHref(item)}
                   allowedStatuses={["want_to", "doing", "done"]}
                   onQuickStatus={(status) => handleStatusChange(item, status)}
-                  onClick={() => router.push(getMediaHref(item))}
+                  onRemove={currentStatus ? () => removeMutation.mutate(item) : undefined}
                 />
               );
             })}

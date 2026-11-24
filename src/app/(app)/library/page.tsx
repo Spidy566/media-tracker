@@ -49,8 +49,8 @@ export default async function LibraryPage() {
   }));
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
-      <div>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full space-y-4 sm:space-y-6">
+      <div className="flex items-baseline justify-between">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#ECEDEF]">
           Library
         </h1>

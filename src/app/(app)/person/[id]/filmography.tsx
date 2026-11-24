@@ -229,21 +229,8 @@ export function Filmography({
       posterUrl={posterUrl(credit.posterPath)}
       releaseYear={credit.year}
       subtitle={credit.subtitle}
-      badge={
-        mergedStatuses[credit.externalId] ? (
-          <span
-            className={`size-2.5 rounded-full ring-2 ring-background inline-block ${
-              mergedStatuses[credit.externalId] === "done"
-                ? "bg-status-done"
-                : mergedStatuses[credit.externalId] === "doing"
-                  ? "bg-status-doing"
-                  : "bg-status-queue"
-            }`}
-          />
-        ) : null
-      }
       currentStatus={mergedStatuses[credit.externalId] || null}
-      onClick={() => router.push(getMediaHref(credit))}
+      href={getMediaHref(credit)}
       onQuickStatus={(status) => setQuickStatus({ credit, status })}
     />
   );

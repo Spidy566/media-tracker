@@ -81,9 +81,9 @@ export function QueueSection({ queueItems, onQuickStatus, onOpenRoulette }: Queu
               posterUrl={entry.media.posterUrl}
               releaseYear={entry.media.releaseYear}
               currentStatus={entry.status}
+              href={getMediaHref(entry.media)}
               allowedStatuses={["doing", "done"]}
               onQuickStatus={(status) => onQuickStatus(entry.media, status)}
-              onClick={() => router.push(getMediaHref(entry.media))}
             />
           </div>
         ))}

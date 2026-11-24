@@ -71,9 +71,8 @@ export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProp
             mediaType={item.mediaType}
             posterUrl={item.posterUrl}
             releaseYear={item.releaseYear}
-            rating={item.rating}
             currentStatus={localStatuses[item.externalId] || null}
-            onClick={() => router.push(`/media/${item.mediaType}/${item.id}`)}
+            href={`/media/${item.mediaType}/${item.id}`}
             onQuickStatus={(status) => setQuickStatus({ item, status })}
           />
         </div>

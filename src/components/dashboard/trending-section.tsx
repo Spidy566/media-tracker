@@ -102,9 +102,9 @@ export function TrendingSection({
               mediaType={item.mediaType}
               posterUrl={item.posterUrl}
               releaseYear={item.releaseYear}
+              href={getMediaHref(item)}
               allowedStatuses={["want_to", "doing", "done"]}
               onQuickStatus={(status) => onQuickStatus(item, status)}
-              onClick={() => router.push(getMediaHref(item))}
             />
           </div>
         ))}
