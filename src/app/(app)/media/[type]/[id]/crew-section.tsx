@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { usePosters } from "@/components/providers/poster-provider";
 import type { CrewMember } from "@/types/media-details";
 
@@ -14,6 +15,34 @@ interface CrewSectionProps {
   mediaType: "movie" | "tv";
 }
 
+function CrewAvatar({ profileUrl, name }: { profileUrl: string | null; name: string }) {
+  const [imageError, setImageError] = useState(false);
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("");
+
+  return (
+    <div className="relative size-9 rounded-full overflow-hidden bg-muted border border-border shrink-0 group-hover/crew:border-foreground/40 transition">
+      {profileUrl && !imageError ? (
+        <Image
+          src={profileUrl}
+          alt={name}
+          fill
+          sizes="36px"
+          className="object-cover"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-card text-muted-foreground font-semibold text-[10px] select-none">
+          {initials}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CrewGroup({ label, members }: { label: string; members: CrewMember[] }) {
   const { hidePosters } = usePosters();
 
@@ -21,16 +50,11 @@ function CrewGroup({ label, members }: { label: string; members: CrewMember[] })
 
   return (
     <div className="space-y-2">
-      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
         {label}
       </span>
       <div className="flex flex-wrap gap-3">
         {members.map((member) => {
-          const initials = member.name
-            .split(" ")
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join("");
           const profileUrl = member.profilePath
             ? `https://image.tmdb.org/t/p/w185${member.profilePath}`
             : null;
@@ -39,25 +63,11 @@ function CrewGroup({ label, members }: { label: string; members: CrewMember[] })
             <Link
               key={`${member.id}-${member.job}`}
               href={`/person/${member.id}`}
-              className="flex items-center gap-2.5 group/crew"
+              className="flex items-center gap-2.5 group/crew select-none"
             >
-              <div className="relative size-9 rounded-full overflow-hidden bg-muted border border-border shrink-0 group-hover/crew:border-foreground/30 transition">
-                {!hidePosters && profileUrl ? (
-                  <Image
-                    src={profileUrl}
-                    alt={member.name}
-                    fill
-                    sizes="36px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-card text-muted-foreground font-medium text-[10px]">
-                    {initials}
-                  </div>
-                )}
-              </div>
+              {!hidePosters && <CrewAvatar profileUrl={profileUrl} name={member.name} />}
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-medium text-foreground group-hover/crew:opacity-80 transition truncate">
+                <span className="text-xs font-medium text-foreground group-hover/crew:text-brand transition truncate">
                   {member.name}
                 </span>
                 <span className="text-[11px] text-muted-foreground leading-tight">
@@ -83,10 +93,10 @@ export function CrewSection({
   const musicMembers =
     composers && composers.length > 0 ? composers.slice(0, 3) : composer ? [composer] : [];
 
-  const hasDirectors = directors && directors.length > 0;
-  const hasWriters = writers && writers.length > 0;
+  const hasDirectors = Boolean(directors && directors.length > 0);
+  const hasWriters = Boolean(writers && writers.length > 0);
   const hasMusic = musicMembers.length > 0;
-  const hasCreators = creators && creators.length > 0;
+  const hasCreators = Boolean(creators && creators.length > 0);
 
   const hasAnyCrew = hasCreators || hasDirectors || hasWriters || hasMusic;
 
@@ -94,7 +104,9 @@ export function CrewSection({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold text-foreground">Crew</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Crew
+      </h3>
       <div className="space-y-4">
         {mediaType === "tv" && creators && creators.length > 0 && (
           <CrewGroup label="Created by" members={creators} />

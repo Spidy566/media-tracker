@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Geist_Mono, Host_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import { PosterProvider } from "@/components/providers/poster-provider";
@@ -25,9 +25,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: "#0B0C0F",
+};
+
 export const metadata: Metadata = {
   title: "Tracklist",
   description: "Minimal media tracker for movies, shows, and games.",
+  other: {
+    "darkreader-lock": "true",
+  },
 };
 
 export default async function RootLayout({
@@ -47,7 +55,13 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${barlowCondensed.variable} ${hostGrotesk.variable} ${geistMono.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <head>
+        <meta name="darkreader-lock" content="true" />
+      </head>
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-background text-foreground"
+      >
         <QueryProvider>
           <PosterProvider initialHidden={hidePosters}>
             <TooltipProvider>

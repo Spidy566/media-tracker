@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import Image from "next/image";
 import { Dialog } from "radix-ui";
 import { useState } from "react";
@@ -29,13 +29,15 @@ export function GameDetailsSection({
   const [activeScreenshot, setActiveScreenshot] = useState<GameScreenshot | null>(null);
 
   const hasTtb =
-    timeToBeat &&
-    (timeToBeat.hastily !== null || timeToBeat.normally !== null || timeToBeat.completely !== null);
+    Boolean(timeToBeat) &&
+    (timeToBeat?.hastily !== null ||
+      timeToBeat?.normally !== null ||
+      timeToBeat?.completely !== null);
 
-  const hasPlatforms = platforms && platforms.length > 0;
-  const hasModes = gameModes && gameModes.length > 0;
-  const hasCompanies = developer || publisher;
-  const hasScreenshots = screenshots && screenshots.length > 0;
+  const hasPlatforms = Boolean(platforms && platforms.length > 0);
+  const hasModes = Boolean(gameModes && gameModes.length > 0);
+  const hasCompanies = Boolean(developer || publisher);
+  const hasScreenshots = Boolean(screenshots && screenshots.length > 0);
 
   if (!hasTtb && !hasPlatforms && !hasModes && !hasCompanies && !hasScreenshots) {
     return null;
@@ -43,50 +45,87 @@ export function GameDetailsSection({
 
   return (
     <div className="space-y-6">
-      {/* 1. How Long to Beat */}
-      {hasTtb && (
-        <div className="space-y-2.5 bg-card border border-border rounded-2xl p-5 shadow-2xs">
-          <h3 className="text-xs font-semibold text-foreground">How long to beat</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {timeToBeat.hastily !== null && (
-              <div className="p-3 rounded-xl bg-background border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground block">Main story</span>
-                <span className="text-base font-semibold text-foreground font-mono">
+      {/* 1. How Long to Beat (Backloggd 3-Stat Row) */}
+      {hasTtb && timeToBeat && (
+        <div className="space-y-2.5 bg-card border border-border rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="size-3.5 text-status-queue" />
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+              How Long to Beat
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {timeToBeat.hastily !== null ? (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/80 space-y-0.5 text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block truncate">
+                  Main Story
+                </span>
+                <span className="text-sm sm:text-base font-bold text-foreground font-mono tabular-nums">
                   {timeToBeat.hastily}h
                 </span>
               </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/40 space-y-0.5 text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block truncate">
+                  Main Story
+                </span>
+                <span className="text-xs text-muted-foreground/60 font-mono">—</span>
+              </div>
             )}
-            {timeToBeat.normally !== null && (
-              <div className="p-3 rounded-xl bg-background border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground block">Main + extras</span>
-                <span className="text-base font-semibold text-foreground font-mono">
+
+            {timeToBeat.normally !== null ? (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/80 space-y-0.5 text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block truncate">
+                  Main + Extra
+                </span>
+                <span className="text-sm sm:text-base font-bold text-foreground font-mono tabular-nums">
                   {timeToBeat.normally}h
                 </span>
               </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/40 space-y-0.5 text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block truncate">
+                  Main + Extra
+                </span>
+                <span className="text-xs text-muted-foreground/60 font-mono">—</span>
+              </div>
             )}
-            {timeToBeat.completely !== null && (
-              <div className="p-3 rounded-xl bg-background border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground block">Completionist</span>
-                <span className="text-base font-semibold text-foreground font-mono">
+
+            {timeToBeat.completely !== null ? (
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/80 space-y-0.5 text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block truncate">
+                  Completionist
+                </span>
+                <span className="text-sm sm:text-base font-bold text-foreground font-mono tabular-nums">
                   {timeToBeat.completely}h
                 </span>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/40 space-y-0.5 text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground block truncate">
+                  Completionist
+                </span>
+                <span className="text-xs text-muted-foreground/60 font-mono">—</span>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* 2. Platforms & Modes */}
+      {/* 2. Platforms & Game Modes */}
       {(hasPlatforms || hasModes) && (
-        <div className="space-y-4 bg-card border border-border rounded-2xl p-5 shadow-2xs">
-          {hasPlatforms && (
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-foreground block">Platforms</span>
+        <div className="space-y-3 bg-card border border-border rounded-2xl p-4 shadow-sm">
+          {hasPlatforms && platforms && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                Platforms
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {platforms.map((p) => (
                   <span
                     key={p}
-                    className="px-2.5 py-1 rounded-full bg-background border border-border text-xs text-muted-foreground font-medium"
+                    className="px-2.5 py-1 rounded-full bg-muted/50 border border-border text-xs text-muted-foreground font-medium select-none"
                   >
                     {p}
                   </span>
@@ -95,14 +134,16 @@ export function GameDetailsSection({
             </div>
           )}
 
-          {hasModes && (
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-foreground block">Game modes</span>
+          {hasModes && gameModes && (
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                Game Modes
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {gameModes.map((m) => (
                   <span
                     key={m}
-                    className="px-2.5 py-1 rounded-full bg-background border border-border text-xs text-muted-foreground font-medium"
+                    className="px-2.5 py-1 rounded-full bg-muted/50 border border-border text-xs text-muted-foreground font-medium select-none"
                   >
                     {m}
                   </span>
@@ -115,8 +156,10 @@ export function GameDetailsSection({
 
       {/* 3. Developer & Publisher */}
       {hasCompanies && (
-        <div className="space-y-2 bg-card border border-border rounded-2xl p-5 shadow-2xs">
-          <h3 className="text-xs font-semibold text-foreground">Credits</h3>
+        <div className="space-y-2 bg-card border border-border rounded-2xl p-4 shadow-sm">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Credits
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {developer && (
               <div>
@@ -135,11 +178,13 @@ export function GameDetailsSection({
       )}
 
       {/* 4. Screenshot Gallery & Lightbox */}
-      {hasScreenshots && (
+      {hasScreenshots && screenshots && (
         <div>
           {hidePosters ? (
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-foreground">Screenshots</h3>
+            <div className="space-y-2.5">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Screenshots
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {screenshots.map((s, idx) => (
                   <span
@@ -153,7 +198,11 @@ export function GameDetailsSection({
             </div>
           ) : (
             <ScrollRow
-              title={<h3 className="text-xs font-semibold text-foreground">Screenshots</h3>}
+              title={
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Screenshots
+                </h3>
+              }
               contentClassName="gap-3"
             >
               {screenshots.map((s, idx) => (
@@ -181,7 +230,7 @@ export function GameDetailsSection({
             onOpenChange={(open) => !open && setActiveScreenshot(null)}
           >
             <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200" />
+              <Dialog.Overlay className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200" />
               <Dialog.Content
                 onOpenAutoFocus={(e) => e.preventDefault()}
                 className="fixed inset-4 sm:inset-10 z-50 flex items-center justify-center p-0 outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200"

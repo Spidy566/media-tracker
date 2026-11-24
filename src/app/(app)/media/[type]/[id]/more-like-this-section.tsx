@@ -8,6 +8,7 @@ import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { ScrollRow } from "@/components/scroll-row";
 import { logEntryApi } from "@/lib/api-entries";
 import { getStatusVerb } from "@/lib/media-formatters";
+import { getMediaHref } from "@/lib/utils";
 import type { RecommendationItem } from "@/types/media-details";
 
 interface MoreLikeThisSectionProps {
@@ -59,20 +60,27 @@ export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProp
 
   return (
     <ScrollRow
-      title={<h3 className="text-xs font-semibold text-foreground">More like this</h3>}
-      action={
-        <span className="text-xs text-muted-foreground">{recommendations.length} recommended</span>
+      title={
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          More like this
+        </h3>
       }
+      action={
+        <span className="text-[11px] text-muted-foreground font-mono">
+          {recommendations.length} titles
+        </span>
+      }
+      contentClassName="gap-3"
     >
       {recommendations.map((item) => (
-        <div key={item.externalId} className="w-36 sm:w-44 shrink-0 snap-start">
+        <div key={item.externalId} className="w-32 sm:w-36 shrink-0 snap-start">
           <MediaCard
             title={item.title}
             mediaType={item.mediaType}
             posterUrl={item.posterUrl}
             releaseYear={item.releaseYear}
             currentStatus={localStatuses[item.externalId] || null}
-            href={`/media/${item.mediaType}/${item.id}`}
+            href={getMediaHref(item)}
             onQuickStatus={(status) => setQuickStatus({ item, status })}
           />
         </div>

@@ -2,7 +2,6 @@
 
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { Film, Gamepad2, Layers, Tv } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
@@ -28,7 +27,6 @@ interface ExploreClientProps {
 }
 
 export function ExploreClient({ initialTitles, initialTrackedMap = {} }: ExploreClientProps) {
-  const router = useRouter();
   const [mediaType, setMediaType] = useState<MediaTypeFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);

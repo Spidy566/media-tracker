@@ -1,3 +1,4 @@
+import { Star } from "lucide-react";
 import type { MediaDetails } from "@/types/media-details";
 
 interface MediaFactsStripProps {
@@ -51,7 +52,7 @@ export function MediaFactsStrip({ details }: MediaFactsStripProps) {
   }
 
   // 3. Status
-  if (details.status) {
+  if (details.status && details.status.toLowerCase() !== "released") {
     facts.push({
       id: "status",
       label: details.status,
@@ -73,17 +74,17 @@ export function MediaFactsStrip({ details }: MediaFactsStripProps) {
   if (facts.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+    <div className="flex flex-wrap items-center gap-2 text-xs">
       {facts.map((fact) => {
         if (fact.isScore) {
           return (
             <span
               key={fact.id}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground font-medium shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border text-foreground font-medium shadow-2xs select-none"
             >
-              <span className="text-rating">★</span>
-              <span className="font-mono font-semibold">{fact.scoreNum}</span>
-              <span className="text-muted-foreground">{fact.source}</span>
+              <Star className="size-3 text-rating fill-rating" />
+              <span className="font-mono font-semibold tabular-nums">{fact.scoreNum}</span>
+              <span className="text-muted-foreground text-[11px] font-normal">{fact.source}</span>
             </span>
           );
         }
@@ -91,9 +92,13 @@ export function MediaFactsStrip({ details }: MediaFactsStripProps) {
         return (
           <span
             key={fact.id}
-            className="inline-flex items-center px-2.5 py-1 rounded-full bg-card border border-border text-muted-foreground font-medium shadow-2xs"
+            className="inline-flex items-center px-3 py-1 rounded-full bg-card border border-border text-muted-foreground font-medium shadow-2xs select-none"
           >
-            {fact.label}
+            {fact.id === "runtime" || fact.id === "seasons" ? (
+              <span className="font-mono tabular-nums">{fact.label}</span>
+            ) : (
+              fact.label
+            )}
           </span>
         );
       })}

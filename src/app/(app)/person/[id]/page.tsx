@@ -2,7 +2,6 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackButton } from "@/app/(app)/media/[type]/[id]/back-button";
 import { MediaCard } from "@/components/media-card";

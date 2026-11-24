@@ -51,10 +51,6 @@ export function FriendProfileClient({ entries }: FriendProfileClientProps) {
     return true;
   });
 
-  const navigateToMedia = (media: Entry["media"]) => {
-    router.push(getMediaHref(media));
-  };
-
   return (
     <div className="space-y-6">
       {/* Filter Tabs */}

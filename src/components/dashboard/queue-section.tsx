@@ -2,7 +2,6 @@
 
 import { Bookmark, Dices } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { ScrollRow } from "@/components/scroll-row";
 import { getMediaHref } from "@/lib/utils";
@@ -15,8 +14,6 @@ interface QueueSectionProps {
 }
 
 export function QueueSection({ queueItems, onQuickStatus, onOpenRoulette }: QueueSectionProps) {
-  const router = useRouter();
-
   if (queueItems.length === 0) {
     return (
       <section aria-label="Up Next in Queue">

@@ -2,7 +2,6 @@
 
 import { Compass, Film, Gamepad2, Tv } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
@@ -22,7 +21,6 @@ export function TrendingSection({
   trendingGames,
   onQuickStatus,
 }: TrendingSectionProps) {
-  const router = useRouter();
   const [activeTrendingTab, setActiveTrendingTab] = useState<"movies" | "tv" | "games">("movies");
 
   const currentTrendingItems =

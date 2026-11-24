@@ -2,12 +2,41 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { usePosters } from "@/components/providers/poster-provider";
 import { ScrollRow } from "@/components/scroll-row";
 import type { CastMember } from "@/types/media-details";
 
 interface CastSectionProps {
   cast: CastMember[] | undefined | null;
+}
+
+function CastAvatar({ profileUrl, name }: { profileUrl: string | null; name: string }) {
+  const [imageError, setImageError] = useState(false);
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("");
+
+  return (
+    <div className="relative size-14 rounded-full overflow-hidden bg-muted border border-border shadow-2xs group-hover/cast:border-foreground/40 transition">
+      {profileUrl && !imageError ? (
+        <Image
+          src={profileUrl}
+          alt={name}
+          fill
+          sizes="56px"
+          className="object-cover"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-card text-muted-foreground font-semibold text-xs select-none">
+          {initials}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function CastSection({ cast }: CastSectionProps) {
@@ -17,8 +46,10 @@ export function CastSection({ cast }: CastSectionProps) {
 
   if (hidePosters) {
     return (
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-foreground">Cast</h3>
+      <div className="space-y-2.5">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Cast
+        </h3>
         <div className="flex flex-wrap gap-2">
           {cast.map((member) => (
             <Link
@@ -38,48 +69,33 @@ export function CastSection({ cast }: CastSectionProps) {
   }
 
   return (
-    <ScrollRow title={<h3 className="text-xs font-semibold text-foreground">Cast</h3>}>
-      {cast.map((member) => {
-        const initials = member.name
-          .split(" ")
-          .map((n) => n[0])
-          .slice(0, 2)
-          .join("");
+    <ScrollRow
+      title={
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Cast
+        </h3>
+      }
+      contentClassName="gap-3"
+    >
+      {cast.map((member) => (
+        <Link
+          key={member.id}
+          href={`/person/${member.id}`}
+          className="flex flex-col items-center w-20 shrink-0 text-center select-none group/cast snap-start"
+        >
+          <CastAvatar profileUrl={member.profileUrl} name={member.name} />
 
-        return (
-          <Link
-            key={member.id}
-            href={`/person/${member.id}`}
-            className="flex flex-col items-center w-20 shrink-0 text-center select-none group/cast"
-          >
-            <div className="relative size-14 rounded-full overflow-hidden bg-muted border border-border shadow-2xs group-hover/cast:border-foreground/30 transition">
-              {member.profileUrl ? (
-                <Image
-                  src={member.profileUrl}
-                  alt={member.name}
-                  fill
-                  sizes="56px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-card text-muted-foreground font-medium text-xs">
-                  {initials}
-                </div>
-              )}
-            </div>
+          <span className="text-xs font-medium text-foreground line-clamp-1 mt-1.5 w-full group-hover/cast:text-brand transition">
+            {member.name}
+          </span>
 
-            <span className="text-xs font-medium text-foreground line-clamp-1 mt-1.5 w-full group-hover/cast:opacity-80 transition">
-              {member.name}
+          {member.character && (
+            <span className="text-[11px] text-muted-foreground line-clamp-1 w-full leading-tight">
+              {member.character}
             </span>
-
-            {member.character && (
-              <span className="text-[11px] text-muted-foreground line-clamp-1 w-full leading-tight">
-                {member.character}
-              </span>
-            )}
-          </Link>
-        );
-      })}
+          )}
+        </Link>
+      ))}
     </ScrollRow>
   );
 }
