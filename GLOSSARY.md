@@ -24,9 +24,9 @@ Database enum values in `user_media_entries.status` and their exact UI labels, s
 
 | DB Enum Value | UI Label | Action Verb (Toasts/Feed) | CSS Token (`globals.css`) | Icon (`lucide-react`) |
 | :--- | :--- | :--- | :--- | :--- |
-| `want_to` | **Queue** | Added to Queue | `status-queue` (`#7DA7FF`) | `Bookmark` |
-| `doing` | **In Progress** | Marked as In Progress | `status-doing` (`#FF8A3D`) | `Play` |
-| `done` | **Done** | Logged as Completed | `status-done` (`#5ED6A0`) | `Check` |
+| `want_to` | **Queue** | Added to Queue | `status-queue` (`#A1A5AD`) | `Bookmark` |
+| `doing` | **In Progress** | Marked as In Progress | `status-doing` (`#E3A94B`) | `Play` |
+| `done` | **Done** | Logged as Completed | `status-done` (`#4FB286`) | `Check` |
 | `dropped` | **Dropped** | Marked as Dropped | `status-dropped` (`#6B6B76`) | `Ban` |
 
 * **Rating Scale:** Integer `1` to `5` stars (`user_media_entries.rating`). Uses token `text-rating` (`#FFC94D`) and `Star` icon.

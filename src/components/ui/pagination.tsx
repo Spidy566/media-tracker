@@ -42,20 +42,17 @@ function PaginationLink({
   href,
   ...props
 }: PaginationLinkProps) {
+  const linkClasses = cn(
+    "size-9 rounded-lg text-sm transition-colors",
+    isActive
+      ? "border-brand bg-card text-foreground font-medium"
+      : "border-transparent text-muted-foreground hover:bg-card hover:text-foreground",
+    className,
+  );
+
   if (href) {
     return (
-      <Button
-        asChild
-        variant={isActive ? "outline" : "ghost"}
-        size={size}
-        className={cn(
-          "size-9 rounded-lg text-sm transition-colors",
-          isActive
-            ? "border-[#7B7FEB] bg-[#16181D] text-[#ECEDEF] font-medium"
-            : "border-transparent text-[#A1A5AD] hover:bg-[#16181D] hover:text-[#ECEDEF]",
-          className,
-        )}
-      >
+      <Button asChild variant={isActive ? "outline" : "ghost"} size={size} className={linkClasses}>
         <a
           href={href}
           aria-current={isActive ? "page" : undefined}
@@ -75,13 +72,7 @@ function PaginationLink({
       aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
       data-active={isActive}
-      className={cn(
-        "size-9 rounded-lg text-sm transition-colors cursor-pointer",
-        isActive
-          ? "border-[#7B7FEB] bg-[#16181D] text-[#ECEDEF] font-medium"
-          : "border-transparent text-[#A1A5AD] hover:bg-[#16181D] hover:text-[#ECEDEF]",
-        className,
-      )}
+      className={cn("cursor-pointer", linkClasses)}
       {...props}
     />
   );
@@ -97,7 +88,7 @@ function PaginationPrevious({
       aria-label="Previous page"
       size="default"
       className={cn(
-        "size-9 p-0 sm:w-auto sm:px-3 text-[#A1A5AD] hover:bg-[#16181D] hover:text-[#ECEDEF] disabled:opacity-40 disabled:cursor-not-allowed border border-white/8",
+        "size-9 p-0 sm:w-auto sm:px-3 text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed border border-border",
         className,
       )}
       {...props}
@@ -118,7 +109,7 @@ function PaginationNext({
       aria-label="Next page"
       size="default"
       className={cn(
-        "size-9 p-0 sm:w-auto sm:px-3 text-[#A1A5AD] hover:bg-[#16181D] hover:text-[#ECEDEF] disabled:opacity-40 disabled:cursor-not-allowed border border-white/8",
+        "size-9 p-0 sm:w-auto sm:px-3 text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed border border-border",
         className,
       )}
       {...props}
@@ -134,7 +125,7 @@ function PaginationEllipsis({ className, ...props }: React.ComponentProps<"span"
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn("flex size-9 items-center justify-center text-[#A1A5AD]", className)}
+      className={cn("flex size-9 items-center justify-center text-muted-foreground", className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />

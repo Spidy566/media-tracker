@@ -85,7 +85,7 @@
   --brand-text: #7B7FEB;
 
   --status-queue: #A1A5AD;
-  --status-doing: #7B7FEB;
+  --status-doing: #E3A94B;
   --status-done: #4FB286;
   --status-dropped: #6B6B76;
   --rating: #FFC94D;
@@ -144,13 +144,13 @@
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.14);
   background-clip: padding-box;
-  border: 2px solid #0B0C0F;
+  border: 2px solid var(--background);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
   background-clip: padding-box;
-  border: 2px solid #0B0C0F;
+  border: 2px solid var(--background);
 }
 
 @utility no-scrollbar {

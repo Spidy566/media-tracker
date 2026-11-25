@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <>
-      <Suspense fallback={<div className="h-20 bg-[#1a1a1a]" />}>
+      <Suspense fallback={<div className="h-20 bg-background border-b border-border" />}>
         <NavBar user={user} isAdmin={userIsAdmin} />
       </Suspense>
       <div className="pt-20 pb-20 md:pb-0 min-h-screen flex flex-col">{children}</div>

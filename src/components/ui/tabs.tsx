@@ -36,7 +36,7 @@ const tabsListVariants = cva(
       variant: {
         default:
           "w-fit rounded-lg bg-muted p-[3px] group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
-        line: "relative flex gap-2 border-b border-white/8 w-full justify-start rounded-none bg-transparent p-0 pb-1.5 overflow-x-auto scrollbar-none",
+        line: "relative flex gap-2 border-b border-border w-full justify-start rounded-none bg-transparent p-0 pb-1.5 overflow-x-auto scrollbar-none",
       },
     },
     defaultVariants: {
@@ -134,7 +134,7 @@ function TabsList({
         <span
           data-slot="tabs-indicator"
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-[#7B7FEB] motion-reduce:transition-none"
+          className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-brand motion-reduce:transition-none"
           style={{
             width: `${indicator.width}px`,
             transform: `translateX(${indicator.left}px)`,
@@ -154,15 +154,11 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "group/trigger relative inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-[#A1A5AD] outline-none cursor-pointer select-none transition-colors duration-150 rounded-md",
-        // Hover on non-active tabs: text #ECEDEF and rounded-md bg-white/6 pill fades in behind label (150ms)
-        "data-[state=inactive]:hover:bg-white/6 data-[state=inactive]:hover:text-[#ECEDEF]",
-        // Active tab: text #ECEDEF, no pill
-        "data-[state=active]:bg-transparent data-[state=active]:text-[#ECEDEF]",
-        // Count text brightens slightly when tab is hovered
-        "[&_.tab-count]:text-[#A1A5AD] [&_.tab-count]:transition-colors [&_.tab-count]:duration-150 hover:[&_.tab-count]:text-[#ECEDEF]/80",
-        // Keyboard focus-visible: ring-2 ring-[#7B7FEB]/40 with a small radius
-        "focus-visible:ring-2 focus-visible:ring-[#7B7FEB]/40 focus-visible:rounded-md",
+        "group/trigger relative inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground outline-none cursor-pointer select-none transition-colors duration-150 rounded-md",
+        "data-[state=inactive]:hover:bg-muted/60 data-[state=inactive]:hover:text-foreground",
+        "data-[state=active]:bg-transparent data-[state=active]:text-foreground",
+        "[&_.tab-count]:text-muted-foreground [&_.tab-count]:transition-colors [&_.tab-count]:duration-150 hover:[&_.tab-count]:text-foreground/80",
+        "focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:rounded-md",
         "disabled:pointer-events-none disabled:opacity-50",
         // Respect prefers-reduced-motion
         "motion-reduce:transition-none",

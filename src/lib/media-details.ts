@@ -3,6 +3,7 @@ import { mediaItems, userMediaEntries, users } from "@/db/schema";
 import { db } from "@/lib/db";
 import { igdbFetch } from "@/lib/igdb";
 import { getIgdbCoverUrl, selectIgdbBackdrop } from "@/lib/igdb-helpers";
+import { normalizeBackdropUrl, normalizePosterUrl } from "@/lib/image-url";
 import { selectTmdbBackdrop, selectTmdbTrailer, tmdbFetch } from "@/lib/tmdb";
 import type { Entry } from "@/types/entry";
 import type {
@@ -24,6 +25,36 @@ function formatSentenceCase(str: string | null | undefined): string | null {
   const trimmed = str.trim();
   if (!trimmed) return null;
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
+function syncMediaImages(
+  savedItem: { id: string; posterUrl: string | null; backdropUrl: string | null } | null,
+  posterUrl: string | null,
+  backdropUrl: string | null,
+) {
+  if (!savedItem) return;
+
+  const normalizedPoster = normalizePosterUrl(posterUrl);
+  const normalizedBackdrop = normalizeBackdropUrl(backdropUrl);
+  const updates: { posterUrl?: string | null; backdropUrl?: string | null } = {};
+
+  if (normalizedPoster && savedItem.posterUrl !== normalizedPoster) {
+    updates.posterUrl = normalizedPoster;
+  }
+  if (normalizedBackdrop && savedItem.backdropUrl !== normalizedBackdrop) {
+    updates.backdropUrl = normalizedBackdrop;
+  }
+
+  if (Object.keys(updates).length === 0) return;
+
+  try {
+    db.update(mediaItems)
+      .set(updates)
+      .where(eq(mediaItems.id, savedItem.id))
+      .catch((err) => console.warn("Failed to persist media images:", err));
+  } catch (err) {
+    console.warn("Failed to trigger media image update:", err);
+  }
 }
 
 const ESRB_RATINGS: Record<number, string> = {
@@ -191,17 +222,8 @@ export async function getMediaDetails(
 
     const trailerUrl = selectTmdbTrailer(tmdbData.videos?.results);
 
-    // Sync backdrop to DB if needed
-    if (savedItem && backdropUrl && savedItem.backdropUrl !== backdropUrl) {
-      try {
-        db.update(mediaItems)
-          .set({ backdropUrl })
-          .where(eq(mediaItems.id, savedItem.id))
-          .catch((err) => console.warn("Failed to persist backdropUrl:", err));
-      } catch (err) {
-        console.warn("Failed to trigger backdrop update:", err);
-      }
-    }
+    // Sync poster/backdrop to DB if stale or missing
+    syncMediaImages(savedItem, posterUrl, backdropUrl);
 
     // Age rating
     let ageRating: string | null = null;
@@ -591,17 +613,8 @@ export async function getMediaDetails(
   const screenshotsRaw = game.screenshots;
   const backdropUrl = await selectIgdbBackdrop(artworks, screenshotsRaw);
 
-  // Sync backdrop to DB if needed
-  if (savedItem && backdropUrl && savedItem.backdropUrl !== backdropUrl) {
-    try {
-      db.update(mediaItems)
-        .set({ backdropUrl })
-        .where(eq(mediaItems.id, savedItem.id))
-        .catch((err) => console.warn("Failed to persist backdropUrl:", err));
-    } catch (err) {
-      console.warn("Failed to trigger backdrop update:", err);
-    }
-  }
+  // Sync poster/backdrop to DB if stale or missing
+  syncMediaImages(savedItem, posterUrl, backdropUrl);
 
   const summary = game.summary || game.storyline || null;
   const genres: string[] = game.genres?.map((g: { name: string }) => g.name) || [];

@@ -65,7 +65,7 @@ export function JumpBackInSection({
           </Link>
         }
       >
-        {activeItems.map((entry) => (
+        {activeItems.map((entry, idx) => (
           <div
             key={entry.id}
             className="w-72 sm:w-88 aspect-16/10 rounded-2xl overflow-hidden bg-card border border-border group relative shrink-0 snap-start select-none shadow-xs hover:shadow-md transition-all duration-200"
@@ -83,6 +83,8 @@ export function JumpBackInSection({
               title={entry.media.title}
               mediaType={entry.media.mediaType}
               releaseYear={entry.media.releaseYear}
+              sizes="(max-width: 640px) 288px, 352px"
+              loading={idx < 2 ? "eager" : undefined}
               className="object-cover transition duration-500 group-hover:scale-105 pointer-events-none"
             />
 

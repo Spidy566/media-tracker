@@ -78,6 +78,7 @@ export default async function MediaDetailPage({
                 src={details.posterUrl}
                 title={details.title}
                 mediaType={type}
+                sizes="288px"
                 priority
                 className="object-cover"
               />
@@ -90,6 +91,7 @@ export default async function MediaDetailPage({
                   src={details.posterUrl}
                   title={details.title}
                   mediaType={type}
+                  sizes="(max-width: 640px) 112px, 144px"
                   priority
                   className="object-cover"
                 />
@@ -156,7 +158,7 @@ export default async function MediaDetailPage({
                   )}
                 </div>
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide block">
-                  {details.squadRatingAverage !== null ? "Squad ★" : "Squad logs"}
+                  {details.squadRatingAverage !== null ? "Friends ★" : "Friends' logs"}
                 </span>
               </div>
 

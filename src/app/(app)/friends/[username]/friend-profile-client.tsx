@@ -154,6 +154,3 @@ export function FriendProfileClient({ entries }: FriendProfileClientProps) {
     </div>
   );
 }
-
-// Backward-compatible alias for existing imports
-export const SquadClient = FriendProfileClient;

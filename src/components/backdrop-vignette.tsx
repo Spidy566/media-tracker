@@ -1,7 +1,5 @@
 import { cn } from "@/lib/utils";
 
-export const BANNER_HEIGHT = "h-[20rem] sm:h-[30rem] lg:h-[34rem]";
-
 export function BannerVignette({ className }: { className?: string }) {
   return (
     <div

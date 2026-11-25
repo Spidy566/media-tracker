@@ -22,19 +22,19 @@ When `design-taste-frontend` or `impeccable` skills are active:
 Tracklist is **100% Dark Mode Only** (OTT / Letterboxd / Linear dark aesthetic). Never add light-mode styles, theme switchers, or hardcoded hex colors in components when semantic tokens exist in `src/app/globals.css`.
 
 ### Surface & Border Tokens
-* **App Canvas:** `bg-background` (`#0B0B0E`)
-* **Primary Text:** `text-foreground` (`#F2F2F5`)
-* **Secondary / Muted Text:** `text-muted-foreground` (`#8B8B97`)
-* **Card / Panel Surface:** `bg-card` (`#121216`) with `border border-border` (`#26262E`)
-* **Elevated / Input / Hover Surface:** `bg-muted` or `bg-secondary` (`#1B1B21`)
+* **App Canvas:** `bg-background` (`#0B0C0F`)
+* **Primary Text:** `text-foreground` (`#ECEDEF`)
+* **Secondary / Muted Text:** `text-muted-foreground` (`#A1A5AD`)
+* **Card / Panel Surface:** `bg-card` (`#16181D`) with `border border-border` (`rgb(255 255 255 / 0.08)`)
+* **Elevated / Input / Hover Surface:** `bg-muted` or `bg-secondary` (`#20232A`)
 * **Glass / Floating Overlays (Navbar, Modals, Popovers):** `bg-popover/90 backdrop-blur-xl border border-border`
-* **Primary Brand Accent:** `bg-brand` / `text-brand` (`#C8F135` Acid Lime) with `text-brand-foreground` (`#0B0B0E`)
+* **Primary Brand Accent:** `bg-brand` / `text-brand` (`#7B7FEB`) with `text-brand-foreground` (`#FFFFFF`)
 * **Destructive:** `text-destructive` / `bg-destructive` (`#E5484D`)
 
 ### Semantic Status & Rating Tokens
-* **Queue (`want_to`):** `text-status-queue` / `bg-status-queue` (`#7DA7FF`)
-* **In Progress (`doing`):** `text-status-doing` / `bg-status-doing` (`#FF8A3D`)
-* **Done (`done`):** `text-status-done` / `bg-status-done` (`#5ED6A0`)
+* **Queue (`want_to`):** `text-status-queue` / `bg-status-queue` (`#A1A5AD`)
+* **In Progress (`doing`):** `text-status-doing` / `bg-status-doing` (`#E3A94B`)
+* **Done (`done`):** `text-status-done` / `bg-status-done` (`#4FB286`)
 * **Dropped (`dropped`):** `text-status-dropped` / `bg-status-dropped` (`#6B6B76`)
 * **Star Rating (`1–5`):** `text-rating` / `fill-rating` (`#FFC94D`)
 

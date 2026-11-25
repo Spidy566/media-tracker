@@ -454,7 +454,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
   return (
     <div className="space-y-6">
       {/* Sticky Top Toolbar with Dark Glass Backdrop */}
-      <div className="sticky top-20 z-20 bg-[#0B0C0F]/95 backdrop-blur-md pb-3 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 space-y-3 border-b border-white/6">
+      <div className="sticky top-20 z-20 bg-background/95 backdrop-blur-md pb-3 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 space-y-3 border-b border-border">
         {/* Row 2: Status Underline Tabs (Radix UI Tabs) */}
         <Tabs
           value={activeTab}
@@ -499,7 +499,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="text-xs text-[#A1A5AD] hover:text-[#ECEDEF] transition cursor-pointer underline underline-offset-4"
+                className="text-xs text-muted-foreground hover:text-foreground transition cursor-pointer underline underline-offset-4"
               >
                 Clear filters
               </button>
@@ -509,7 +509,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
           {/* Right Side: Search Input + Sort Select */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-56">
-              <Search className="absolute left-3 top-2.5 size-4 text-[#A1A5AD] pointer-events-none z-10" />
+              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground pointer-events-none z-10" />
               <Input
                 ref={searchInputRef}
                 type="text"
@@ -523,7 +523,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                   type="button"
                   onClick={() => handleSearchChange("")}
                   aria-label="Clear search"
-                  className="absolute right-2 top-2.5 p-0.5 rounded text-[#A1A5AD] hover:text-[#ECEDEF] transition cursor-pointer z-10"
+                  className="absolute right-2 top-2.5 p-0.5 rounded text-muted-foreground hover:text-foreground transition cursor-pointer z-10"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -556,17 +556,17 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
             {/* Situation A: Brand new library (Zero items overall) */}
             {initialEntries.length === 0 && (
               <div className="flex flex-col items-center gap-3">
-                <span className="size-10 grid place-items-center rounded-full bg-white/6 text-[#A1A5AD]">
+                <span className="size-10 grid place-items-center rounded-full bg-muted text-muted-foreground">
                   <Plus className="size-5" />
                 </span>
-                <h3 className="text-sm font-semibold text-[#ECEDEF]">Your Library is empty</h3>
-                <p className="text-xs text-[#A1A5AD] max-w-xs">
+                <h3 className="text-sm font-semibold text-foreground">Your Library is empty</h3>
+                <p className="text-xs text-muted-foreground max-w-xs">
                   Add your first movie, show, or game to start tracking.
                 </p>
                 <button
                   type="button"
                   onClick={openSearch}
-                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7B7FEB] hover:bg-[#7B7FEB]/90 text-white text-xs font-semibold transition cursor-pointer shadow-sm"
+                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand/90 text-brand-foreground text-xs font-semibold transition cursor-pointer shadow-sm"
                 >
                   <Plus className="size-4 stroke-2" />
                   <span>Add something</span>
@@ -577,24 +577,24 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
             {/* Situation B: Search/Filter returned nothing */}
             {initialEntries.length > 0 && searchQuery.trim().length > 0 && (
               <div className="flex flex-col items-center gap-3">
-                <h3 className="text-sm font-semibold text-[#ECEDEF]">
+                <h3 className="text-sm font-semibold text-foreground">
                   No results for &ldquo;{searchQuery}&rdquo;
                 </h3>
-                <p className="text-xs text-[#A1A5AD] max-w-xs">
+                <p className="text-xs text-muted-foreground max-w-xs">
                   Try searching catalog or clearing your active filters.
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <button
                     type="button"
                     onClick={handleClearFilters}
-                    className="px-3.5 py-1.5 rounded-lg border border-white/8 bg-[#16181D] hover:bg-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-foreground transition cursor-pointer"
                   >
                     Clear filters
                   </button>
                   <button
                     type="button"
                     onClick={openSearch}
-                    className="px-3.5 py-1.5 rounded-lg bg-[#7B7FEB] hover:bg-[#7B7FEB]/90 text-white text-xs font-semibold transition cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand/90 text-brand-foreground text-xs font-semibold transition cursor-pointer"
                   >
                     Search all of Tracklist
                   </button>
@@ -605,22 +605,26 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
             {/* Situation C: Specific tab is empty */}
             {initialEntries.length > 0 && !searchQuery.trim() && (
               <div className="flex flex-col items-center gap-3">
-                <span className="size-8 grid place-items-center rounded-full bg-black/60 border border-white/10 text-xs">
+                <span className="size-8 grid place-items-center rounded-full bg-card border border-border text-xs">
                   {activeTab === "want_to" && (
-                    <span className="size-2.5 rounded-full bg-[#8A8F98]" />
+                    <span className="size-2.5 rounded-full bg-status-queue" />
                   )}
-                  {activeTab === "doing" && <span className="size-2.5 rounded-full bg-[#E3A94B]" />}
-                  {activeTab === "done" && <span className="size-2.5 rounded-full bg-[#4FB286]" />}
+                  {activeTab === "doing" && (
+                    <span className="size-2.5 rounded-full bg-status-doing" />
+                  )}
+                  {activeTab === "done" && (
+                    <span className="size-2.5 rounded-full bg-status-done" />
+                  )}
                 </span>
 
-                <h3 className="text-sm font-semibold text-[#ECEDEF]">
+                <h3 className="text-sm font-semibold text-foreground">
                   {activeTab === "want_to" && "Your queue is empty"}
                   {activeTab === "doing" && "Nothing in progress right now"}
                   {activeTab === "done" && "Nothing finished yet"}
                   {activeTab === "all" && "No titles match the selected medium"}
                 </h3>
 
-                <p className="text-xs text-[#A1A5AD] max-w-xs">
+                <p className="text-xs text-muted-foreground max-w-xs">
                   {activeTab === "want_to" && "Find movies, TV series, or games to queue up next."}
                   {activeTab === "doing" &&
                     "Pick something from your Queue and start watching or playing."}
@@ -633,7 +637,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                   <button
                     type="button"
                     onClick={() => handleTabChange("want_to")}
-                    className="mt-2 px-4 py-2 rounded-lg bg-[#16181D] hover:bg-white/8 border border-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                    className="mt-2 px-4 py-2 rounded-lg bg-card hover:bg-muted border border-border text-xs font-medium text-foreground transition cursor-pointer"
                   >
                     Go to Queue
                   </button>
@@ -643,7 +647,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                   <button
                     type="button"
                     onClick={() => handleTabChange("doing")}
-                    className="mt-2 px-4 py-2 rounded-lg bg-[#16181D] hover:bg-white/8 border border-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                    className="mt-2 px-4 py-2 rounded-lg bg-card hover:bg-muted border border-border text-xs font-medium text-foreground transition cursor-pointer"
                   >
                     Go to In Progress
                   </button>
@@ -652,7 +656,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                 {activeTab === "want_to" && (
                   <Link
                     href="/explore"
-                    className="mt-2 px-4 py-2 rounded-lg bg-[#7B7FEB] hover:bg-[#7B7FEB]/90 text-white text-xs font-semibold transition cursor-pointer"
+                    className="mt-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand/90 text-brand-foreground text-xs font-semibold transition cursor-pointer"
                   >
                     Browse and add
                   </Link>
@@ -662,7 +666,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                   <button
                     type="button"
                     onClick={handleClearFilters}
-                    className="mt-2 px-4 py-2 rounded-lg border border-white/8 bg-[#16181D] hover:bg-white/8 text-xs font-medium text-[#ECEDEF] transition cursor-pointer"
+                    className="mt-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-foreground transition cursor-pointer"
                   >
                     Reset Medium to All
                   </button>
@@ -707,7 +711,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
             {totalPages > 1 && (
               <div className="mt-10 mb-16 flex flex-col items-center justify-center gap-3">
                 {/* Muted Footer Count Text */}
-                <span className="text-xs text-[#A1A5AD] font-mono tabular-nums">
+                <span className="text-xs text-muted-foreground font-mono tabular-nums">
                   Showing {startItem}–{endItem} of {filteredEntries.length}
                 </span>
 
@@ -721,7 +725,7 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                           disabled={currentPage <= 1}
                         />
                       </PaginationItem>
-                      <span className="text-xs text-[#ECEDEF] font-mono tabular-nums">
+                      <span className="text-xs text-foreground font-mono tabular-nums">
                         Page {currentPage} of {totalPages}
                       </span>
                       <PaginationItem>

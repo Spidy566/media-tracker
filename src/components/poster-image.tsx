@@ -27,7 +27,7 @@ export function PosterImage({
   title,
   mediaType,
   releaseYear,
-  sizes,
+  sizes = "(max-width: 640px) 50vw, 250px",
   priority,
   loading,
   className,
@@ -54,7 +54,7 @@ export function PosterImage({
     if (compact) {
       const Icon = getMediaTypeIcon(mediaType);
       return (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-900 border border-white/8 select-none text-neutral-400">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-card border border-border select-none text-muted-foreground">
           <Icon className="size-4" />
         </div>
       );
@@ -63,13 +63,13 @@ export function PosterImage({
     const Icon = getMediaTypeIcon(mediaType);
 
     return (
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 bg-linear-to-b from-[#22222b] via-[#16161e] to-[#0e0e13] border border-white/8 select-none">
-        <div className="flex items-center justify-between text-neutral-400">
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 bg-linear-to-b from-muted via-card to-background border border-border select-none">
+        <div className="flex items-center justify-between text-muted-foreground">
           <Icon className="size-4 opacity-75" />
           {releaseYear && <span className="text-[11px] font-mono opacity-60">{releaseYear}</span>}
         </div>
         <div className="my-auto py-2">
-          <span className="font-semibold text-white text-[14px] leading-snug line-clamp-3 text-balance text-left block drop-shadow-sm">
+          <span className="font-semibold text-foreground text-[14px] leading-snug line-clamp-3 text-balance text-left block drop-shadow-sm">
             {title}
           </span>
         </div>

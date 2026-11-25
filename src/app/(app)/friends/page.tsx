@@ -218,6 +218,8 @@ export default async function FriendsPage() {
                             src={item.posterUrl}
                             title={item.title}
                             mediaType={item.mediaType}
+                            sizes="32px"
+                            compact
                             className="object-cover"
                           />
                         </div>

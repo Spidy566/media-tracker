@@ -40,7 +40,7 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className="group flex items-center gap-1.5 rounded-full p-0.5 hover:bg-white/6 transition-colors cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-0 select-none"
+            className="group flex items-center gap-1.5 rounded-full p-0.5 hover:bg-muted/60 transition-colors cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 select-none"
             aria-label="User account menu"
           >
             {user.avatarUrl ? (
@@ -49,16 +49,16 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
                 alt={user.displayName || user.username}
                 width={40}
                 height={40}
-                className="size-10 rounded-full object-cover border border-white/10"
+                className="size-10 rounded-full object-cover border border-border"
                 unoptimized
               />
             ) : (
-              <div className="size-10 rounded-full bg-neutral-800 text-white font-medium text-xs sm:text-sm flex items-center justify-center border border-white/10">
+              <div className="size-10 rounded-full bg-muted text-foreground font-medium text-xs sm:text-sm flex items-center justify-center border border-border">
                 {initials}
               </div>
             )}
             <ChevronDown
-              className="size-4 text-neutral-400 group-hover:text-white transition-transform duration-200 group-data-[state=open]:rotate-180"
+              className="size-4 text-muted-foreground group-hover:text-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
               strokeWidth={1.75}
             />
           </button>
@@ -78,9 +78,9 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
             <DropdownMenu.Item asChild>
               <Link
                 href="/library"
-                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-neutral-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-white/8 focus:text-white"
+                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer outline-none focus:outline-none focus:bg-muted focus:text-foreground"
               >
-                <UserIcon className="size-4 text-neutral-400" strokeWidth={1.75} />
+                <UserIcon className="size-4 text-muted-foreground" strokeWidth={1.75} />
                 <span>Profile</span>
               </Link>
             </DropdownMenu.Item>
@@ -88,9 +88,9 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
             <DropdownMenu.Item asChild>
               <Link
                 href={`/friends/${user.username}`}
-                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-neutral-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-white/8 focus:text-white"
+                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer outline-none focus:outline-none focus:bg-muted focus:text-foreground"
               >
-                <Users className="size-4 text-neutral-400" strokeWidth={1.75} />
+                <Users className="size-4 text-muted-foreground" strokeWidth={1.75} />
                 <span>Public Profile</span>
               </Link>
             </DropdownMenu.Item>
@@ -98,9 +98,9 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
             <DropdownMenu.Item asChild>
               <Link
                 href="/settings"
-                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-neutral-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-white/8 focus:text-white"
+                className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer outline-none focus:outline-none focus:bg-muted focus:text-foreground"
               >
-                <Settings className="size-4 text-neutral-400" strokeWidth={1.75} />
+                <Settings className="size-4 text-muted-foreground" strokeWidth={1.75} />
                 <span>Settings</span>
               </Link>
             </DropdownMenu.Item>
@@ -109,9 +109,9 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
               <DropdownMenu.Item asChild>
                 <Link
                   href="/admin"
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-neutral-300 hover:text-white hover:bg-white/8 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-white/8 focus:text-white"
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer outline-none focus:outline-none focus:bg-muted focus:text-foreground"
                 >
-                  <ShieldCheck className="size-4 text-neutral-400" strokeWidth={1.75} />
+                  <ShieldCheck className="size-4 text-muted-foreground" strokeWidth={1.75} />
                   <span>Admin Console</span>
                 </Link>
               </DropdownMenu.Item>
@@ -121,7 +121,7 @@ export function NavActions({ user, isAdmin = false }: NavActionsProps) {
 
             <DropdownMenu.Item
               onSelect={handleLogout}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-red-500/10 focus:text-red-300"
+              className="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer outline-none focus:outline-none focus:bg-destructive/10 focus:text-destructive"
             >
               <LogOut className="size-4" strokeWidth={1.75} />
               <span>Sign out</span>

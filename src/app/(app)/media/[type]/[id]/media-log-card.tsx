@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { MediaStatus } from "@/db/schema";
-import { logEntryApi } from "@/lib/api-entries";
+import { deleteEntryApi, logEntryApi } from "@/lib/api-entries";
 import { cn } from "@/lib/utils";
 import type { Entry } from "@/types/entry";
 
@@ -92,14 +92,7 @@ export function MediaLogCard({ media, initialEntry }: MediaLogCardProps) {
   const { mutate: removeEntry, isPending: isDeleting } = useMutation({
     mutationFn: async () => {
       if (!initialEntry) return;
-      const res = await fetch(`/api/entries?id=${initialEntry.id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to remove entry");
-      }
-      return res.json();
+      return deleteEntryApi(initialEntry.id);
     },
     onSuccess: () => {
       router.refresh();
