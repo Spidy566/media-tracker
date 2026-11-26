@@ -1,11 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { requireUser } from "@/lib/auth";
 import { igdbFetch } from "@/lib/igdb";
-import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
-import { normalizePosterUrl } from "@/lib/image-url";
+import { mapIgdbGameToSearchResult, mapTmdbItemToSearchResult } from "@/lib/media-discover";
 import { tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGameItem } from "@/types/igdb";
+import type { UnifiedSearchResult } from "@/types/search";
 import type { TMDBResponse } from "@/types/tmdb";
 
 export async function GET(request: NextRequest) {
@@ -50,19 +49,7 @@ export async function GET(request: NextRequest) {
             const extId = `tmdb:${type}:${item.id}`;
             if (!seenIds.has(extId) && item.poster_path) {
               seenIds.add(extId);
-              const dateStr = item.release_date || item.first_air_date;
-              results.push({
-                externalId: extId,
-                mediaType: type,
-                title: item.title || item.name || "Untitled",
-                releaseYear: dateStr ? parseInt(dateStr.slice(0, 4), 10) || null : null,
-                posterUrl: normalizePosterUrl(
-                  item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-                ),
-                creator: null,
-                summary: item.overview || null,
-                genres: [],
-              });
+              results.push(mapTmdbItemToSearchResult(item, type));
             }
           }
         }
@@ -112,20 +99,7 @@ export async function GET(request: NextRequest) {
         const extId = `igdb:${sim.id}`;
         if (!seenIds.has(extId) && sim.cover?.url) {
           seenIds.add(extId);
-          results.push({
-            externalId: extId,
-            mediaType: "game",
-            title: sim.name || "Untitled Game",
-            releaseYear: sim.first_release_date
-              ? new Date(sim.first_release_date * 1000).getUTCFullYear()
-              : null,
-            posterUrl: getIgdbCoverUrl(sim.cover.url, "cover_big"),
-            creator: null,
-            summary: sim.summary || null,
-            genres: Array.isArray(sim.genres)
-              ? sim.genres.map((g: { name: string }) => g.name)
-              : [],
-          });
+          results.push(mapIgdbGameToSearchResult(sim));
         }
       }
 
@@ -140,18 +114,7 @@ export async function GET(request: NextRequest) {
               const extId = `igdb:${g.id}`;
               if (!seenIds.has(extId) && extId !== `igdb:${id}` && g.cover?.url) {
                 seenIds.add(extId);
-                results.push({
-                  externalId: extId,
-                  mediaType: "game",
-                  title: g.name || "Untitled Game",
-                  releaseYear: g.first_release_date
-                    ? new Date(g.first_release_date * 1000).getUTCFullYear()
-                    : null,
-                  posterUrl: getIgdbCoverUrl(g.cover.url, "cover_big"),
-                  creator: null,
-                  summary: g.summary || null,
-                  genres: Array.isArray(g.genres) ? g.genres.map((gen) => gen.name) : [],
-                });
+                results.push(mapIgdbGameToSearchResult(g));
                 if (results.length >= 24) break;
               }
             }

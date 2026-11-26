@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { CalendarItem } from "@/app/api/calendar/route";
 import { PosterImage } from "@/components/poster-image";
 import { usePosters } from "@/components/providers/poster-provider";
 import type { MediaStatus } from "@/db/schema";
 import type { MonthCell } from "@/lib/calendar-dates";
+import type { CalendarItem } from "@/types/calendar";
 
 export const WEEKDAYS_HEADER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 

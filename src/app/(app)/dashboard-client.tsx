@@ -1,9 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { DashboardHeader, type LibraryCounts } from "@/components/dashboard/dashboard-header";
 import { JumpBackInSection } from "@/components/dashboard/jump-back-in-section";
@@ -11,10 +8,8 @@ import { LastTrackedSection } from "@/components/dashboard/last-tracked-section"
 import { QueueRouletteModal } from "@/components/dashboard/queue-roulette-modal";
 import { QueueSection } from "@/components/dashboard/queue-section";
 import { TrendingSection } from "@/components/dashboard/trending-section";
-import type { MediaStatus } from "@/components/media-card";
-import { logEntryApi } from "@/lib/api-entries";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import type { HomeSection } from "@/lib/home-prefs";
-import { getStatusVerb } from "@/lib/media-formatters";
 import type { Entry, EntryUser } from "@/types/entry";
 
 export type { LibraryCounts };
@@ -43,34 +38,8 @@ export function DashboardClient({
   trendingGames,
   hiddenSections = [],
 }: DashboardClientProps) {
-  const router = useRouter();
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
-
-  // Quick 1-click status mutation
-  const { mutate: setQuickStatus, isPending } = useMutation({
-    mutationFn: async ({
-      media,
-      status,
-    }: {
-      media: Entry["media"] | UnifiedSearchResult;
-      status: MediaStatus;
-    }) => {
-      return logEntryApi({
-        media,
-        status,
-      });
-    },
-    onSuccess: (_, variables) => {
-      router.refresh();
-      const actionVerb = getStatusVerb(variables.status);
-      toast.success(actionVerb, { description: variables.media.title });
-    },
-    onError: (err: Error) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to update status");
-      }
-    },
-  });
+  const { logEntry: setQuickStatus, isLogging: isPending } = useEntryMutations();
 
   return (
     <div className="w-full min-h-screen bg-background text-foreground flex flex-col pb-24">

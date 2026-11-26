@@ -2,12 +2,12 @@
 
 import { Bookmark, Check, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
-import type { CalendarItem } from "@/app/api/calendar/route";
 import { PosterImage } from "@/components/poster-image";
 import { ScrollRow } from "@/components/scroll-row";
 import type { MediaStatus } from "@/db/schema";
 import { parseYMD } from "@/lib/calendar-dates";
 import { getMediaHref } from "@/lib/utils";
+import type { CalendarItem } from "@/types/calendar";
 
 const MONTHS_SHORT = [
   "Jan",

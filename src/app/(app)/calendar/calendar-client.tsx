@@ -1,15 +1,15 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { CalendarApiResponse, CalendarItem } from "@/app/api/calendar/route";
 import type { MediaStatus } from "@/db/schema";
-import { logEntryApi } from "@/lib/api-entries";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import { buildMonthGrid, formatMonthTitle, getAdjacentMonths, toYMD } from "@/lib/calendar-dates";
 import { getStatusVerb } from "@/lib/media-formatters";
+import type { CalendarApiResponse, CalendarItem } from "@/types/calendar";
 import { AgendaListView } from "./components/agenda-list-view";
 import { CalendarHighlights } from "./components/calendar-highlights";
 import { CalendarToolbar } from "./components/calendar-toolbar";
@@ -142,46 +142,42 @@ export function CalendarClient({ currentUser, myStatus: initialMyStatus }: Calen
     [queryClient, type, lang, depth],
   );
 
-  const { mutate: setQuickStatus, isPending: isMutatingStatus } = useMutation({
-    mutationFn: async ({
-      media,
-      status,
-    }: {
-      media: CalendarItem;
-      status: "want_to" | "doing" | "done";
-    }) => {
-      return logEntryApi({
-        media: {
-          externalId: media.externalId,
-          mediaType: media.mediaType,
-          title: media.title,
-          releaseYear: media.releaseDate
-            ? Number.parseInt(media.releaseDate.slice(0, 4), 10)
-            : null,
-          posterUrl: media.posterUrl,
-          creator: null,
-          summary: media.summary || null,
-          genres: [],
-        },
-        status,
-      });
-    },
-    onSuccess: (_, variables) => {
+  const { logEntry, isLogging: isMutatingStatus } = useEntryMutations<CalendarItem>({
+    onLogSuccess: (_, variables) => {
+      const media = variables.meta;
+      if (!media) return;
       setMyStatus((prev) => ({
         ...prev,
-        [variables.media.externalId]: variables.status,
+        [media.externalId]: variables.status,
       }));
-      router.refresh();
       toast.success(getStatusVerb(variables.status), {
-        description: variables.media.title,
+        description: media.title,
       });
     },
-    onError: (err: Error) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to update status");
-      }
-    },
   });
+
+  const setQuickStatus = ({
+    media,
+    status,
+  }: {
+    media: CalendarItem;
+    status: "want_to" | "doing" | "done";
+  }) => {
+    logEntry({
+      media: {
+        externalId: media.externalId,
+        mediaType: media.mediaType,
+        title: media.title,
+        releaseYear: media.releaseDate ? Number.parseInt(media.releaseDate.slice(0, 4), 10) : null,
+        posterUrl: media.posterUrl,
+        creator: null,
+        summary: media.summary || null,
+        genres: [],
+      },
+      status,
+      meta: media,
+    });
+  };
 
   const monthTitle = useMemo(() => formatMonthTitle(month), [month]);
   const monthGridCells = useMemo(() => buildMonthGrid(month), [month]);

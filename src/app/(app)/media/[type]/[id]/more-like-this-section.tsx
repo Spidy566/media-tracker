@@ -1,13 +1,9 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { ScrollRow } from "@/components/scroll-row";
-import { logEntryApi } from "@/lib/api-entries";
-import { getStatusVerb } from "@/lib/media-formatters";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import { getMediaHref } from "@/lib/utils";
 import type { RecommendationItem } from "@/types/media-details";
 
@@ -16,43 +12,15 @@ interface MoreLikeThisSectionProps {
 }
 
 export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProps) {
-  const router = useRouter();
-
   // Local state for tracking quick statuses added during session
   const [localStatuses, setLocalStatuses] = useState<Record<string, MediaStatus>>({});
 
-  const { mutate: setQuickStatus } = useMutation({
-    mutationFn: async ({
-      item,
-      status,
-    }: {
-      item: RecommendationItem;
-      status: "want_to" | "doing" | "done";
-    }) => {
-      return logEntryApi({
-        media: {
-          externalId: item.externalId,
-          mediaType: item.mediaType,
-          title: item.title,
-          releaseYear: item.releaseYear,
-          posterUrl: item.posterUrl,
-          backdropUrl: item.backdropUrl,
-        },
-        status,
-      });
-    },
-    onSuccess: (_, variables) => {
+  const { logEntry } = useEntryMutations({
+    onLogSuccess: (_, variables) => {
       setLocalStatuses((prev) => ({
         ...prev,
-        [variables.item.externalId]: variables.status,
+        [variables.media.externalId]: variables.status,
       }));
-      toast.success(`Updated "${variables.item.title}" to ${getStatusVerb(variables.status)}`);
-      router.refresh();
-    },
-    onError: (err) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to update status");
-      }
     },
   });
 
@@ -81,7 +49,19 @@ export function MoreLikeThisSection({ recommendations }: MoreLikeThisSectionProp
             releaseYear={item.releaseYear}
             currentStatus={localStatuses[item.externalId] || null}
             href={getMediaHref(item)}
-            onQuickStatus={(status) => setQuickStatus({ item, status })}
+            onQuickStatus={(status) =>
+              logEntry({
+                media: {
+                  externalId: item.externalId,
+                  mediaType: item.mediaType,
+                  title: item.title,
+                  releaseYear: item.releaseYear,
+                  posterUrl: item.posterUrl,
+                  backdropUrl: item.backdropUrl,
+                },
+                status,
+              })
+            }
           />
         </div>
       ))}

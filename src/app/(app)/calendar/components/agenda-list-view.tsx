@@ -1,8 +1,8 @@
 "use client";
 
-import type { CalendarItem } from "@/app/api/calendar/route";
 import type { MediaStatus } from "@/db/schema";
 import { formatDayHeading, relativeLabel } from "@/lib/calendar-dates";
+import type { CalendarItem } from "@/types/calendar";
 import { CalendarRow } from "../calendar-row";
 
 interface AgendaListViewProps {

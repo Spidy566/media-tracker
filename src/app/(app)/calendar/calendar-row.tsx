@@ -2,11 +2,11 @@
 
 import { Bookmark, Check, Play } from "lucide-react";
 import Link from "next/link";
-import type { CalendarItem } from "@/app/api/calendar/route";
 import { PosterImage } from "@/components/poster-image";
 import type { MediaStatus } from "@/db/schema";
 import { MediaTypeIcon } from "@/lib/media-formatters";
 import { getMediaHref } from "@/lib/utils";
+import type { CalendarItem } from "@/types/calendar";
 
 interface CalendarRowProps {
   item: CalendarItem;

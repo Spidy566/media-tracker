@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Film, Gamepad2, Layers, Tv } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -9,12 +9,24 @@ import { AnchorChip } from "@/components/explore/anchor-chip";
 import { ExploreSpinner } from "@/components/explore/explore-spinner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
-import { deleteEntryApi, logEntryApi } from "@/lib/api-entries";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import { getGenresForType } from "@/lib/genres";
+import { getStatusVerb } from "@/lib/media-formatters";
 import { getMediaHref } from "@/lib/utils";
 
 type MediaTypeFilter = "all" | "movie" | "tv" | "game";
 type SortOption = "popular" | "top_rated" | "upcoming";
+
+const MEDIA_TYPE_OPTIONS: Array<{
+  id: MediaTypeFilter;
+  label: string;
+  icon: typeof Layers;
+}> = [
+  { id: "all", label: "All", icon: Layers },
+  { id: "movie", label: "Movies", icon: Film },
+  { id: "tv", label: "TV", icon: Tv },
+  { id: "game", label: "Games", icon: Gamepad2 },
+];
 
 interface TrackedItem {
   id: string;
@@ -177,60 +189,25 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
     return getGenresForType(mediaType);
   }, [mediaType]);
 
-  // Status mutation (Want to, Doing, Done, Dropped)
-  const statusMutation = useMutation({
-    mutationFn: async ({ item, status }: { item: UnifiedSearchResult; status: MediaStatus }) => {
-      return logEntryApi({
-        media: {
-          externalId: item.externalId,
-          mediaType: item.mediaType as "movie" | "tv" | "game",
-          title: item.title,
-          releaseYear: item.releaseYear,
-          posterUrl: item.posterUrl,
-          creator: item.creator,
-          summary: item.summary,
-          genres: item.genres,
-        },
-        status,
-      });
-    },
-    onSuccess: (data, variables) => {
-      const entryId = data?.entry?.id || variables.item.externalId;
+  // Status & removal mutations via shared hook
+  const { logEntry, removeEntry } = useEntryMutations<UnifiedSearchResult, UnifiedSearchResult>({
+    onLogSuccess: (data, variables) => {
+      const item = variables.meta;
+      if (!item) return;
+      const entryData = data as { entry?: { id?: string } } | undefined;
+      const entryId = entryData?.entry?.id || item.externalId;
       setTrackedMap((prev) => ({
         ...prev,
-        [variables.item.externalId]: {
+        [item.externalId]: {
           id: entryId,
           status: variables.status,
         },
       }));
-
-      const statusLabels: Record<MediaStatus, string> = {
-        want_to: "Added to Queue",
-        doing: "Marked as In Progress",
-        done: "Marked as Completed",
-        dropped: "Marked as Dropped",
-      };
-
-      toast.success(statusLabels[variables.status], {
-        description: variables.item.title,
-      });
+      toast.success(getStatusVerb(variables.status), { description: item.title });
     },
-    onError: (err) => {
-      console.error("Failed to update status:", err);
-      toast.error("Failed to update status");
-    },
-  });
-
-  // Remove tracking mutation
-  const removeMutation = useMutation({
-    mutationFn: async (item: UnifiedSearchResult) => {
-      const tracked = trackedMap[item.externalId];
-      if (!tracked?.id) {
-        throw new Error("Item not currently tracked");
-      }
-      return deleteEntryApi(tracked.id);
-    },
-    onSuccess: (_, item) => {
+    onRemoveSuccess: (_, variables) => {
+      const item = variables.meta;
+      if (!item) return;
       setTrackedMap((prev) => {
         const next = { ...prev };
         delete next[item.externalId];
@@ -240,18 +217,33 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
         description: item.title,
       });
     },
-    onError: (err) => {
-      console.error("Failed to remove tracked entry:", err);
-      toast.error("Failed to remove from library");
-    },
   });
+
+  const handleRemoveItem = (item: UnifiedSearchResult) => {
+    const tracked = trackedMap[item.externalId];
+    if (!tracked?.id) return;
+    removeEntry({ id: tracked.id, title: item.title, meta: item });
+  };
 
   const handleStatusChange = (item: UnifiedSearchResult, status: MediaStatus) => {
     if (trackedMap[item.externalId]?.status === status) {
-      removeMutation.mutate(item);
+      handleRemoveItem(item);
       return;
     }
-    statusMutation.mutate({ item, status });
+    logEntry({
+      media: {
+        externalId: item.externalId,
+        mediaType: item.mediaType as "movie" | "tv" | "game",
+        title: item.title,
+        releaseYear: item.releaseYear,
+        posterUrl: item.posterUrl,
+        creator: item.creator,
+        summary: item.summary,
+        genres: item.genres,
+      },
+      status,
+      meta: item,
+    });
   };
 
   const isInitialLoading = mediaType !== "all" && !anchoredItem && isLoading;
@@ -278,54 +270,25 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
             <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none pb-0.5">
               {/* Media type segmented control */}
               <div className="flex items-center bg-card border border-border p-1 rounded-xl shrink-0 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => handleMediaTypeChange("all")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                    mediaType === "all"
-                      ? "bg-muted text-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Layers className="size-3.5" />
-                  <span>All</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMediaTypeChange("movie")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                    mediaType === "movie"
-                      ? "bg-muted text-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Film className="size-3.5" />
-                  <span>Movies</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMediaTypeChange("tv")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                    mediaType === "tv"
-                      ? "bg-muted text-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Tv className="size-3.5" />
-                  <span>TV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMediaTypeChange("game")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                    mediaType === "game"
-                      ? "bg-muted text-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Gamepad2 className="size-3.5" />
-                  <span>Games</span>
-                </button>
+                {MEDIA_TYPE_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const isActive = mediaType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => handleMediaTypeChange(opt.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                        isActive
+                          ? "bg-muted text-foreground font-semibold shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="size-3.5" />
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Sort pills: Popular, Top Rated, Upcoming */}
@@ -454,7 +417,7 @@ export function ExploreClient({ initialTitles, initialTrackedMap = {} }: Explore
                   href={getMediaHref(item)}
                   allowedStatuses={["want_to", "doing", "done"]}
                   onQuickStatus={(status) => handleStatusChange(item, status)}
-                  onRemove={currentStatus ? () => removeMutation.mutate(item) : undefined}
+                  onRemove={currentStatus ? () => handleRemoveItem(item) : undefined}
                 />
               );
             })}

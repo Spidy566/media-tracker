@@ -1,8 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { Plus, Search, X } from "lucide-react";
-import Link from "next/link";
+import { Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -25,18 +23,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import { useSearchModal } from "@/hooks/use-search-modal";
-import { deleteEntryApi, logEntryApi } from "@/lib/api-entries";
+import { getStatusLabel } from "@/lib/media-formatters";
 import { cn, getMediaHref } from "@/lib/utils";
 import type { Entry } from "@/types/entry";
+import {
+  LibraryEmptyState,
+  type LibraryMediumFilter as MediumFilter,
+  type LibraryTabType as TabType,
+} from "./library-empty-state";
 
 interface LibraryClientProps {
   initialEntries: Entry[];
 }
 
-type TabType = "all" | "want_to" | "doing" | "done";
 type SortOption = "updated" | "rating" | "year" | "title";
-type MediumFilter = "all" | "movie" | "tv" | "game";
 
 const PAGE_SIZE = 48;
 
@@ -223,29 +225,12 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Quick status progression mutation with optimistic update and interactive Undo toast
-  const { mutate: setQuickStatus } = useMutation({
-    mutationFn: async ({
-      media,
-      status,
-    }: {
-      media: Entry["media"];
-      status: MediaStatus;
-      previousStatus?: MediaStatus | null;
-    }) => {
-      return logEntryApi({ media, status });
-    },
-    onMutate: async ({ media, status }) => {
-      const targetLabel =
-        status === "want_to"
-          ? "Queue"
-          : status === "doing"
-            ? "In Progress"
-            : status === "done"
-              ? "Done"
-              : "Dropped";
-
-      // If activeTab is not "all" and the new status no longer matches activeTab, fade out the card
+  // Quick status progression & removal mutations with optimistic fade and Undo toast
+  const { logEntry, removeEntry } = useEntryMutations<
+    { previousStatus?: MediaStatus | null },
+    Entry
+  >({
+    onLogMutate: ({ media, status }) => {
       const matchesCurrentTab = activeTab === "all" || activeTab === status;
       const matched = entries.find((e) => e.media.externalId === media.externalId);
 
@@ -274,68 +259,51 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
           ),
         );
       }
-
-      return { targetLabel };
     },
-    onSuccess: (_, variables, context) => {
-      router.refresh();
-      toast(`Moved to ${context?.targetLabel || "status"}.`, {
+    onLogSuccess: (_, variables) => {
+      const targetLabel = getStatusLabel(variables.status);
+      toast(`Moved to ${targetLabel}.`, {
         duration: 5000,
-        action: variables.previousStatus
+        action: variables.meta?.previousStatus
           ? {
               label: "Undo",
               onClick: () => {
-                setQuickStatus({
+                logEntry({
                   media: variables.media,
-                  status: variables.previousStatus as MediaStatus,
+                  status: variables.meta?.previousStatus as MediaStatus,
                 });
               },
             }
           : undefined,
       });
     },
-    onError: (err: Error) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to update status");
-      }
-    },
-  });
-
-  // Remove from library mutation with optimistic update and Undo toast
-  const { mutate: removeEntry } = useMutation({
-    mutationFn: async (entry: Entry) => {
-      return deleteEntryApi(entry.id);
-    },
-    onMutate: async (entry) => {
-      setFadingEntryIds((prev) => new Set(prev).add(entry.id));
+    onRemoveMutate: ({ id }) => {
+      setFadingEntryIds((prev) => new Set(prev).add(id));
       setTimeout(() => {
-        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        setEntries((prev) => prev.filter((e) => e.id !== id));
         setFadingEntryIds((prev) => {
           const next = new Set(prev);
-          next.delete(entry.id);
+          next.delete(id);
           return next;
         });
       }, 300);
     },
-    onSuccess: (_, entry) => {
-      router.refresh();
+    onRemoveSuccess: (_, variables) => {
+      const entry = variables.meta;
       toast("Removed from library.", {
         duration: 5000,
-        action: {
-          label: "Undo",
-          onClick: () => {
-            setQuickStatus({
-              media: entry.media,
-              status: entry.status,
-            });
-          },
-        },
+        action: entry
+          ? {
+              label: "Undo",
+              onClick: () => {
+                logEntry({
+                  media: entry.media,
+                  status: entry.status,
+                });
+              },
+            }
+          : undefined,
       });
-    },
-    onError: (err: Error) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to remove from library");
-      }
     },
   });
 
@@ -552,128 +520,15 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
       {/* Row 4: Empty States OR 48-Item Paginated Grid (with min-height to prevent vertical collapse) */}
       <div className="min-h-[50vh]">
         {filteredEntries.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center text-center">
-            {/* Situation A: Brand new library (Zero items overall) */}
-            {initialEntries.length === 0 && (
-              <div className="flex flex-col items-center gap-3">
-                <span className="size-10 grid place-items-center rounded-full bg-muted text-muted-foreground">
-                  <Plus className="size-5" />
-                </span>
-                <h3 className="text-sm font-semibold text-foreground">Your Library is empty</h3>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  Add your first movie, show, or game to start tracking.
-                </p>
-                <button
-                  type="button"
-                  onClick={openSearch}
-                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand/90 text-brand-foreground text-xs font-semibold transition cursor-pointer shadow-sm"
-                >
-                  <Plus className="size-4 stroke-2" />
-                  <span>Add something</span>
-                </button>
-              </div>
-            )}
-
-            {/* Situation B: Search/Filter returned nothing */}
-            {initialEntries.length > 0 && searchQuery.trim().length > 0 && (
-              <div className="flex flex-col items-center gap-3">
-                <h3 className="text-sm font-semibold text-foreground">
-                  No results for &ldquo;{searchQuery}&rdquo;
-                </h3>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  Try searching catalog or clearing your active filters.
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="px-3.5 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-foreground transition cursor-pointer"
-                  >
-                    Clear filters
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openSearch}
-                    className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand/90 text-brand-foreground text-xs font-semibold transition cursor-pointer"
-                  >
-                    Search all of Tracklist
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Situation C: Specific tab is empty */}
-            {initialEntries.length > 0 && !searchQuery.trim() && (
-              <div className="flex flex-col items-center gap-3">
-                <span className="size-8 grid place-items-center rounded-full bg-card border border-border text-xs">
-                  {activeTab === "want_to" && (
-                    <span className="size-2.5 rounded-full bg-status-queue" />
-                  )}
-                  {activeTab === "doing" && (
-                    <span className="size-2.5 rounded-full bg-status-doing" />
-                  )}
-                  {activeTab === "done" && (
-                    <span className="size-2.5 rounded-full bg-status-done" />
-                  )}
-                </span>
-
-                <h3 className="text-sm font-semibold text-foreground">
-                  {activeTab === "want_to" && "Your queue is empty"}
-                  {activeTab === "doing" && "Nothing in progress right now"}
-                  {activeTab === "done" && "Nothing finished yet"}
-                  {activeTab === "all" && "No titles match the selected medium"}
-                </h3>
-
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  {activeTab === "want_to" && "Find movies, TV series, or games to queue up next."}
-                  {activeTab === "doing" &&
-                    "Pick something from your Queue and start watching or playing."}
-                  {activeTab === "done" &&
-                    "Titles you complete will appear here with your ratings."}
-                  {activeTab === "all" && "Try switching back to Medium: All."}
-                </p>
-
-                {activeTab === "doing" && (
-                  <button
-                    type="button"
-                    onClick={() => handleTabChange("want_to")}
-                    className="mt-2 px-4 py-2 rounded-lg bg-card hover:bg-muted border border-border text-xs font-medium text-foreground transition cursor-pointer"
-                  >
-                    Go to Queue
-                  </button>
-                )}
-
-                {activeTab === "done" && (
-                  <button
-                    type="button"
-                    onClick={() => handleTabChange("doing")}
-                    className="mt-2 px-4 py-2 rounded-lg bg-card hover:bg-muted border border-border text-xs font-medium text-foreground transition cursor-pointer"
-                  >
-                    Go to In Progress
-                  </button>
-                )}
-
-                {activeTab === "want_to" && (
-                  <Link
-                    href="/explore"
-                    className="mt-2 px-4 py-2 rounded-lg bg-brand hover:bg-brand/90 text-brand-foreground text-xs font-semibold transition cursor-pointer"
-                  >
-                    Browse and add
-                  </Link>
-                )}
-
-                {activeTab === "all" && mediumFilter !== "all" && (
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="mt-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-muted text-xs font-medium text-foreground transition cursor-pointer"
-                  >
-                    Reset Medium to All
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          <LibraryEmptyState
+            totalEntries={initialEntries.length}
+            activeTab={activeTab}
+            mediumFilter={mediumFilter}
+            searchQuery={searchQuery}
+            onOpenSearch={openSearch}
+            onClearFilters={handleClearFilters}
+            onTabChange={handleTabChange}
+          />
         ) : (
           /* The Responsive Poster Grid: 48 items per page (locked to 2, 3, 4, 6, 8 columns) */
           <div>
@@ -695,13 +550,19 @@ export function LibraryClient({ initialEntries }: LibraryClientProps) {
                     activeTab={activeTab}
                     href={getMediaHref(entry.media)}
                     onQuickStatus={(status) =>
-                      setQuickStatus({
+                      logEntry({
                         media: entry.media,
                         status,
-                        previousStatus: entry.status,
+                        meta: { previousStatus: entry.status },
                       })
                     }
-                    onRemove={() => removeEntry(entry)}
+                    onRemove={() =>
+                      removeEntry({
+                        id: entry.id,
+                        title: entry.media.title,
+                        meta: entry,
+                      })
+                    }
                   />
                 </div>
               ))}

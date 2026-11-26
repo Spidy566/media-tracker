@@ -1,15 +1,11 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { MediaCard, type MediaStatus } from "@/components/media-card";
 import { MediaGrid } from "@/components/media-grid";
-import { logEntryApi } from "@/lib/api-entries";
-import { getStatusVerb } from "@/lib/media-formatters";
-import type { PersonCastCredit, PersonCrewGroup } from "@/lib/person-details";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import { getMediaHref } from "@/lib/utils";
+import type { PersonCastCredit, PersonCrewGroup } from "@/types/person";
 
 // --- Types ---
 
@@ -74,8 +70,6 @@ export function Filmography({
   statusMap,
   knownForDepartment,
 }: FilmographyProps) {
-  const router = useRouter();
-
   // Determine available tabs: primary department first, others sorted by credit count
   const availableTabs = useMemo(() => {
     const counts: Record<TabKey, number> = {
@@ -105,46 +99,33 @@ export function Filmography({
   const [showAll, setShowAll] = useState(false);
   const [localStatuses, setLocalStatuses] = useState<Record<string, MediaStatus>>({});
 
-  // Quick-add mutation
-  const { mutate: setQuickStatus } = useMutation({
-    mutationFn: async ({
-      credit,
-      status,
-    }: {
-      credit: {
-        externalId: string;
-        mediaType: "movie" | "tv";
-        title: string;
-        year: number | null;
-        posterPath: string | null;
-      };
-      status: "want_to" | "doing" | "done";
-    }) => {
-      return logEntryApi({
-        media: {
-          externalId: credit.externalId,
-          mediaType: credit.mediaType,
-          title: credit.title,
-          releaseYear: credit.year,
-          posterUrl: posterUrl(credit.posterPath),
-        },
-        status,
-      });
-    },
-    onSuccess: (_, variables) => {
+  const { logEntry } = useEntryMutations({
+    onLogSuccess: (_, variables) => {
       setLocalStatuses((prev) => ({
         ...prev,
-        [variables.credit.externalId]: variables.status,
+        [variables.media.externalId]: variables.status,
       }));
-      toast.success(`Updated "${variables.credit.title}" to ${getStatusVerb(variables.status)}`);
-      router.refresh();
-    },
-    onError: (err) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to update status");
-      }
     },
   });
+
+  const setQuickStatus = ({
+    credit,
+    status,
+  }: {
+    credit: NormalizedCreditItem;
+    status: "want_to" | "doing" | "done";
+  }) => {
+    logEntry({
+      media: {
+        externalId: credit.externalId,
+        mediaType: credit.mediaType,
+        title: credit.title,
+        releaseYear: credit.year,
+        posterUrl: posterUrl(credit.posterPath),
+      },
+      status,
+    });
+  };
 
   // Build credits list based on active tab
   const credits: NormalizedCreditItem[] = useMemo(() => {

@@ -1,20 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
-import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { requireUser } from "@/lib/auth";
 import { GENRE_MAP } from "@/lib/genres";
 import { igdbFetch } from "@/lib/igdb";
-import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
+import { mapIgdbGameToSearchResult, mapTmdbItemToSearchResult } from "@/lib/media-discover";
 import { tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGameItem } from "@/types/igdb";
+import type { UnifiedSearchResult } from "@/types/search";
 import type { TMDBResponse } from "@/types/tmdb";
 
 export { GENRE_MAP };
-
-function parseReleaseYear(dateStr?: string | null): number | null {
-  if (!dateStr?.trim()) return null;
-  const year = parseInt(dateStr.slice(0, 4), 10);
-  return Number.isNaN(year) ? null : year;
-}
 
 export async function GET(request: NextRequest) {
   const authResult = await requireUser(request);
@@ -90,16 +84,9 @@ async function fetchTmdbDiscover(
   const data: TMDBResponse = await tmdbFetch(endpoint);
   const rawResults = Array.isArray(data?.results) ? data.results : [];
 
-  const results: UnifiedSearchResult[] = rawResults.map((item) => ({
-    externalId: `tmdb:${type}:${item.id}`,
-    mediaType: type,
-    title: item.title || item.name || "Untitled",
-    releaseYear: parseReleaseYear(item.release_date || item.first_air_date),
-    posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-    creator: null,
-    summary: item.overview || null,
-    genres: [],
-  }));
+  const results: UnifiedSearchResult[] = rawResults.map((item) =>
+    mapTmdbItemToSearchResult(item, type),
+  );
 
   return NextResponse.json({
     results,
@@ -155,18 +142,7 @@ async function fetchIgdbDiscover(
     countRes?.count && typeof countRes.count === "number" ? countRes.count : rawGames.length;
   const totalPages = Math.min(50, Math.max(1, Math.ceil(totalCount / limit)));
 
-  const results: UnifiedSearchResult[] = rawGames.map((g) => ({
-    externalId: `igdb:${g.id}`,
-    mediaType: "game",
-    title: g.name || "Untitled Game",
-    releaseYear: g.first_release_date
-      ? new Date(g.first_release_date * 1000).getUTCFullYear()
-      : null,
-    posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
-    creator: null,
-    summary: g.summary || null,
-    genres: Array.isArray(g.genres) ? g.genres.map((gen) => gen.name) : [],
-  }));
+  const results: UnifiedSearchResult[] = rawGames.map(mapIgdbGameToSearchResult);
 
   return NextResponse.json({
     results,

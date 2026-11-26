@@ -1,20 +1,46 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Bookmark, Check, Film, Gamepad2, Play, Search, Tv, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import type { UnifiedSearchResult } from "@/app/api/search/route";
 import { PosterImage } from "@/components/poster-image";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useEntryMutations } from "@/hooks/use-entry-mutations";
 import { useSearchModal } from "@/hooks/use-search-modal";
-import { logEntryApi } from "@/lib/api-entries";
-import { getMediaTypeLabel, getStatusVerb } from "@/lib/media-formatters";
+import { getMediaTypeLabel } from "@/lib/media-formatters";
 import { cn, getMediaHref } from "@/lib/utils";
+import type { UnifiedSearchResult } from "@/types/search";
 
 export type MediaFilterType = "all" | "movie" | "tv" | "game";
+
+const MEDIA_FILTER_OPTIONS = [
+  { id: "all", label: "All", icon: Search },
+  { id: "movie", label: "Movies", icon: Film },
+  { id: "tv", label: "TV Series", icon: Tv },
+  { id: "game", label: "Games", icon: Gamepad2 },
+] as const;
+
+const QUICK_STATUS_ACTIONS = [
+  {
+    status: "want_to",
+    title: "Add to Queue",
+    icon: Bookmark,
+    activeClass: "bg-status-queue/20 text-status-queue border-status-queue/40 font-bold",
+  },
+  {
+    status: "doing",
+    title: "In Progress",
+    icon: Play,
+    activeClass: "bg-status-doing/20 text-status-doing border-status-doing/40 font-bold",
+  },
+  {
+    status: "done",
+    title: "Completed",
+    icon: Check,
+    activeClass: "bg-status-done/20 text-status-done border-status-done/40 font-bold",
+  },
+] as const;
 
 const TRENDING_SUGGESTIONS = [
   { title: "Dune: Part Two", type: "Movie" },
@@ -26,7 +52,6 @@ const TRENDING_SUGGESTIONS = [
 ];
 
 export function SearchModal() {
-  const router = useRouter();
   const { isOpen, closeSearch, toggleSearch } = useSearchModal();
   const [query, setQuery] = useState("");
   const [mediaFilter, setMediaFilter] = useState<MediaFilterType>("all");
@@ -78,30 +103,12 @@ export function SearchModal() {
     enabled: debouncedQuery.trim().length > 0,
   });
 
-  const { mutate: logMedia, isPending } = useMutation({
-    mutationFn: async ({
-      media,
-      status,
-    }: {
-      media: UnifiedSearchResult;
-      status: "want_to" | "doing" | "done";
-    }) => {
-      return logEntryApi({ media, status });
-    },
-    onSuccess: (_, variables) => {
+  const { logEntry, isLogging: isPending } = useEntryMutations({
+    onLogSuccess: (_, variables) => {
       setTrackedStatus((prev) => ({
         ...prev,
         [variables.media.externalId]: variables.status,
       }));
-      router.refresh();
-      toast.success(getStatusVerb(variables.status), {
-        description: variables.media.title,
-      });
-    },
-    onError: (err: Error) => {
-      if (err.message !== "Unauthorized") {
-        toast.error("Failed to log title");
-      }
     },
   });
 
@@ -169,21 +176,13 @@ export function SearchModal() {
                   Filter by medium
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {(
-                    [
-                      { id: "all", label: "All", icon: Search },
-                      { id: "movie", label: "Movies", icon: Film },
-                      { id: "tv", label: "TV Series", icon: Tv },
-                      { id: "game", label: "Games", icon: Gamepad2 },
-                    ] as const
-                  ).map((chip) => {
-                    const Icon = chip.icon;
-                    const isSelected = mediaFilter === chip.id;
+                  {MEDIA_FILTER_OPTIONS.map(({ id, label, icon: Icon }) => {
+                    const isSelected = mediaFilter === id;
                     return (
                       <button
-                        key={chip.id}
+                        key={id}
                         type="button"
-                        onClick={() => setMediaFilter(chip.id as MediaFilterType)}
+                        onClick={() => setMediaFilter(id)}
                         className={cn(
                           "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer border",
                           isSelected
@@ -192,7 +191,7 @@ export function SearchModal() {
                         )}
                       >
                         <Icon className="size-3.5" />
-                        <span>{chip.label}</span>
+                        <span>{label}</span>
                       </button>
                     );
                   })}
@@ -230,19 +229,19 @@ export function SearchModal() {
             <>
               <div className="px-4 py-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground bg-muted/20">
                 <div className="flex items-center gap-1">
-                  {(["all", "movie", "tv", "game"] as const).map((t) => (
+                  {MEDIA_FILTER_OPTIONS.map(({ id, label }) => (
                     <button
-                      key={t}
+                      key={id}
                       type="button"
-                      onClick={() => setMediaFilter(t)}
+                      onClick={() => setMediaFilter(id)}
                       className={cn(
-                        "px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition cursor-pointer",
-                        mediaFilter === t
+                        "px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer",
+                        mediaFilter === id
                           ? "bg-muted text-foreground border border-border shadow-2xs"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      {t === "all" ? "All" : t === "tv" ? "TV Series" : `${t}s`}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -324,50 +323,25 @@ export function SearchModal() {
                         </Link>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            title="Add to Queue"
-                            disabled={isPending}
-                            onClick={() => logMedia({ media: item, status: "want_to" })}
-                            className={cn(
-                              "p-2 rounded-xl transition cursor-pointer border select-none",
-                              currentLoggedStatus === "want_to"
-                                ? "bg-status-queue/20 text-status-queue border-status-queue/40 font-bold"
-                                : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
-                            )}
-                          >
-                            <Bookmark className="size-4 stroke-2" />
-                          </button>
-
-                          <button
-                            type="button"
-                            title="In Progress"
-                            disabled={isPending}
-                            onClick={() => logMedia({ media: item, status: "doing" })}
-                            className={cn(
-                              "p-2 rounded-xl transition cursor-pointer border select-none",
-                              currentLoggedStatus === "doing"
-                                ? "bg-status-doing/20 text-status-doing border-status-doing/40 font-bold"
-                                : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
-                            )}
-                          >
-                            <Play className="size-4 stroke-2" />
-                          </button>
-
-                          <button
-                            type="button"
-                            title="Completed"
-                            disabled={isPending}
-                            onClick={() => logMedia({ media: item, status: "done" })}
-                            className={cn(
-                              "p-2 rounded-xl transition cursor-pointer border select-none",
-                              currentLoggedStatus === "done"
-                                ? "bg-status-done/20 text-status-done border-status-done/40 font-bold"
-                                : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
-                            )}
-                          >
-                            <Check className="size-4 stroke-2" />
-                          </button>
+                          {QUICK_STATUS_ACTIONS.map(
+                            ({ status, title, icon: Icon, activeClass }) => (
+                              <button
+                                key={status}
+                                type="button"
+                                title={title}
+                                disabled={isPending}
+                                onClick={() => logEntry({ media: item, status })}
+                                className={cn(
+                                  "p-2 rounded-xl transition cursor-pointer border select-none",
+                                  currentLoggedStatus === status
+                                    ? activeClass
+                                    : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-border",
+                                )}
+                              >
+                                <Icon className="size-4 stroke-2" />
+                              </button>
+                            ),
+                          )}
                         </div>
                       </div>
                     );

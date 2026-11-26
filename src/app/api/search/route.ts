@@ -1,21 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { igdbFetch } from "@/lib/igdb";
-import { getIgdbCoverUrl } from "@/lib/igdb-helpers";
+import { mapIgdbGameToSearchResult, mapTmdbItemToSearchResult } from "@/lib/media-discover";
 import { tmdbFetch } from "@/lib/tmdb";
 import type { IGDBGameItem } from "@/types/igdb";
+import type { UnifiedSearchResult } from "@/types/search";
 import type { TMDBResponse } from "@/types/tmdb";
 
-export interface UnifiedSearchResult {
-  externalId: string;
-  mediaType: "movie" | "tv" | "game";
-  title: string;
-  releaseYear: number | null;
-  posterUrl: string | null;
-  creator: string | null;
-  summary: string | null;
-  genres: string[];
-}
+export type { UnifiedSearchResult };
 
 export async function GET(request: NextRequest) {
   const authResult = await requireUser(request);
@@ -47,56 +39,23 @@ export async function GET(request: NextRequest) {
   // Parse Movies
   if (moviesRes.status === "fulfilled" && moviesRes.value?.results) {
     const movieData = moviesRes.value as TMDBResponse;
-    for (const m of movieData.results.slice(0, 8)) {
-      results.push({
-        externalId: `tmdb:movie:${m.id}`,
-        mediaType: "movie",
-        title: m.title || "Untitled",
-        releaseYear: m.release_date ? parseInt(m.release_date.slice(0, 4), 10) || null : null,
-        posterUrl: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
-        creator: null,
-        summary: m.overview || null,
-        genres: [],
-      });
-    }
+    results.push(
+      ...movieData.results.slice(0, 8).map((m) => mapTmdbItemToSearchResult(m, "movie")),
+    );
   }
 
   // Parse TV Shows
   if (tvRes.status === "fulfilled" && tvRes.value?.results) {
     const tvData = tvRes.value as TMDBResponse;
-    for (const show of tvData.results.slice(0, 8)) {
-      results.push({
-        externalId: `tmdb:tv:${show.id}`,
-        mediaType: "tv",
-        title: show.name || "Untitled",
-        releaseYear: show.first_air_date
-          ? parseInt(show.first_air_date.slice(0, 4), 10) || null
-          : null,
-        posterUrl: show.poster_path ? `https://image.tmdb.org/t/p/w500${show.poster_path}` : null,
-        creator: null,
-        summary: show.overview || null,
-        genres: [],
-      });
-    }
+    results.push(
+      ...tvData.results.slice(0, 8).map((show) => mapTmdbItemToSearchResult(show, "tv")),
+    );
   }
 
   // Parse Games
   if (gamesRes.status === "fulfilled" && Array.isArray(gamesRes.value)) {
     const gameData = gamesRes.value as IGDBGameItem[];
-    for (const g of gameData.slice(0, 8)) {
-      results.push({
-        externalId: `igdb:${g.id}`,
-        mediaType: "game",
-        title: g.name || "Untitled Game",
-        releaseYear: g.first_release_date
-          ? new Date(g.first_release_date * 1000).getUTCFullYear()
-          : null,
-        posterUrl: getIgdbCoverUrl(g.cover?.url, "cover_big"),
-        creator: g.involved_companies?.[0]?.company?.name || null,
-        summary: g.summary || null,
-        genres: g.genres?.map((gen) => gen.name) || [],
-      });
-    }
+    results.push(...gameData.slice(0, 8).map(mapIgdbGameToSearchResult));
   }
 
   return NextResponse.json({ results });

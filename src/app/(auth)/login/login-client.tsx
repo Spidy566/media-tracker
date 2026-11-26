@@ -6,6 +6,67 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
+const INPUT_BASE_CLASS =
+  "w-full h-10 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition";
+
+function PasswordField({
+  id,
+  label,
+  autoComplete,
+  value,
+  placeholder,
+  showPassword,
+  onToggleShow,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  autoComplete: string;
+  value: string;
+  placeholder: string;
+  showPassword: boolean;
+  onToggleShow: () => void;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-xs font-medium text-foreground tracking-wide">
+        {label}
+      </label>
+      <div className="relative">
+        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <input
+          id={id}
+          type={showPassword ? "text" : "password"}
+          autoComplete={autoComplete}
+          required
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={cn(INPUT_BASE_CLASS, "pl-10 pr-10")}
+        />
+        <button
+          type="button"
+          onClick={onToggleShow}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition cursor-pointer"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function getSignUpErrorMessage(message?: string): string {
+  const lower = message?.toLowerCase() ?? "";
+  if (lower.includes("invite")) return "Invalid invite code.";
+  if (lower.includes("unique") || lower.includes("already") || lower.includes("exist")) {
+    return "This username is already taken. Please choose another.";
+  }
+  return message || "Sign-up failed. Please check your details.";
+}
+
 export function LoginClient() {
   const searchParams = useSearchParams();
 
@@ -45,23 +106,23 @@ export function LoginClient() {
       });
 
       if (res.error) {
-        if (res.error.status === 429) {
-          setErrorMessage("Too many attempts. Please try again in a few moments.");
-        } else {
-          setErrorMessage(res.error.message || "Invalid username or password.");
-        }
+        setErrorMessage(
+          res.error.status === 429
+            ? "Too many attempts. Please try again in a few moments."
+            : res.error.message || "Invalid username or password.",
+        );
         setIsSubmitting(false);
         return;
       }
 
       window.location.href = targetUrl;
     } catch (err: unknown) {
-      const errorObj = err as { status?: number; message?: string };
-      if (errorObj?.status === 429) {
-        setErrorMessage("Too many attempts. Please try again in a few moments.");
-      } else {
-        setErrorMessage("Sign-in failed. Please check your credentials.");
-      }
+      const errorObj = err as { status?: number };
+      setErrorMessage(
+        errorObj?.status === 429
+          ? "Too many attempts. Please try again in a few moments."
+          : "Sign-in failed. Please check your credentials.",
+      );
       setIsSubmitting(false);
     }
   };
@@ -106,17 +167,7 @@ export function LoginClient() {
       } as unknown as Parameters<typeof authClient.signUp.email>[0]);
 
       if (res.error) {
-        if (res.error.message?.toLowerCase().includes("invite")) {
-          setErrorMessage("Invalid invite code.");
-        } else if (
-          res.error.message?.toLowerCase().includes("unique") ||
-          res.error.message?.toLowerCase().includes("already") ||
-          res.error.message?.toLowerCase().includes("exist")
-        ) {
-          setErrorMessage("This username is already taken. Please choose another.");
-        } else {
-          setErrorMessage(res.error.message || "Sign-up failed. Please check your details.");
-        }
+        setErrorMessage(getSignUpErrorMessage(res.error.message));
         setIsSubmitting(false);
         return;
       }
@@ -124,11 +175,11 @@ export function LoginClient() {
       window.location.href = targetUrl;
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
-      if (errorObj?.message?.toLowerCase().includes("invite")) {
-        setErrorMessage("Invalid invite code.");
-      } else {
-        setErrorMessage("Sign-up failed. Please check your credentials.");
-      }
+      setErrorMessage(
+        errorObj?.message?.toLowerCase().includes("invite")
+          ? "Invalid invite code."
+          : "Sign-up failed. Please check your credentials.",
+      );
       setIsSubmitting(false);
     }
   };
@@ -150,36 +201,29 @@ export function LoginClient() {
 
       {/* Mode Switcher */}
       <div className="flex items-center bg-muted/60 border border-border p-1 rounded-xl shadow-2xs">
-        <button
-          type="button"
-          onClick={() => {
-            setMode("signin");
-            setErrorMessage(null);
-          }}
-          className={cn(
-            "flex-1 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-center",
-            mode === "signin"
-              ? "bg-card text-foreground shadow-2xs"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Sign In
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setMode("signup");
-            setErrorMessage(null);
-          }}
-          className={cn(
-            "flex-1 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-center",
-            mode === "signup"
-              ? "bg-card text-foreground shadow-2xs"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Create Account
-        </button>
+        {(
+          [
+            { key: "signin", label: "Sign In" },
+            { key: "signup", label: "Create Account" },
+          ] as const
+        ).map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => {
+              setMode(key);
+              setErrorMessage(null);
+            }}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-center",
+              mode === key
+                ? "bg-card text-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Error Message Alert */}
@@ -212,40 +256,21 @@ export function LoginClient() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="your username"
-                className="w-full h-10 pl-10 pr-3.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+                className={cn(INPUT_BASE_CLASS, "pl-10 pr-3.5")}
               />
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="signin-password"
-              className="text-xs font-medium text-foreground tracking-wide"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                id="signin-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-10 pl-10 pr-10 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-          </div>
+          <PasswordField
+            id="signin-password"
+            label="Password"
+            autoComplete="current-password"
+            value={password}
+            placeholder="••••••••"
+            showPassword={showPassword}
+            onToggleShow={() => setShowPassword((prev) => !prev)}
+            onChange={setPassword}
+          />
 
           <button
             type="submit"
@@ -300,7 +325,7 @@ export function LoginClient() {
                 value={signupUsername}
                 onChange={(e) => setSignupUsername(e.target.value)}
                 placeholder="e.g. alex"
-                className="w-full h-10 pl-10 pr-3.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+                className={cn(INPUT_BASE_CLASS, "pl-10 pr-3.5")}
               />
             </div>
             <span className="text-[11px] text-muted-foreground font-mono">
@@ -323,39 +348,20 @@ export function LoginClient() {
               onChange={(e) => setSignupDisplayName(e.target.value)}
               placeholder="e.g. Alex Rivers"
               maxLength={50}
-              className="w-full h-10 px-3.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+              className={cn(INPUT_BASE_CLASS, "px-3.5")}
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="signup-password"
-              className="text-xs font-medium text-foreground tracking-wide"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <input
-                id="signup-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                required
-                value={signupPassword}
-                onChange={(e) => setSignupPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                className="w-full h-10 pl-10 pr-10 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-          </div>
+          <PasswordField
+            id="signup-password"
+            label="Password"
+            autoComplete="new-password"
+            value={signupPassword}
+            placeholder="At least 8 characters"
+            showPassword={showPassword}
+            onToggleShow={() => setShowPassword((prev) => !prev)}
+            onChange={setSignupPassword}
+          />
 
           <div className="flex flex-col gap-1">
             <label
@@ -374,7 +380,7 @@ export function LoginClient() {
                 value={signupInviteCode}
                 onChange={(e) => setSignupInviteCode(e.target.value)}
                 placeholder="Enter invite code"
-                className="w-full h-10 pl-10 pr-3.5 rounded-xl bg-muted/40 border border-border text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition font-mono"
+                className={cn(INPUT_BASE_CLASS, "pl-10 pr-3.5 font-mono")}
               />
             </div>
           </div>

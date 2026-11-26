@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Popover } from "radix-ui";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 export const REGION_OPTIONS = [
   { key: "all", label: "All languages" },
@@ -42,6 +43,55 @@ export const MONTHS_SHORT = [
   "Nov",
   "Dec",
 ];
+
+const VIEW_OPTIONS = [
+  { key: "grid", label: "Month", icon: Grid3X3 },
+  { key: "list", label: "List", icon: List },
+] as const;
+
+const MEDIA_TYPE_OPTIONS = [
+  { key: "all", label: "All", icon: Layers },
+  { key: "movie", label: "Movies", icon: Film },
+  { key: "tv", label: "TV", icon: Tv },
+  { key: "game", label: "Games", icon: Gamepad2 },
+] as const;
+
+function ToolbarSwitch({
+  label,
+  checked,
+  activeTrackClass,
+  onToggle,
+}: {
+  label: string;
+  checked: boolean;
+  activeTrackClass: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onToggle}
+      className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer select-none group"
+    >
+      <span className="text-muted-foreground group-hover:text-foreground transition">{label}</span>
+      <span
+        className={cn(
+          "inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-border p-0.5 transition-colors",
+          checked ? activeTrackClass : "bg-muted",
+        )}
+      >
+        <span
+          className={cn(
+            "size-3.5 rounded-full bg-background transition-transform shadow-xs",
+            checked ? "translate-x-4" : "translate-x-0",
+          )}
+        />
+      </span>
+    </button>
+  );
+}
 
 interface CalendarToolbarProps {
   month: string;
@@ -124,7 +174,6 @@ export function CalendarToolbar({
               <ChevronRight className="size-4" />
             </button>
 
-            {/* Today jump button */}
             <button
               type="button"
               onClick={() => onUpdateUrl({ month: defaultMonth })}
@@ -134,7 +183,6 @@ export function CalendarToolbar({
               Today
             </button>
 
-            {/* Jump button with Radix Popover */}
             <Popover.Root open={isJumpOpen} onOpenChange={setIsJumpOpen}>
               <Popover.Trigger asChild>
                 <button
@@ -152,7 +200,6 @@ export function CalendarToolbar({
                   sideOffset={8}
                   className="z-50 w-72 rounded-2xl border border-border bg-popover p-4 shadow-xl outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-200"
                 >
-                  {/* Year stepper */}
                   <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
                     <button
                       type="button"
@@ -177,7 +224,6 @@ export function CalendarToolbar({
                     </button>
                   </div>
 
-                  {/* 12 Month buttons */}
                   <div className="grid grid-cols-3 gap-1.5">
                     {MONTHS_SHORT.map((mName, idx) => {
                       const mNum = String(idx + 1).padStart(2, "0");
@@ -192,11 +238,12 @@ export function CalendarToolbar({
                             onUpdateUrl({ month: targetYm });
                             setIsJumpOpen(false);
                           }}
-                          className={`py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
+                          className={cn(
+                            "py-2 rounded-xl text-xs font-medium transition cursor-pointer",
                             isSelected
                               ? "bg-foreground text-background font-semibold shadow-xs"
-                              : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                          }`}
+                              : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                          )}
                         >
                           {mName}
                         </button>
@@ -210,92 +257,49 @@ export function CalendarToolbar({
 
           {/* Right group: Month / List toggle */}
           <div className="hidden md:flex items-center bg-card border border-border p-1 rounded-xl shadow-2xs">
-            <button
-              type="button"
-              onClick={() => onUpdateUrl({ view: "grid" })}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                view === "grid"
-                  ? "bg-muted text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Grid3X3 className="size-3.5" />
-              <span>Month</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onUpdateUrl({ view: "list" })}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                view === "list"
-                  ? "bg-muted text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <List className="size-3.5" />
-              <span>List</span>
-            </button>
+            {VIEW_OPTIONS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onUpdateUrl({ view: key })}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer",
+                  view === key
+                    ? "bg-muted text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="size-3.5" />
+                <span>{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Row 2: Media Type segmented control + Languages + Switches */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1 border-t border-border/60">
-          {/* Left: Media Types & Language Pills */}
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none pb-1">
-            {/* Media type segmented control */}
             <div className="flex items-center bg-card border border-border p-1 rounded-xl shrink-0 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => onUpdateUrl({ type: "all" })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  type === "all"
-                    ? "bg-muted text-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Layers className="size-3.5" />
-                <span>All</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onUpdateUrl({ type: "movie" })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  type === "movie"
-                    ? "bg-muted text-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Film className="size-3.5" />
-                <span>Movies</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onUpdateUrl({ type: "tv" })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                  type === "tv"
-                    ? "bg-muted text-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Tv className="size-3.5" />
-                <span>TV</span>
-              </button>
-              {!isNonEnglish && (
-                <button
-                  type="button"
-                  onClick={() => onUpdateUrl({ type: "game" })}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                    type === "game"
-                      ? "bg-muted text-foreground font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Gamepad2 className="size-3.5" />
-                  <span>Games</span>
-                </button>
+              {MEDIA_TYPE_OPTIONS.filter((opt) => !(isNonEnglish && opt.key === "game")).map(
+                ({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => onUpdateUrl({ type: key })}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer",
+                      type === key
+                        ? "bg-muted text-foreground font-semibold shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="size-3.5" />
+                    <span>{label}</span>
+                  </button>
+                ),
               )}
             </div>
 
-            {/* Region / Language pills */}
             <div className="flex items-center gap-1 shrink-0">
               {REGION_OPTIONS.map((r) => {
                 const isSelected = lang === r.key;
@@ -310,11 +314,12 @@ export function CalendarToolbar({
                       }
                       onUpdateUrl(nextUpdates);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer shrink-0 border ${
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer shrink-0 border",
                       isSelected
                         ? "bg-foreground text-background border-foreground font-semibold shadow-2xs"
-                        : "bg-card/70 text-muted-foreground hover:text-foreground border-border hover:bg-card"
-                    }`}
+                        : "bg-card/70 text-muted-foreground hover:text-foreground border-border hover:bg-card",
+                    )}
                   >
                     {r.label}
                   </button>
@@ -329,56 +334,20 @@ export function CalendarToolbar({
             )}
           </div>
 
-          {/* Right: Switches (Top releases, My list) */}
           <div className="flex items-center gap-4 shrink-0 self-end lg:self-center">
-            {/* Switch 1: Top releases only */}
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isTopOnly}
-              onClick={() => onUpdateUrl({ top: isTopOnly ? 0 : 1 })}
-              className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer select-none group"
-            >
-              <span className="text-muted-foreground group-hover:text-foreground transition">
-                Top releases only
-              </span>
-              <span
-                className={`inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-border p-0.5 transition-colors ${
-                  isTopOnly ? "bg-foreground" : "bg-muted"
-                }`}
-              >
-                <span
-                  className={`size-3.5 rounded-full bg-background transition-transform shadow-xs ${
-                    isTopOnly ? "translate-x-4" : "translate-x-0"
-                  }`}
-                />
-              </span>
-            </button>
-
-            {/* Switch 2: My list */}
+            <ToolbarSwitch
+              label="Top releases only"
+              checked={isTopOnly}
+              activeTrackClass="bg-foreground"
+              onToggle={() => onUpdateUrl({ top: isTopOnly ? 0 : 1 })}
+            />
             {currentUser && (
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isMyListOnly}
-                onClick={() => onUpdateUrl({ mine: isMyListOnly ? 0 : 1 })}
-                className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer select-none group"
-              >
-                <span className="text-muted-foreground group-hover:text-foreground transition">
-                  In My Queue
-                </span>
-                <span
-                  className={`inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-border p-0.5 transition-colors ${
-                    isMyListOnly ? "bg-status-queue text-background" : "bg-muted"
-                  }`}
-                >
-                  <span
-                    className={`size-3.5 rounded-full bg-background transition-transform shadow-xs ${
-                      isMyListOnly ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </span>
-              </button>
+              <ToolbarSwitch
+                label="In My Queue"
+                checked={isMyListOnly}
+                activeTrackClass="bg-status-queue text-background"
+                onToggle={() => onUpdateUrl({ mine: isMyListOnly ? 0 : 1 })}
+              />
             )}
           </div>
         </div>
